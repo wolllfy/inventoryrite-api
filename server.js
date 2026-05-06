@@ -29,11 +29,18 @@ app.get("/health", (req, res) => {
     });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Clover Connect Route
+|--------------------------------------------------------------------------
+*/
+
 app.get("/connect-clover", (req, res) => {
+
     if (!CLOVER_CLIENT_ID) {
         return res.status(500).json({
             success: false,
-            message: "Missing CLOVER_CLIENT_ID in Render environment variables."
+            message: "Missing CLOVER_CLIENT_ID in environment variables."
         });
     }
 
@@ -43,13 +50,22 @@ app.get("/connect-clover", (req, res) => {
         `&response_type=code` +
         `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
 
+    console.log("Redirecting to Clover OAuth...");
+
     res.redirect(cloverAuthUrl);
 });
 
+/*
+|--------------------------------------------------------------------------
+| Clover OAuth Callback
+|--------------------------------------------------------------------------
+*/
+
 app.get("/oauth/callback", async (req, res) => {
+
     try {
+
         const code = req.query.code;
-        const merchantId = req.query.merchant_id || req.query.merchantId;
 
         if (!code) {
             return res.status(400).json({
@@ -67,37 +83,46 @@ app.get("/oauth/callback", async (req, res) => {
             });
         }
 
-        const response = await axios.post(
+        console.log("Starting Clover token exchange...");
+
+        const tokenResponse = await axios.post(
             `${CLOVER_BASE_URL}/oauth/token`,
-            null,
+            new URLSearchParams({
+                client_id: CLOVER_CLIENT_ID,
+                client_secret: CLOVER_CLIENT_SECRET,
+                code: code
+            }).toString(),
             {
-                params: {
-                    client_id: CLOVER_CLIENT_ID,
-                    client_secret: CLOVER_CLIENT_SECRET,
-                    code: code
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
                 }
             }
         );
 
-        const tokenData = response.data;
+        const tokenData = tokenResponse.data;
 
-        console.log("Clover connected successfully.");
+        console.log("Clover OAuth successful.");
         console.log({
-            merchantId: merchantId || tokenData.merchant_id || null,
             hasAccessToken: !!tokenData.access_token,
-            hasRefreshToken: !!tokenData.refresh_token
+            hasRefreshToken: !!tokenData.refresh_token,
+            merchantId: tokenData.merchant_id || null
         });
 
         res.json({
             success: true,
             message: "Clover connected successfully",
-            merchantId: merchantId || tokenData.merchant_id || null,
             data: tokenData
         });
 
     } catch (error) {
+
         console.error("Clover OAuth Error:");
-        console.error(error.response?.data || error.message);
+
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
 
         res.status(500).json({
             success: false,
