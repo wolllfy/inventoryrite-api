@@ -291,6 +291,7 @@ function renderDashboard(options = {}) {
         .btn-dark { background: #111827; color: white; }
         .btn-light { background: #f8fafc; color: #111827; border: 1px solid var(--line); }
         .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid #fecaca; }
+        .btn-amber { background: var(--amber-soft); color: var(--amber); border: 1px solid #fde68a; }
         .btn-small { min-height: 34px; padding: 8px 11px; font-size: 12px; border-radius: 10px; }
 
         .inventory-card { padding: 24px; }
@@ -359,6 +360,180 @@ function renderDashboard(options = {}) {
             margin-bottom: 7px;
         }
 
+        /* ----------------------------------------------------------------
+        | BULK PRICE UPDATE PANEL
+        ---------------------------------------------------------------- */
+
+        .bulk-panel {
+            display: none;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fde68a;
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin: 0 0 16px;
+        }
+
+        .bulk-panel.show { display: block; }
+
+        .bulk-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .bulk-panel-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bulk-count-badge {
+            background: #f59e0b;
+            color: white;
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: 12px;
+            font-weight: 900;
+            min-width: 26px;
+            text-align: center;
+        }
+
+        .bulk-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-pct-input {
+            width: 90px;
+            min-width: 90px;
+            padding: 9px 10px;
+            margin: 0;
+            border-radius: 10px;
+            border: 1px solid #fcd34d;
+            background: white;
+            font-weight: 900;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .bulk-pct-input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+        }
+
+        .bulk-progress {
+            display: none;
+            margin-top: 12px;
+            background: #fde68a;
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .bulk-progress.show { display: block; }
+
+        .bulk-progress-bar {
+            height: 100%;
+            background: #f59e0b;
+            border-radius: 999px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .bulk-progress-label {
+            font-size: 12px;
+            color: #92400e;
+            margin-top: 6px;
+            font-weight: 800;
+            display: none;
+        }
+
+        .bulk-progress-label.show { display: block; }
+
+        /* ----------------------------------------------------------------
+        | BULK TOOLBAR (floats above table when items are selected)
+        ---------------------------------------------------------------- */
+
+        .bulk-toolbar {
+            display: none;
+            background: #111827;
+            color: white;
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin: 0 0 12px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .bulk-toolbar.show { display: flex; }
+
+        .bulk-toolbar-left {
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bulk-toolbar-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-bulk-increase {
+            background: #16a34a;
+            color: white;
+            border: 0;
+        }
+
+        .btn-bulk-increase:hover { background: #15803d; }
+
+        .btn-bulk-decrease {
+            background: #dc2626;
+            color: white;
+            border: 0;
+        }
+
+        .btn-bulk-decrease:hover { background: #b91c1c; }
+
+        .btn-bulk-clear {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+
+        /* ----------------------------------------------------------------
+        | CHECKBOX COLUMN
+        ---------------------------------------------------------------- */
+
+        .col-check { width: 42px; text-align: center; }
+
+        input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            min-width: 17px;
+            border-radius: 5px;
+            border: 2px solid #d1d5db;
+            cursor: pointer;
+            accent-color: #15803d;
+            padding: 0;
+            margin: 0;
+        }
+
+        tr.row-selected td { background: #f0fdf4 !important; }
+
         .stats-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -393,7 +568,7 @@ function renderDashboard(options = {}) {
             background: white;
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 1020px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1060px; }
         th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: middle; }
         th { background: #f8fafc; color: #334155; font-weight: 900; }
         tr:last-child td { border-bottom: 0; }
@@ -405,6 +580,13 @@ function renderDashboard(options = {}) {
             0% { background: #dcfce7; }
             100% { background: white; }
         }
+
+        @keyframes rowBulkFlash {
+            0% { background: #fef3c7; }
+            100% { background: white; }
+        }
+
+        tr.row-bulk-updated { animation: rowBulkFlash 1.8s ease; }
 
         .pill {
             display: inline-flex;
@@ -553,6 +735,7 @@ function renderDashboard(options = {}) {
             .table-top { flex-direction: column; }
             .toolbar { width: 100%; justify-content: flex-start; }
             .search-input { width: 100%; min-width: 100%; max-width: 100%; }
+            .bulk-controls { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -601,6 +784,7 @@ function renderDashboard(options = {}) {
                 </div>
             </div>
 
+            <!-- ADD PRODUCT PANEL (unchanged) -->
             <div class="add-panel" id="addPanel">
                 <div class="add-grid">
                     <div>
@@ -613,6 +797,47 @@ function renderDashboard(options = {}) {
                     </div>
                     <button id="btnCreateItem" type="button" class="btn btn-primary">Create Product</button>
                 </div>
+            </div>
+
+            <!-- BULK PRICE UPDATE PANEL -->
+            <div class="bulk-panel" id="bulkPanel">
+                <div class="bulk-panel-header">
+                    <div class="bulk-panel-title">
+                        ⚡ Bulk Price Update &mdash;
+                        <span id="bulkSelectedCount" class="bulk-count-badge">0</span>
+                        item(s) selected
+                    </div>
+                    <div class="bulk-controls">
+                        <div>
+                            <label for="bulkPct" style="color:#92400e;">% Amount</label>
+                            <input
+                                id="bulkPct"
+                                type="number"
+                                class="bulk-pct-input"
+                                value="10"
+                                min="0.01"
+                                max="9999"
+                                step="0.01"
+                                placeholder="10"
+                            />
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:0;">
+                            <button id="btnBulkIncrease" type="button" class="btn btn-small btn-bulk-increase">
+                                ▲ Increase by %
+                            </button>
+                            <button id="btnBulkDecrease" type="button" class="btn btn-small btn-bulk-decrease">
+                                ▼ Decrease by %
+                            </button>
+                            <button id="btnBulkClearPanel" type="button" class="btn btn-small btn-light">
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bulk-progress" id="bulkProgress">
+                    <div class="bulk-progress-bar" id="bulkProgressBar"></div>
+                </div>
+                <div class="bulk-progress-label" id="bulkProgressLabel"></div>
             </div>
 
             <div class="stats-row">
@@ -638,6 +863,9 @@ function renderDashboard(options = {}) {
                 <table>
                     <thead>
                         <tr>
+                            <th class="col-check">
+                                <input type="checkbox" id="selectAllCheckbox" title="Select all visible" />
+                            </th>
                             <th>Product Name</th>
                             <th>Price</th>
                             <th>SKU / Code</th>
@@ -651,7 +879,7 @@ function renderDashboard(options = {}) {
                     </thead>
                     <tbody id="itemsBody">
                         <tr>
-                            <td colspan="9" class="empty">
+                            <td colspan="10" class="empty">
                                 <strong>Loading Clover inventory...</strong>
                                 Your products will appear here in a moment.
                             </td>
@@ -700,8 +928,12 @@ function renderDashboard(options = {}) {
 
         var loadedItems = [];
         var lastUpdatedItemId = "";
+        var bulkUpdatedItemIds = [];
         var isBusy = false;
         var pendingConfirmAction = null;
+
+        // Track selected item IDs for bulk operations
+        var selectedItemIds = new Set();
 
         function byId(id) {
             return document.getElementById(id);
@@ -818,6 +1050,204 @@ function renderDashboard(options = {}) {
             if (statValue) statValue.textContent = formatCurrencyFromCents(totalCents);
         }
 
+        /*
+        |------------------------------------------------------------------
+        | BULK SELECTION HELPERS
+        |------------------------------------------------------------------
+        */
+
+        function syncBulkUI() {
+            var count = selectedItemIds.size;
+            var bulkPanel = byId("bulkPanel");
+            var countBadge = byId("bulkSelectedCount");
+            var selectAll = byId("selectAllCheckbox");
+
+            if (countBadge) countBadge.textContent = String(count);
+
+            if (bulkPanel) {
+                if (count > 0) {
+                    bulkPanel.classList.add("show");
+                } else {
+                    bulkPanel.classList.remove("show");
+                }
+            }
+
+            // Update select-all checkbox visual state
+            if (selectAll) {
+                var body = byId("itemsBody");
+                var allCheckboxes = body ? body.querySelectorAll("input[type='checkbox'][data-item-id]") : [];
+                var total = allCheckboxes.length;
+                selectAll.indeterminate = count > 0 && count < total;
+                selectAll.checked = total > 0 && count === total;
+            }
+
+            // Highlight selected rows
+            var body = byId("itemsBody");
+            if (body) {
+                var rows = body.querySelectorAll("tr[data-row-id]");
+                rows.forEach(function (row) {
+                    var id = row.getAttribute("data-row-id");
+                    if (selectedItemIds.has(id)) {
+                        row.classList.add("row-selected");
+                    } else {
+                        row.classList.remove("row-selected");
+                    }
+                });
+            }
+        }
+
+        function clearSelection() {
+            selectedItemIds.clear();
+            syncBulkUI();
+        }
+
+        function toggleItemSelection(itemId, checked) {
+            if (checked) {
+                selectedItemIds.add(itemId);
+            } else {
+                selectedItemIds.delete(itemId);
+            }
+            syncBulkUI();
+        }
+
+        function selectAllVisible(checked) {
+            var body = byId("itemsBody");
+            if (!body) return;
+            var checkboxes = body.querySelectorAll("input[type='checkbox'][data-item-id]");
+            checkboxes.forEach(function (cb) {
+                var id = cb.getAttribute("data-item-id");
+                if (checked) {
+                    selectedItemIds.add(id);
+                } else {
+                    selectedItemIds.delete(id);
+                }
+                cb.checked = checked;
+            });
+            syncBulkUI();
+        }
+
+        /*
+        |------------------------------------------------------------------
+        | BULK PRICE UPDATE
+        |------------------------------------------------------------------
+        */
+
+        async function runBulkPriceUpdate(direction) {
+            if (isBusy) return;
+
+            var connection = requireConnection();
+            if (!connection) return;
+
+            if (selectedItemIds.size === 0) {
+                showToast("Select at least one product to bulk update.", "error");
+                return;
+            }
+
+            var pctInput = byId("bulkPct");
+            var pct = parseFloat(pctInput ? pctInput.value : "10");
+
+            if (Number.isNaN(pct) || pct <= 0) {
+                showToast("Enter a valid percentage greater than 0.", "error");
+                if (pctInput) pctInput.focus();
+                return;
+            }
+
+            var selectedIds = Array.from(selectedItemIds);
+            var dirLabel = direction === "increase" ? "increased" : "decreased";
+            var dirWord = direction === "increase" ? "Increasing" : "Decreasing";
+
+            openConfirm(
+                "Bulk Price " + (direction === "increase" ? "Increase" : "Decrease"),
+                dirWord + " prices by " + pct + "% for " + selectedIds.length + " product(s). This cannot be undone.",
+                async function () {
+                    await executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel);
+                }
+            );
+        }
+
+        async function executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel) {
+            startBusy();
+
+            var progressWrap = byId("bulkProgress");
+            var progressBar = byId("bulkProgressBar");
+            var progressLabel = byId("bulkProgressLabel");
+
+            if (progressWrap) progressWrap.classList.add("show");
+            if (progressLabel) progressLabel.classList.add("show");
+
+            var total = selectedIds.length;
+            var successCount = 0;
+            var failCount = 0;
+
+            bulkUpdatedItemIds = [];
+
+            for (var i = 0; i < total; i++) {
+                var itemId = selectedIds[i];
+                var item = loadedItems.find(function (it) { return it.id === itemId; });
+
+                if (!item) {
+                    failCount++;
+                    continue;
+                }
+
+                var currentCents = Number(item.price || 0);
+                var multiplier = direction === "increase"
+                    ? (1 + pct / 100)
+                    : (1 - pct / 100);
+
+                var newCents = Math.max(0, Math.round(currentCents * multiplier));
+
+                // Progress
+                var pctDone = Math.round(((i) / total) * 100);
+                if (progressBar) progressBar.style.width = pctDone + "%";
+                if (progressLabel) progressLabel.textContent = "Updating " + (i + 1) + " of " + total + ": " + escapeHtml(item.name || itemId);
+
+                try {
+                    await fetchJson(
+                        "/clover-update-item/" + encodeURIComponent(itemId) +
+                        "?token=" + encodeURIComponent(connection.token) +
+                        "&merchantId=" + encodeURIComponent(connection.merchantId),
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: item.name || "", price: newCents })
+                        }
+                    );
+                    successCount++;
+                    bulkUpdatedItemIds.push(itemId);
+                } catch (err) {
+                    failCount++;
+                    console.error("Bulk update failed for item", itemId, err);
+                }
+            }
+
+            // Complete progress
+            if (progressBar) progressBar.style.width = "100%";
+            if (progressLabel) progressLabel.textContent = "Done! " + successCount + " updated, " + failCount + " failed.";
+
+            setTimeout(function () {
+                if (progressWrap) progressWrap.classList.remove("show");
+                if (progressLabel) progressLabel.classList.remove("show");
+                if (progressBar) progressBar.style.width = "0%";
+            }, 2400);
+
+            if (failCount === 0) {
+                showToast("Bulk update complete: " + successCount + " price(s) " + dirLabel + " by " + pct + "%.", "success");
+            } else {
+                showToast("Bulk update: " + successCount + " succeeded, " + failCount + " failed.", failCount > 0 && successCount === 0 ? "error" : "info");
+            }
+
+            clearSelection();
+            stopBusy();
+            await loadItems();
+        }
+
+        /*
+        |------------------------------------------------------------------
+        | RENDER ITEMS
+        |------------------------------------------------------------------
+        */
+
         function renderItems(items) {
             var body = byId("itemsBody");
             if (!body) return;
@@ -840,19 +1270,21 @@ function renderDashboard(options = {}) {
 
             if (!items || !items.length) {
                 body.innerHTML =
-                    '<tr><td colspan="9" class="empty">' +
+                    '<tr><td colspan="10" class="empty">' +
                     '<strong>No Clover products found.</strong>' +
                     'Click Add Product to create your first item.' +
                     '</td></tr>';
+                syncBulkUI();
                 return;
             }
 
             if (!filtered.length) {
                 body.innerHTML =
-                    '<tr><td colspan="9" class="empty">' +
+                    '<tr><td colspan="10" class="empty">' +
                     '<strong>No matching products found.</strong>' +
                     'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
+                syncBulkUI();
                 return;
             }
 
@@ -865,12 +1297,23 @@ function renderDashboard(options = {}) {
                 var itemId = item.id || "";
                 var itemName = item.name || "Unnamed Product";
                 var priceDollars = (Number(item.price || 0) / 100).toFixed(2);
+                var isSelected = selectedItemIds.has(itemId);
+                var isBulkUpdated = bulkUpdatedItemIds.indexOf(itemId) >= 0;
+
+                row.setAttribute("data-row-id", itemId);
 
                 if (lastUpdatedItemId && itemId === lastUpdatedItemId) {
                     row.className = "row-updated";
+                } else if (isBulkUpdated) {
+                    row.className = "row-bulk-updated";
+                }
+
+                if (isSelected) {
+                    row.classList.add("row-selected");
                 }
 
                 row.innerHTML =
+                    "<td class='col-check'><input type='checkbox' data-item-id='" + escapeHtml(itemId) + "' " + (isSelected ? "checked" : "") + " /></td>" +
                     "<td><input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
                     "<td><input class='small-input' data-price-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(priceDollars) + "' /></td>" +
                     "<td class='muted'>" + escapeHtml(sku) + "</td>" +
@@ -893,6 +1336,24 @@ function renderDashboard(options = {}) {
                     renderItems(loadedItems);
                 }, 1400);
             }
+
+            if (bulkUpdatedItemIds.length > 0) {
+                setTimeout(function () {
+                    bulkUpdatedItemIds = [];
+                    renderItems(loadedItems);
+                }, 1800);
+            }
+
+            // Wire up row checkboxes after render
+            var checkboxes = body.querySelectorAll("input[type='checkbox'][data-item-id]");
+            checkboxes.forEach(function (cb) {
+                cb.addEventListener("change", function (e) {
+                    var id = e.target.getAttribute("data-item-id");
+                    toggleItemSelection(id, e.target.checked);
+                });
+            });
+
+            syncBulkUI();
         }
 
         async function fetchJson(url, options) {
@@ -1098,6 +1559,12 @@ function renderDashboard(options = {}) {
             }
         }
 
+        /*
+        |------------------------------------------------------------------
+        | EVENT BINDINGS
+        |------------------------------------------------------------------
+        */
+
         bind("btnRefreshInventoryTop", "click", loadItems);
         bind("btnRefreshInventory", "click", loadItems);
         bind("btnToggleAddTop", "click", toggleAddPanel);
@@ -1110,6 +1577,19 @@ function renderDashboard(options = {}) {
             var action = pendingConfirmAction;
             closeConfirm();
             if (typeof action === "function") action();
+        });
+
+        // Select-all checkbox
+        bind("selectAllCheckbox", "change", function (e) {
+            selectAllVisible(e.target.checked);
+        });
+
+        // Bulk action buttons
+        bind("btnBulkIncrease", "click", function () { runBulkPriceUpdate("increase"); });
+        bind("btnBulkDecrease", "click", function () { runBulkPriceUpdate("decrease"); });
+        bind("btnBulkClearPanel", "click", function () {
+            clearSelection();
+            renderItems(loadedItems);
         });
 
         var modal = byId("confirmModal");
@@ -1151,7 +1631,9 @@ function renderDashboard(options = {}) {
 
 </body>
 </html>`;
-}/*
+}
+
+/*
 |--------------------------------------------------------------------------
 | ROOT + CLOVER CALLBACK HANDLER
 |--------------------------------------------------------------------------
@@ -1594,8 +2076,6 @@ app.get("/clover-create-item-legacy", async (req, res) => {
         });
     }
 });
-
-
 
 /*
 |--------------------------------------------------------------------------
