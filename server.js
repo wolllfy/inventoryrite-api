@@ -14,7 +14,7 @@ const CLOVER_CLIENT_ID = process.env.CLOVER_CLIENT_ID?.trim();
 const CLOVER_CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET?.trim();
 
 const REDIRECT_URI = "https://inventoryrite-api.onrender.com/oauth/callback";
-const CLOVER_BASE_URL = "https://sandbox.dev.clover.com";
+const CLOVER_BASE_URL = "https://www.sandbox.dev.clover.com";
 
 app.get("/", (req, res) => {
     res.send("InventoryRite API is running.");
