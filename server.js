@@ -18,14 +18,6 @@ const REDIRECT_URI = "https://inventoryrite-api.onrender.com/";
 const CLOVER_BASE_URL = "https://sandbox.dev.clover.com";
 const CLOVER_API_BASE_URL = "https://apisandbox.dev.clover.com";
 
-/*
-|--------------------------------------------------------------------------
-| SIMPLE IN-MEMORY SESSION STORAGE
-|--------------------------------------------------------------------------
-| Sandbox/testing only. Render restarts clear this.
-|--------------------------------------------------------------------------
-*/
-
 let latestCloverConnection = {
     connected: false,
     merchant_id: "",
@@ -33,12 +25,6 @@ let latestCloverConnection = {
     access_token: "",
     connected_at: ""
 };
-
-/*
-|--------------------------------------------------------------------------
-| HELPERS
-|--------------------------------------------------------------------------
-*/
 
 function safe(value) {
     return String(value || "")
@@ -71,12 +57,6 @@ function cloverHeaders(accessToken) {
         "Content-Type": "application/json"
     };
 }
-
-/*
-|--------------------------------------------------------------------------
-| UI
-|--------------------------------------------------------------------------
-*/
 
 function renderDashboard(options = {}) {
     const merchantId = options.merchant_id || latestCloverConnection.merchant_id || "";
@@ -198,6 +178,7 @@ function renderDashboard(options = {}) {
             right: -90px;
             top: -105px;
             background: rgba(34, 197, 94, 0.13);
+            pointer-events: none;
         }
 
         .eyebrow {
@@ -225,7 +206,7 @@ function renderDashboard(options = {}) {
             font-size: 15px;
         }
 
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; position: relative; z-index: 2; }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; position: relative; z-index: 3; }
 
         .btn {
             border: 0;
@@ -337,7 +318,7 @@ function renderDashboard(options = {}) {
             line-height: 1.45;
             margin-top: 14px;
             position: relative;
-            z-index: 2;
+            z-index: 3;
         }
 
         .inventory-card { padding: 24px; }
@@ -486,9 +467,9 @@ function renderDashboard(options = {}) {
 
                 <div class="actions">
                     <a class="btn btn-primary" href="/connect-clover">Connect Clover</a>
-                    <button type="button" class="btn btn-secondary" onclick="loadItems()">Load Clover Items</button>
-                    <button type="button" class="btn btn-dark" onclick="createItem()">Create Test Item</button>
-                    <button type="button" class="btn btn-light" onclick="checkHealth()">Check Backend</button>
+                    <button id="btnLoadTop" type="button" class="btn btn-secondary">Load Clover Items</button>
+                    <button id="btnCreateTop" type="button" class="btn btn-dark">Create Test Item</button>
+                    <button id="btnHealthTop" type="button" class="btn btn-light">Check Backend</button>
                 </div>
 
                 <div class="note">
@@ -573,11 +554,11 @@ function renderDashboard(options = {}) {
                 </div>
 
                 <div class="button-row">
-                    <button type="button" class="btn btn-secondary" onclick="loadMerchant()">Test Merchant</button>
-                    <button type="button" class="btn btn-secondary" onclick="loadItems()">Load Items</button>
+                    <button id="btnMerchant" type="button" class="btn btn-secondary">Test Merchant</button>
+                    <button id="btnLoadPanel" type="button" class="btn btn-secondary">Load Items</button>
                 </div>
 
-                <button type="button" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="createItem()">Create Clover Item</button>
+                <button id="btnCreatePanel" type="button" class="btn btn-primary" style="width:100%; margin-top:10px;">Create Clover Item</button>
             </div>
 
             <div class="card panel">
@@ -596,9 +577,9 @@ function renderDashboard(options = {}) {
                     <p>Search, edit, refresh, and delete sandbox Clover items from one clean table.</p>
                 </div>
                 <div class="toolbar">
-                    <input id="inventorySearch" class="search-input" type="text" placeholder="Search item, SKU, or Clover ID..." oninput="applySearch()" />
-                    <button type="button" class="btn btn-secondary" onclick="loadItems()">Refresh Inventory</button>
-                    <button type="button" class="btn btn-light" onclick="prepareSyncPreview()">Sync Preview</button>
+                    <input id="inventorySearch" class="search-input" type="text" placeholder="Search item, SKU, or Clover ID..." />
+                    <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh Inventory</button>
+                    <button id="btnSyncPreview" type="button" class="btn btn-light">Sync Preview</button>
                 </div>
             </div>
 
@@ -635,6 +616,7 @@ function renderDashboard(options = {}) {
     <div class="toast-wrap" id="toastWrap"></div>
 
     <script>
+    (function () {
         var embeddedConnection = {
             connected: ${connected ? "true" : "false"},
             merchant_id: ${JSON.stringify(merchantId)},
@@ -645,19 +627,25 @@ function renderDashboard(options = {}) {
 
         var loadedItems = [];
 
+        function byId(id) {
+            return document.getElementById(id);
+        }
+
+        function bind(id, eventName, handler) {
+            var el = byId(id);
+            if (el) {
+                el.addEventListener(eventName, handler);
+            }
+        }
+
         function getToken() {
-            var tokenBox = document.getElementById("token");
+            var tokenBox = byId("token");
             return (tokenBox && tokenBox.value ? tokenBox.value.trim() : "") || embeddedConnection.access_token || "";
         }
 
         function getMerchantId() {
-            var merchantBox = document.getElementById("merchantId");
+            var merchantBox = byId("merchantId");
             return (merchantBox && merchantBox.value ? merchantBox.value.trim() : "") || embeddedConnection.merchant_id || "";
-        }
-
-        function centsToDollars(cents) {
-            var value = Number(cents || 0) / 100;
-            return value.toLocaleString(undefined, { style: "currency", currency: "USD" });
         }
 
         function formatDateFromClover(value) {
@@ -670,7 +658,7 @@ function renderDashboard(options = {}) {
         }
 
         function showToast(message, type) {
-            var wrap = document.getElementById("toastWrap");
+            var wrap = byId("toastWrap");
             if (!wrap) return;
 
             var toast = document.createElement("div");
@@ -686,25 +674,19 @@ function renderDashboard(options = {}) {
         }
 
         function setBusy(text) {
-            var result = document.getElementById("result");
-            if (result) {
-                result.textContent = text || "Loading...";
-            }
+            var result = byId("result");
+            if (result) result.textContent = text || "Loading...";
         }
 
         function showResult(data) {
-            var result = document.getElementById("result");
-            if (result) {
-                result.textContent = JSON.stringify(data, null, 2);
-            }
+            var result = byId("result");
+            if (result) result.textContent = JSON.stringify(data, null, 2);
         }
 
         function showError(error) {
             var message = error && error.message ? error.message : String(error || "Request failed.");
-            var result = document.getElementById("result");
-            if (result) {
-                result.textContent = "ERROR:\\n" + message;
-            }
+            var result = byId("result");
+            if (result) result.textContent = "ERROR:\\n" + message;
             showToast(message, "error");
         }
 
@@ -718,14 +700,6 @@ function renderDashboard(options = {}) {
             }
 
             return { token: token, merchantId: merchantId };
-        }
-
-        function updateStatusFromData() {
-            var merchantId = getMerchantId();
-            var merchantDisplay = document.getElementById("merchantDisplay");
-            if (merchantId && merchantDisplay) {
-                merchantDisplay.textContent = merchantId;
-            }
         }
 
         function escapeHtml(value) {
@@ -744,29 +718,19 @@ function renderDashboard(options = {}) {
             return Math.round(dollars * 100);
         }
 
-        function applySearch() {
-            renderItems(loadedItems);
-        }
-
         function renderItems(items) {
-            var body = document.getElementById("itemsBody");
+            var body = byId("itemsBody");
             if (!body) return;
 
             body.innerHTML = "";
 
-            var searchBox = document.getElementById("inventorySearch");
+            var searchBox = byId("inventorySearch");
             var search = searchBox && searchBox.value ? searchBox.value.trim().toLowerCase() : "";
 
             var filtered = (items || []).filter(function (item) {
                 if (!search) return true;
-
                 var sku = item.sku || item.code || item.productCode || "";
-                var haystack = [
-                    item.name || "",
-                    sku,
-                    item.id || ""
-                ].join(" ").toLowerCase();
-
+                var haystack = [item.name || "", sku, item.id || ""].join(" ").toLowerCase();
                 return haystack.indexOf(search) >= 0;
             });
 
@@ -778,26 +742,16 @@ function renderDashboard(options = {}) {
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
                 var sku = item.sku || item.code || item.productCode || "—";
-
-                var available = item.available === false
-                    ? '<span class="pill warn">No</span>'
-                    : '<span class="pill good">Yes</span>';
-
-                var hidden = item.hidden
-                    ? '<span class="pill warn">Hidden</span>'
-                    : '<span class="pill good">Visible</span>';
-
-                var revenue = item.isRevenue === false
-                    ? '<span class="pill warn">No</span>'
-                    : '<span class="pill good">Yes</span>';
-
+                var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
+                var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
+                var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var itemId = item.id || "";
                 var itemName = item.name || "Unnamed Item";
                 var priceDollars = (Number(item.price || 0) / 100).toFixed(2);
 
                 row.innerHTML =
-                    "<td><input class='name-input' id='name_" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
-                    "<td><input class='small-input' id='price_" + escapeHtml(itemId) + "' value='" + escapeHtml(priceDollars) + "' /></td>" +
+                    "<td><input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
+                    "<td><input class='small-input' data-price-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(priceDollars) + "' /></td>" +
                     "<td class='muted'>" + escapeHtml(sku) + "</td>" +
                     "<td>" + available + "</td>" +
                     "<td>" + hidden + "</td>" +
@@ -805,8 +759,8 @@ function renderDashboard(options = {}) {
                     "<td class='muted'>" + formatDateFromClover(item.modifiedTime) + "</td>" +
                     "<td class='muted'>" + escapeHtml(itemId || "—") + "</td>" +
                     "<td><div class='row-actions'>" +
-                        "<button type='button' class='btn btn-secondary' onclick='updateItem(\"" + escapeHtml(itemId) + "\")'>Save</button>" +
-                        "<button type='button' class='btn btn-danger' onclick='deleteItem(\"" + escapeHtml(itemId) + "\")'>Delete</button>" +
+                        "<button type='button' class='btn btn-secondary' data-action='save' data-id='" + escapeHtml(itemId) + "'>Save</button>" +
+                        "<button type='button' class='btn btn-danger' data-action='delete' data-id='" + escapeHtml(itemId) + "'>Delete</button>" +
                     "</div></td>";
 
                 body.appendChild(row);
@@ -849,13 +803,11 @@ function renderDashboard(options = {}) {
                 );
 
                 showResult(data);
-                updateStatusFromData();
 
-                if (data.success) {
-                    showToast("Merchant info loaded successfully.", "success");
-                } else {
-                    showToast(data.message || "Merchant test failed.", "error");
-                }
+                var merchantDisplay = byId("merchantDisplay");
+                if (merchantDisplay) merchantDisplay.textContent = connection.merchantId;
+
+                showToast("Merchant info loaded successfully.", "success");
             } catch (error) {
                 showError(error);
             }
@@ -874,14 +826,9 @@ function renderDashboard(options = {}) {
                 );
 
                 showResult(data);
-
-                if (data.success) {
-                    loadedItems = data.data && data.data.elements ? data.data.elements : [];
-                    renderItems(loadedItems);
-                    showToast("Clover inventory loaded: " + loadedItems.length + " item(s).", "success");
-                } else {
-                    showToast(data.message || "Failed to load Clover items.", "error");
-                }
+                loadedItems = data.data && data.data.elements ? data.data.elements : [];
+                renderItems(loadedItems);
+                showToast("Clover inventory loaded: " + loadedItems.length + " item(s).", "success");
             } catch (error) {
                 showError(error);
             }
@@ -892,8 +839,8 @@ function renderDashboard(options = {}) {
                 var connection = requireConnection();
                 if (!connection) return;
 
-                var nameBox = document.getElementById("itemName");
-                var priceBox = document.getElementById("itemPrice");
+                var nameBox = byId("itemName");
+                var priceBox = byId("itemPrice");
 
                 var name = nameBox && nameBox.value ? nameBox.value.trim() : "InvoiceRite Test Item";
                 var price = priceBox && priceBox.value ? priceBox.value.trim() : "199";
@@ -916,13 +863,8 @@ function renderDashboard(options = {}) {
                 );
 
                 showResult(data);
-
-                if (data.success) {
-                    showToast("Clover item created successfully.", "success");
-                    await loadItems();
-                } else {
-                    showToast(data.message || "Failed to create item.", "error");
-                }
+                showToast("Clover item created successfully.", "success");
+                await loadItems();
             } catch (error) {
                 showError(error);
             }
@@ -933,13 +875,8 @@ function renderDashboard(options = {}) {
                 var connection = requireConnection();
                 if (!connection) return;
 
-                if (!itemId) {
-                    showToast("Missing Clover item ID.", "error");
-                    return;
-                }
-
-                var nameBox = document.getElementById("name_" + itemId);
-                var priceBox = document.getElementById("price_" + itemId);
+                var nameBox = document.querySelector("[data-name-for='" + itemId + "']");
+                var priceBox = document.querySelector("[data-price-for='" + itemId + "']");
 
                 var name = nameBox && nameBox.value ? nameBox.value.trim() : "";
                 var priceCents = priceToCentsFromDollarsString(priceBox && priceBox.value ? priceBox.value : "0");
@@ -979,11 +916,6 @@ function renderDashboard(options = {}) {
             try {
                 var connection = requireConnection();
                 if (!connection) return;
-
-                if (!itemId) {
-                    showToast("Missing Clover item ID.", "error");
-                    return;
-                }
 
                 var ok = confirm("Delete this Clover item from the sandbox merchant?");
                 if (!ok) return;
@@ -1032,29 +964,39 @@ function renderDashboard(options = {}) {
             showToast("Sync preview created. Desktop sync endpoint comes next.", "success");
         }
 
+        bind("btnLoadTop", "click", loadItems);
+        bind("btnCreateTop", "click", createItem);
+        bind("btnHealthTop", "click", checkHealth);
+        bind("btnMerchant", "click", loadMerchant);
+        bind("btnLoadPanel", "click", loadItems);
+        bind("btnCreatePanel", "click", createItem);
+        bind("btnRefreshInventory", "click", loadItems);
+        bind("btnSyncPreview", "click", prepareSyncPreview);
+        bind("inventorySearch", "input", function () { renderItems(loadedItems); });
+
+        var itemsBody = byId("itemsBody");
+        if (itemsBody) {
+            itemsBody.addEventListener("click", function (event) {
+                var target = event.target;
+                if (!target || !target.getAttribute) return;
+
+                var action = target.getAttribute("data-action");
+                var itemId = target.getAttribute("data-id");
+
+                if (action === "save") updateItem(itemId);
+                if (action === "delete") deleteItem(itemId);
+            });
+        }
+
         if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
             showToast("Clover OAuth connection saved for this sandbox session.", "success");
         }
-
-        window.checkHealth = checkHealth;
-        window.loadMerchant = loadMerchant;
-        window.loadItems = loadItems;
-        window.createItem = createItem;
-        window.updateItem = updateItem;
-        window.deleteItem = deleteItem;
-        window.applySearch = applySearch;
-        window.prepareSyncPreview = prepareSyncPreview;
+    })();
     </script>
 
 </body>
 </html>`;
 }
-
-/*
-|--------------------------------------------------------------------------
-| ROOT + CLOVER CALLBACK HANDLER
-|--------------------------------------------------------------------------
-*/
 
 app.get("/", async (req, res) => {
     try {
@@ -1107,13 +1049,7 @@ app.get("/", async (req, res) => {
 
         return res.send(renderDashboard(latestCloverConnection));
     } catch (error) {
-        console.error("Clover Root OAuth Error:");
-
-        if (error.response?.data) {
-            console.error(error.response.data);
-        } else {
-            console.error(error.message);
-        }
+        console.error("Clover Root OAuth Error:", error.response?.data || error.message);
 
         return res.status(500).send(`
             <h1>Clover OAuth failed</h1>
@@ -1122,12 +1058,6 @@ app.get("/", async (req, res) => {
         `);
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| HEALTH ROUTE
-|--------------------------------------------------------------------------
-*/
 
 app.get("/health", (req, res) => {
     res.json({
@@ -1144,12 +1074,6 @@ app.get("/health", (req, res) => {
         }
     });
 });
-
-/*
-|--------------------------------------------------------------------------
-| CLOVER CONNECT ROUTE
-|--------------------------------------------------------------------------
-*/
 
 app.get("/connect-clover", (req, res) => {
     if (!CLOVER_CLIENT_ID) {
@@ -1169,12 +1093,6 @@ app.get("/connect-clover", (req, res) => {
     return res.redirect(cloverAuthUrl);
 });
 
-/*
-|--------------------------------------------------------------------------
-| CLOVER CONNECTION STATUS ROUTE
-|--------------------------------------------------------------------------
-*/
-
 app.get("/clover-connection", (req, res) => {
     res.json({
         success: true,
@@ -1187,12 +1105,6 @@ app.get("/clover-connection", (req, res) => {
         }
     });
 });
-
-/*
-|--------------------------------------------------------------------------
-| CLOVER MERCHANT INFO ROUTE
-|--------------------------------------------------------------------------
-*/
 
 app.get("/clover-merchant", async (req, res) => {
     try {
@@ -1207,9 +1119,7 @@ app.get("/clover-merchant", async (req, res) => {
 
         const merchantResponse = await axios.get(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}`,
-            {
-                headers: cloverHeaders(accessToken)
-            }
+            { headers: cloverHeaders(accessToken) }
         );
 
         res.json({
@@ -1228,12 +1138,6 @@ app.get("/clover-merchant", async (req, res) => {
     }
 });
 
-/*
-|--------------------------------------------------------------------------
-| CLOVER ITEMS ROUTE
-|--------------------------------------------------------------------------
-*/
-
 app.get("/clover-items", async (req, res) => {
     try {
         const { accessToken, merchantId } = getConnectionFromRequest(req);
@@ -1247,9 +1151,7 @@ app.get("/clover-items", async (req, res) => {
 
         const itemsResponse = await axios.get(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=100`,
-            {
-                headers: cloverHeaders(accessToken)
-            }
+            { headers: cloverHeaders(accessToken) }
         );
 
         res.json({
@@ -1267,12 +1169,6 @@ app.get("/clover-items", async (req, res) => {
         });
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| CLOVER CREATE ITEM ROUTE - POST
-|--------------------------------------------------------------------------
-*/
 
 app.post("/clover-create-item", async (req, res) => {
     try {
@@ -1305,9 +1201,7 @@ app.post("/clover-create-item", async (req, res) => {
                 hidden: false,
                 isRevenue: true
             },
-            {
-                headers: cloverHeaders(accessToken)
-            }
+            { headers: cloverHeaders(accessToken) }
         );
 
         res.json({
@@ -1325,12 +1219,6 @@ app.post("/clover-create-item", async (req, res) => {
         });
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| CLOVER UPDATE ITEM ROUTE - POST
-|--------------------------------------------------------------------------
-*/
 
 app.post("/clover-update-item/:itemId", async (req, res) => {
     try {
@@ -1371,9 +1259,7 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
                 hidden: false,
                 isRevenue: true
             },
-            {
-                headers: cloverHeaders(accessToken)
-            }
+            { headers: cloverHeaders(accessToken) }
         );
 
         res.json({
@@ -1391,12 +1277,6 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
         });
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| CLOVER DELETE ITEM ROUTE - POST
-|--------------------------------------------------------------------------
-*/
 
 app.post("/clover-delete-item/:itemId", async (req, res) => {
     try {
@@ -1419,9 +1299,7 @@ app.post("/clover-delete-item/:itemId", async (req, res) => {
 
         const deleteResponse = await axios.delete(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
-            {
-                headers: cloverHeaders(accessToken)
-            }
+            { headers: cloverHeaders(accessToken) }
         );
 
         res.json({
@@ -1439,13 +1317,6 @@ app.post("/clover-delete-item/:itemId", async (req, res) => {
         });
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| CLOVER CREATE TEST ITEM ROUTE - GET
-| Kept for backwards compatibility with older button/link tests.
-|--------------------------------------------------------------------------
-*/
 
 app.get("/clover-create-test-item", async (req, res) => {
     try {
@@ -1478,9 +1349,7 @@ app.get("/clover-create-test-item", async (req, res) => {
                 hidden: false,
                 isRevenue: true
             },
-            {
-                headers: cloverHeaders(accessToken)
-            }
+            { headers: cloverHeaders(accessToken) }
         );
 
         res.json({
@@ -1498,12 +1367,6 @@ app.get("/clover-create-test-item", async (req, res) => {
         });
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| 404
-|--------------------------------------------------------------------------
-*/
 
 app.use((req, res) => {
     res.status(404).json({
