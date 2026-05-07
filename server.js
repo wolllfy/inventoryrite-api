@@ -36,8 +36,9 @@ app.get("/", async (req, res) => {
 
         console.log("Clover OAuth code received.");
 
+        // FIXED TOKEN ENDPOINT
         const tokenResponse = await axios.post(
-            `${CLOVER_BASE_URL}/oauth/token`,
+            `${CLOVER_API_BASE_URL}/oauth/token`,
             new URLSearchParams({
                 client_id: CLOVER_CLIENT_ID,
                 client_secret: CLOVER_CLIENT_SECRET,
@@ -78,7 +79,9 @@ app.get("/", async (req, res) => {
             message: "Clover OAuth failed",
             error: error.response?.data || error.message
         });
+
     }
+
 });
 
 /*
