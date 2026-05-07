@@ -12,11 +12,15 @@ app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3000;
 
 const CLOVER_CLIENT_ID = process.env.CLOVER_CLIENT_ID?.trim();
-const CLOVER_CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET?.trim();
+const CLOVER_CLIENT_SECRET = CLOVER_CLIENT_SECRET_SAFE();
 
 const REDIRECT_URI = "https://inventoryrite-api.onrender.com/";
 const CLOVER_BASE_URL = "https://sandbox.dev.clover.com";
 const CLOVER_API_BASE_URL = "https://apisandbox.dev.clover.com";
+
+function CLOVER_CLIENT_SECRET_SAFE() {
+    return process.env.CLOVER_CLIENT_SECRET?.trim();
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +71,19 @@ function getConnectionFromRequest(req) {
     };
 }
 
+function buildCloverHeaders(accessToken) {
+    return {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+    };
+}
+
+function toCloverPriceCents(value) {
+    const numberValue = Number(value);
+    if (Number.isNaN(numberValue) || numberValue < 0) return null;
+    return Math.round(numberValue);
+}
+
 /*
 |--------------------------------------------------------------------------
 | UI
@@ -98,6 +115,7 @@ function renderDashboard(options = {}) {
             --blue: #2563eb;
             --blue-soft: #eef2ff;
             --red: #b91c1c;
+            --red-soft: #fee2e2;
             --amber: #b45309;
             --dark: #0f172a;
             --shadow: 0 16px 45px rgba(15, 23, 42, 0.08);
@@ -160,7 +178,7 @@ function renderDashboard(options = {}) {
         .badge.connected { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
         .badge.disconnected { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
 
-        .wrap { max-width: 1240px; margin: 28px auto; padding: 0 22px 50px; }
+        .wrap { max-width: 1280px; margin: 28px auto; padding: 0 22px 50px; }
 
         .hero {
             display: grid;
@@ -233,6 +251,7 @@ function renderDashboard(options = {}) {
             justify-content: center;
             min-height: 44px;
             transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+            white-space: nowrap;
         }
 
         .btn:hover { transform: translateY(-1px); }
@@ -243,6 +262,14 @@ function renderDashboard(options = {}) {
         .btn-secondary { background: var(--blue-soft); color: #1d4ed8; }
         .btn-dark { background: #111827; color: white; }
         .btn-light { background: #f8fafc; color: #111827; border: 1px solid var(--line); }
+        .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid #fecaca; }
+
+        .btn-small {
+            min-height: 34px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
 
         .status-card { padding: 24px; }
 
@@ -282,7 +309,7 @@ function renderDashboard(options = {}) {
 
         label { display: block; font-size: 13px; font-weight: 900; margin-bottom: 7px; }
 
-        input {
+        input, select {
             width: 100%;
             border: 1px solid #d1d5db;
             border-radius: 13px;
@@ -293,7 +320,7 @@ function renderDashboard(options = {}) {
             background: white;
         }
 
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--green);
             box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
         }
@@ -343,6 +370,47 @@ function renderDashboard(options = {}) {
         .table-top h3 { margin: 0 0 6px; font-size: 22px; }
         .table-top p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 
+        .toolbar {
+            display: grid;
+            grid-template-columns: 1fr 170px 170px auto auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .toolbar input,
+        .toolbar select {
+            margin-bottom: 0;
+        }
+
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 13px 14px;
+        }
+
+        .summary-card span {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .summary-card strong {
+            display: block;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
         .table-wrap {
             border: 1px solid var(--line);
             border-radius: 16px;
@@ -350,9 +418,9 @@ function renderDashboard(options = {}) {
             background: white;
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 850px; }
-        th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; }
-        th { background: #f8fafc; color: #334155; font-weight: 900; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: middle; }
+        th { background: #f8fafc; color: #334155; font-weight: 900; position: sticky; top: 0; z-index: 1; }
         tr:last-child td { border-bottom: 0; }
         td.muted { color: var(--muted); }
 
@@ -374,6 +442,20 @@ function renderDashboard(options = {}) {
             color: var(--muted);
             font-size: 14px;
             text-align: center;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .edit-input {
+            min-width: 92px;
+            padding: 8px 9px;
+            border-radius: 10px;
+            margin-bottom: 0;
+            font-size: 13px;
         }
 
         .toast-wrap {
@@ -402,12 +484,19 @@ function renderDashboard(options = {}) {
 
         .footer { color: var(--muted); text-align: center; margin-top: 30px; font-size: 13px; }
 
+        @media (max-width: 1100px) {
+            .toolbar { grid-template-columns: 1fr 1fr; }
+            .summary-strip { grid-template-columns: 1fr 1fr; }
+        }
+
         @media (max-width: 980px) {
             .hero, .workbench, .grid { grid-template-columns: 1fr; }
             .hero h2 { font-size: 28px; }
             .topbar { align-items: flex-start; gap: 14px; flex-direction: column; }
             .button-row { grid-template-columns: 1fr; }
             .table-top { flex-direction: column; }
+            .toolbar { grid-template-columns: 1fr; }
+            .summary-strip { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -435,7 +524,7 @@ function renderDashboard(options = {}) {
                 <h2>Manage Clover inventory through your InventoryRite connector.</h2>
                 <p class="hero-text">
                     This dashboard confirms that your Clover merchant connection works, reads Clover inventory,
-                    creates test items, and gives you a clean starting point for a real Clover App Market product.
+                    creates test items, edits item pricing, hides/deletes test items, and gives you a cleaner starting point for a real Clover App Market product.
                 </p>
 
                 <div class="actions">
@@ -493,12 +582,12 @@ function renderDashboard(options = {}) {
                 <p>Create sandbox inventory items directly through your Render backend.</p>
             </div>
             <div class="card mini-card">
-                <h3>Sync Foundation</h3>
-                <p>This is ready to become Clover to InvoiceRite desktop sync.</p>
+                <h3>Edit + Delete</h3>
+                <p>Update item names/prices, hide items, and delete test data when needed.</p>
             </div>
             <div class="card mini-card">
-                <h3>App Market Ready</h3>
-                <p>Clean onboarding, clear connection status, and professional UI.</p>
+                <h3>Sync Foundation</h3>
+                <p>This is ready to become Clover to InvoiceRite desktop sync.</p>
             </div>
         </section>
 
@@ -547,9 +636,32 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Clover Inventory</h3>
-                    <p>Loaded Clover items will appear here in a clean table instead of only raw JSON.</p>
+                    <p>Search, refresh, edit price/name, hide, delete, and prepare item data for InvoiceRite sync.</p>
                 </div>
                 <button class="btn btn-secondary" onclick="loadItems()">Refresh Inventory</button>
+            </div>
+
+            <div class="summary-strip">
+                <div class="summary-card"><span>Total Items</span><strong id="summaryTotal">0</strong></div>
+                <div class="summary-card"><span>Visible</span><strong id="summaryVisible">0</strong></div>
+                <div class="summary-card"><span>Hidden</span><strong id="summaryHidden">0</strong></div>
+                <div class="summary-card"><span>Estimated Value</span><strong id="summaryValue">$0.00</strong></div>
+            </div>
+
+            <div class="toolbar">
+                <input id="inventorySearch" type="text" placeholder="Search by item, SKU/code, or Clover ID..." oninput="applyInventoryFilters()" />
+                <select id="visibilityFilter" onchange="applyInventoryFilters()">
+                    <option value="all">All Visibility</option>
+                    <option value="visible">Visible Only</option>
+                    <option value="hidden">Hidden Only</option>
+                </select>
+                <select id="availabilityFilter" onchange="applyInventoryFilters()">
+                    <option value="all">All Availability</option>
+                    <option value="available">Available Only</option>
+                    <option value="unavailable">Unavailable Only</option>
+                </select>
+                <button class="btn btn-light" onclick="exportItemsJson()">Export JSON</button>
+                <button class="btn btn-dark" onclick="syncToInvoiceRitePreview()">Sync Preview</button>
             </div>
 
             <div class="table-wrap">
@@ -564,11 +676,12 @@ function renderDashboard(options = {}) {
                             <th>Revenue</th>
                             <th>Modified</th>
                             <th>Clover ID</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsBody">
                         <tr>
-                            <td colspan="8" class="empty">No items loaded yet. Click “Load Clover Items”.</td>
+                            <td colspan="9" class="empty">No items loaded yet. Click “Load Clover Items”.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -592,6 +705,9 @@ function renderDashboard(options = {}) {
             connected_at: ${JSON.stringify(connectedAt)}
         };
 
+        let allCloverItems = [];
+        let filteredCloverItems = [];
+
         function getToken() {
             return document.getElementById("token").value.trim() || embeddedConnection.access_token || "";
         }
@@ -603,6 +719,15 @@ function renderDashboard(options = {}) {
         function centsToDollars(cents) {
             const value = Number(cents || 0) / 100;
             return value.toLocaleString(undefined, { style: "currency", currency: "USD" });
+        }
+
+        function dollarsToCentsInput(value) {
+            const text = String(value || "").trim().replace("$", "");
+            if (!text) return 0;
+            const numberValue = Number(text);
+            if (Number.isNaN(numberValue)) return 0;
+            if (text.includes(".")) return Math.round(numberValue * 100);
+            return Math.round(numberValue);
         }
 
         function formatDateFromClover(value) {
@@ -625,8 +750,8 @@ function renderDashboard(options = {}) {
             }, 4200);
         }
 
-        function setBusy(buttonText) {
-            document.getElementById("result").textContent = buttonText || "Loading...";
+        function setBusy(message) {
+            document.getElementById("result").textContent = message || "Loading...";
         }
 
         function showResult(data) {
@@ -651,19 +776,73 @@ function renderDashboard(options = {}) {
             return { token, merchantId };
         }
 
-        function updateStatusFromData(data) {
+        function updateStatusFromData() {
             const merchantId = getMerchantId();
             if (merchantId) {
                 document.getElementById("merchantDisplay").textContent = merchantId;
             }
         }
 
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function updateSummary(items) {
+            const total = items.length;
+            const hidden = items.filter(function (x) { return !!x.hidden; }).length;
+            const visible = total - hidden;
+            const estimatedValue = items.reduce(function (sum, item) {
+                return sum + Number(item.price || 0);
+            }, 0);
+
+            document.getElementById("summaryTotal").textContent = total;
+            document.getElementById("summaryVisible").textContent = visible;
+            document.getElementById("summaryHidden").textContent = hidden;
+            document.getElementById("summaryValue").textContent = centsToDollars(estimatedValue);
+        }
+
+        function applyInventoryFilters() {
+            const search = document.getElementById("inventorySearch").value.trim().toLowerCase();
+            const visibility = document.getElementById("visibilityFilter").value;
+            const availability = document.getElementById("availabilityFilter").value;
+
+            filteredCloverItems = allCloverItems.filter(function (item) {
+                const sku = item.sku || item.code || item.productCode || "";
+                const haystack = [
+                    item.name || "",
+                    sku || "",
+                    item.id || ""
+                ].join(" ").toLowerCase();
+
+                const matchesSearch = !search || haystack.includes(search);
+                const matchesVisibility =
+                    visibility === "all" ||
+                    (visibility === "visible" && !item.hidden) ||
+                    (visibility === "hidden" && !!item.hidden);
+                const matchesAvailability =
+                    availability === "all" ||
+                    (availability === "available" && item.available !== false) ||
+                    (availability === "unavailable" && item.available === false);
+
+                return matchesSearch && matchesVisibility && matchesAvailability;
+            });
+
+            renderItems(filteredCloverItems);
+        }
+
         function renderItems(items) {
             const body = document.getElementById("itemsBody");
             body.innerHTML = "";
 
+            updateSummary(allCloverItems);
+
             if (!items || !items.length) {
-                body.innerHTML = '<tr><td colspan="8" class="empty">No Clover items found for this merchant.</td></tr>';
+                body.innerHTML = '<tr><td colspan="9" class="empty">No Clover items match this view.</td></tr>';
                 return;
             }
 
@@ -681,34 +860,49 @@ function renderDashboard(options = {}) {
                     ? '<span class="pill warn">No</span>'
                     : '<span class="pill good">Yes</span>';
 
+                const itemId = escapeHtml(item.id || "");
+                const itemName = escapeHtml(item.name || "Unnamed Item");
+                const itemPrice = Number(item.price || 0);
+
                 row.innerHTML =
-                    "<td><strong>" + escapeHtml(item.name || "Unnamed Item") + "</strong></td>" +
-                    "<td>" + centsToDollars(item.price || 0) + "</td>" +
+                    "<td><input class='edit-input' id='name_" + itemId + "' value='" + itemName + "' /></td>" +
+                    "<td><input class='edit-input' id='price_" + itemId + "' value='" + itemPrice + "' /></td>" +
                     "<td class='muted'>" + escapeHtml(sku) + "</td>" +
                     "<td>" + available + "</td>" +
                     "<td>" + hidden + "</td>" +
                     "<td>" + revenue + "</td>" +
                     "<td class='muted'>" + formatDateFromClover(item.modifiedTime) + "</td>" +
-                    "<td class='muted'>" + escapeHtml(item.id || "—") + "</td>";
+                    "<td class='muted'>" + itemId + "</td>" +
+                    "<td><div class='row-actions'>" +
+                        "<button class='btn btn-secondary btn-small' onclick='updateItem(\"" + itemId + "\")'>Save</button>" +
+                        "<button class='btn btn-light btn-small' onclick='toggleHidden(\"" + itemId + "\", " + (!item.hidden).toString() + ")'>" + (item.hidden ? "Unhide" : "Hide") + "</button>" +
+                        "<button class='btn btn-danger btn-small' onclick='deleteItem(\"" + itemId + "\")'>Delete</button>" +
+                    "</div></td>";
 
                 body.appendChild(row);
             });
         }
 
-        function escapeHtml(value) {
-            return String(value || "")
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#039;");
+        async function apiFetchJson(url, options) {
+            const response = await fetch(url, options || {});
+            const data = await response.json().catch(function () {
+                return {
+                    success: false,
+                    message: "Invalid JSON response from server."
+                };
+            });
+
+            if (!response.ok && !data.success) {
+                data.success = false;
+            }
+
+            return data;
         }
 
         async function checkHealth() {
             try {
                 setBusy("Checking backend health...");
-                const response = await fetch("/health");
-                const data = await response.json();
+                const data = await apiFetchJson("/health");
                 showResult(data);
                 showToast("Backend is live.", "success");
             } catch (error) {
@@ -723,14 +917,13 @@ function renderDashboard(options = {}) {
 
                 setBusy("Loading merchant info...");
 
-                const response = await fetch(
+                const data = await apiFetchJson(
                     "/clover-merchant?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId)
                 );
 
-                const data = await response.json();
                 showResult(data);
-                updateStatusFromData(data);
+                updateStatusFromData();
 
                 if (data.success) {
                     showToast("Merchant info loaded successfully.", "success");
@@ -749,18 +942,18 @@ function renderDashboard(options = {}) {
 
                 setBusy("Loading Clover inventory items...");
 
-                const response = await fetch(
+                const data = await apiFetchJson(
                     "/clover-items?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId)
                 );
 
-                const data = await response.json();
                 showResult(data);
 
                 if (data.success) {
-                    const items = data.data && data.data.elements ? data.data.elements : [];
-                    renderItems(items);
-                    showToast("Clover inventory loaded: " + items.length + " item(s).", "success");
+                    allCloverItems = data.data && data.data.elements ? data.data.elements : [];
+                    filteredCloverItems = allCloverItems.slice();
+                    applyInventoryFilters();
+                    showToast("Clover inventory loaded: " + allCloverItems.length + " item(s).", "success");
                 } else {
                     showToast(data.message || "Failed to load Clover items.", "error");
                 }
@@ -784,7 +977,7 @@ function renderDashboard(options = {}) {
 
                 setBusy("Creating Clover item...");
 
-                const response = await fetch(
+                const data = await apiFetchJson(
                     "/clover-create-item?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId),
                     {
@@ -794,7 +987,6 @@ function renderDashboard(options = {}) {
                     }
                 );
 
-                const data = await response.json();
                 showResult(data);
 
                 if (data.success) {
@@ -806,6 +998,157 @@ function renderDashboard(options = {}) {
             } catch (error) {
                 showError(error);
             }
+        }
+
+        async function updateItem(itemId) {
+            try {
+                const connection = requireConnection();
+                if (!connection) return;
+
+                const nameInput = document.getElementById("name_" + itemId);
+                const priceInput = document.getElementById("price_" + itemId);
+
+                const name = nameInput ? nameInput.value.trim() : "";
+                const price = priceInput ? Number(priceInput.value) : NaN;
+
+                if (!itemId || !name || Number.isNaN(price) || price < 0) {
+                    showToast("Item name and price cents are required.", "error");
+                    return;
+                }
+
+                setBusy("Updating Clover item...");
+
+                const data = await apiFetchJson(
+                    "/clover-update-item?token=" + encodeURIComponent(connection.token) +
+                    "&merchantId=" + encodeURIComponent(connection.merchantId) +
+                    "&itemId=" + encodeURIComponent(itemId),
+                    {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: name, price: price })
+                    }
+                );
+
+                showResult(data);
+
+                if (data.success) {
+                    showToast("Clover item updated.", "success");
+                    await loadItems();
+                } else {
+                    showToast(data.message || "Failed to update item.", "error");
+                }
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        async function toggleHidden(itemId, hideValue) {
+            try {
+                const connection = requireConnection();
+                if (!connection) return;
+
+                setBusy(hideValue ? "Hiding item..." : "Unhiding item...");
+
+                const data = await apiFetchJson(
+                    "/clover-update-item?token=" + encodeURIComponent(connection.token) +
+                    "&merchantId=" + encodeURIComponent(connection.merchantId) +
+                    "&itemId=" + encodeURIComponent(itemId),
+                    {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ hidden: hideValue })
+                    }
+                );
+
+                showResult(data);
+
+                if (data.success) {
+                    showToast(hideValue ? "Item hidden." : "Item visible again.", "success");
+                    await loadItems();
+                } else {
+                    showToast(data.message || "Failed to update visibility.", "error");
+                }
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        async function deleteItem(itemId) {
+            try {
+                const connection = requireConnection();
+                if (!connection) return;
+
+                if (!confirm("Delete this Clover item from the sandbox merchant?")) {
+                    return;
+                }
+
+                setBusy("Deleting Clover item...");
+
+                const data = await apiFetchJson(
+                    "/clover-delete-item?token=" + encodeURIComponent(connection.token) +
+                    "&merchantId=" + encodeURIComponent(connection.merchantId) +
+                    "&itemId=" + encodeURIComponent(itemId),
+                    {
+                        method: "DELETE"
+                    }
+                );
+
+                showResult(data);
+
+                if (data.success) {
+                    showToast("Clover item deleted.", "success");
+                    await loadItems();
+                } else {
+                    showToast(data.message || "Failed to delete item.", "error");
+                }
+            } catch (error) {
+                showError(error);
+            }
+        }
+
+        function exportItemsJson() {
+            if (!allCloverItems.length) {
+                showToast("Load Clover inventory first.", "error");
+                return;
+            }
+
+            const payload = {
+                merchantId: getMerchantId(),
+                exportedAt: new Date().toISOString(),
+                items: allCloverItems
+            };
+
+            showResult(payload);
+            showToast("Inventory JSON prepared in the Live API Result box.", "success");
+        }
+
+        function syncToInvoiceRitePreview() {
+            if (!allCloverItems.length) {
+                showToast("Load Clover inventory first.", "error");
+                return;
+            }
+
+            const preview = allCloverItems.map(function (item) {
+                return {
+                    ProductName: item.name || "",
+                    SKU: item.sku || item.code || item.productCode || "",
+                    Barcode: item.code || "",
+                    CloverItemId: item.id || "",
+                    SellingPrice: Number(item.price || 0) / 100,
+                    Available: item.available !== false,
+                    Hidden: !!item.hidden,
+                    ModifiedTime: item.modifiedTime || null
+                };
+            });
+
+            showResult({
+                success: true,
+                message: "InvoiceRite sync preview generated. This is the structure your desktop app can import later.",
+                count: preview.length,
+                data: preview
+            });
+
+            showToast("Sync preview generated.", "success");
         }
 
         if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
@@ -975,9 +1318,7 @@ app.get("/clover-merchant", async (req, res) => {
         const merchantResponse = await axios.get(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}`,
             {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
+                headers: buildCloverHeaders(accessToken)
             }
         );
 
@@ -1017,9 +1358,7 @@ app.get("/clover-items", async (req, res) => {
         const itemsResponse = await axios.get(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=100`,
             {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
+                headers: buildCloverHeaders(accessToken)
             }
         );
 
@@ -1057,9 +1396,9 @@ app.post("/clover-create-item", async (req, res) => {
         }
 
         const itemName = req.body.name || "InvoiceRite Test Item";
-        const itemPrice = Number(req.body.price || 199);
+        const itemPrice = toCloverPriceCents(req.body.price || 199);
 
-        if (!itemName || Number.isNaN(itemPrice) || itemPrice < 0) {
+        if (!itemName || itemPrice === null) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid item name or price."
@@ -1077,10 +1416,7 @@ app.post("/clover-create-item", async (req, res) => {
                 isRevenue: true
             },
             {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                }
+                headers: buildCloverHeaders(accessToken)
             }
         );
 
@@ -1095,6 +1431,129 @@ app.post("/clover-create-item", async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to create Clover item",
+            error: error.response?.data || error.message
+        });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLOVER UPDATE ITEM ROUTE - PUT
+|--------------------------------------------------------------------------
+*/
+
+app.put("/clover-update-item", async (req, res) => {
+    try {
+        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const itemId = req.query.itemId || req.body.itemId || "";
+
+        if (!accessToken || !merchantId || !itemId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing token, merchantId, or itemId."
+            });
+        }
+
+        const updatePayload = {};
+
+        if (typeof req.body.name !== "undefined") {
+            const name = String(req.body.name || "").trim();
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Item name cannot be empty."
+                });
+            }
+            updatePayload.name = name;
+        }
+
+        if (typeof req.body.price !== "undefined") {
+            const price = toCloverPriceCents(req.body.price);
+            if (price === null) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid item price."
+                });
+            }
+            updatePayload.price = price;
+            updatePayload.priceType = "FIXED";
+        }
+
+        if (typeof req.body.hidden !== "undefined") {
+            updatePayload.hidden = !!req.body.hidden;
+        }
+
+        if (typeof req.body.available !== "undefined") {
+            updatePayload.available = !!req.body.available;
+        }
+
+        if (!Object.keys(updatePayload).length) {
+            return res.status(400).json({
+                success: false,
+                message: "Nothing to update."
+            });
+        }
+
+        const updateResponse = await axios.post(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+            updatePayload,
+            {
+                headers: buildCloverHeaders(accessToken)
+            }
+        );
+
+        res.json({
+            success: true,
+            message: "Clover item updated successfully",
+            data: updateResponse.data
+        });
+    } catch (error) {
+        console.error("Clover Update Item Error:", error.response?.data || error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to update Clover item",
+            error: error.response?.data || error.message
+        });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLOVER DELETE ITEM ROUTE - DELETE
+|--------------------------------------------------------------------------
+*/
+
+app.delete("/clover-delete-item", async (req, res) => {
+    try {
+        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const itemId = req.query.itemId || req.body.itemId || "";
+
+        if (!accessToken || !merchantId || !itemId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing token, merchantId, or itemId."
+            });
+        }
+
+        const deleteResponse = await axios.delete(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+            {
+                headers: buildCloverHeaders(accessToken)
+            }
+        );
+
+        res.json({
+            success: true,
+            message: "Clover item deleted successfully",
+            data: deleteResponse.data || { id: itemId }
+        });
+    } catch (error) {
+        console.error("Clover Delete Item Error:", error.response?.data || error.message);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete Clover item",
             error: error.response?.data || error.message
         });
     }
@@ -1119,9 +1578,9 @@ app.get("/clover-create-test-item", async (req, res) => {
         }
 
         const itemName = req.query.name || "InvoiceRite Test Item";
-        const itemPrice = Number(req.query.price || 199);
+        const itemPrice = toCloverPriceCents(req.query.price || 199);
 
-        if (!itemName || Number.isNaN(itemPrice) || itemPrice < 0) {
+        if (!itemName || itemPrice === null) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid item name or price."
@@ -1139,10 +1598,7 @@ app.get("/clover-create-test-item", async (req, res) => {
                 isRevenue: true
             },
             {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                }
+                headers: buildCloverHeaders(accessToken)
             }
         );
 
