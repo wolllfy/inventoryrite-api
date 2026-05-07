@@ -14,9 +14,26 @@ const PORT = process.env.PORT || 3000;
 const CLOVER_CLIENT_ID = process.env.CLOVER_CLIENT_ID?.trim();
 const CLOVER_CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET?.trim();
 
-const REDIRECT_URI = "https://inventoryrite-api.onrender.com/";
-const CLOVER_BASE_URL = "https://sandbox.dev.clover.com";
-const CLOVER_API_BASE_URL = "https://apisandbox.dev.clover.com";
+const APP_BASE_URL = (process.env.APP_BASE_URL || "https://inventoryrite-api.onrender.com").replace(/\/$/, "");
+const REDIRECT_URI = (process.env.REDIRECT_URI || `${APP_BASE_URL}/`).trim();
+
+const CLOVER_ENV = (process.env.CLOVER_ENV || "sandbox").toLowerCase();
+const IS_PRODUCTION_CLOVER = CLOVER_ENV === "production" || CLOVER_ENV === "prod" || CLOVER_ENV === "live";
+
+const CLOVER_BASE_URL = IS_PRODUCTION_CLOVER
+    ? "https://www.clover.com"
+    : "https://sandbox.dev.clover.com";
+
+const CLOVER_API_BASE_URL = IS_PRODUCTION_CLOVER
+    ? "https://api.clover.com"
+    : "https://apisandbox.dev.clover.com";
+
+const CLOVER_ITEM_LIMIT = Number(process.env.CLOVER_ITEM_LIMIT || 100);
+const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 20000);
+
+const cloverApi = axios.create({
+    timeout: REQUEST_TIMEOUT_MS
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +88,18 @@ function cloverHeaders(accessToken) {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json"
     };
+}
+
+function getCloverError(error) {
+    return {
+        status: error.response?.status || 500,
+        data: error.response?.data || error.message || "Unknown Clover error"
+    };
+}
+
+function isValidMoneyCents(value) {
+    const numberValue = Number(value);
+    return !Number.isNaN(numberValue) && numberValue >= 0 && Number.isFinite(numberValue);
 }
 
 /*
@@ -586,8 +615,7 @@ function renderDashboard(options = {}) {
                 </div>
 
                 <div class="note">
-                    Sandbox build: OAuth can auto-fill the merchant connection after Clover redirects back.
-                    You can also paste a Merchant API token manually for testing.
+                    Connect Clover to load and manage products. Advanced token entry is kept available for setup and support testing.
                 </div>
             </div>
 
@@ -614,7 +642,7 @@ function renderDashboard(options = {}) {
                 </div>
                 <div class="status-row">
                     <div class="status-label">Mode</div>
-                    <div class="status-value">Sandbox</div>
+                    ${IS_PRODUCTION_CLOVER ? `<div class="status-value">Production</div>` : `<div class="status-value">Sandbox</div>`}
                 </div>
                 <div class="status-row">
                     <div class="status-label">Connected At</div>
@@ -630,15 +658,15 @@ function renderDashboard(options = {}) {
             </div>
             <div class="card mini-card">
                 <h3>Create Items</h3>
-                <p>Create sandbox inventory items directly through your Render backend.</p>
+                <p>Create Clover inventory items directly through your Render backend.</p>
             </div>
             <div class="card mini-card">
                 <h3>Edit + Delete</h3>
-                <p>Update names/prices and remove sandbox test items when needed.</p>
+                <p>Update names/prices and remove test items when needed.</p>
             </div>
             <div class="card mini-card">
-                <h3>Sync Foundation</h3>
-                <p>Ready to become Clover to InvoiceRite desktop sync.</p>
+                <h3>Product Export</h3>
+                <p>Ready for product export and future inventory workflows.</p>
             </div>
         </section>
 
@@ -646,7 +674,7 @@ function renderDashboard(options = {}) {
             <div class="card panel">
                 <h3>Connection Test</h3>
                 <p class="panel-desc">
-                    Use the OAuth connection or paste your sandbox Merchant API token manually.
+                    Use the OAuth connection or paste your Merchant API token manually.
                 </p>
 
                 <label for="token">Merchant API Token</label>
@@ -686,7 +714,7 @@ function renderDashboard(options = {}) {
 
                 <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:16px; padding:16px; color:#334155; font-size:14px; line-height:1.6;">
                     <strong>Merchant tools included:</strong><br>
-                    Load products, create test items, edit item names, edit prices, delete items, search inventory, and preview sync data.
+                    Load products, create test items, edit item names, edit prices, delete items, search inventory, and preview product data.
                 </div>
 
                 <details style="margin-top:14px;">
@@ -700,7 +728,7 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Clover Inventory</h3>
-                    <p>Search, edit, refresh, and delete sandbox Clover items from one clean table.</p>
+                    <p>Search, edit, refresh, and delete Clover items from one clean table.</p>
                 </div>
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search item, SKU, or Clover ID..." />
@@ -747,7 +775,7 @@ function renderDashboard(options = {}) {
                         <tr>
                             <td colspan="9" class="empty">
                                 <strong>No Clover inventory loaded yet.</strong>
-                                Click “Load Clover Items” to pull inventory from your sandbox merchant.
+                                Click “Load Clover Items” to pull inventory from your merchant.
                             </td>
                         </tr>
                     </tbody>
@@ -938,6 +966,8 @@ function renderDashboard(options = {}) {
                 var sku = item.sku || item.code || item.productCode || "";
                 var haystack = [item.name || "", sku, item.id || ""].join(" ").toLowerCase();
                 return haystack.indexOf(search) >= 0;
+            }).sort(function (a, b) {
+                return String(a.name || "").localeCompare(String(b.name || ""));
             });
 
             updateStats(items || []);
@@ -946,7 +976,7 @@ function renderDashboard(options = {}) {
                 body.innerHTML =
                     '<tr><td colspan="9" class="empty">' +
                     '<strong>No Clover inventory found.</strong>' +
-                    'Create your first sandbox item using the form above, then refresh inventory.' +
+                    'Create your first item using the form above, then refresh inventory.' +
                     '</td></tr>';
                 return;
             }
@@ -1001,10 +1031,26 @@ function renderDashboard(options = {}) {
 
         async function fetchJson(url, options) {
             var response = await fetch(url, options || {});
-            var data = await response.json();
+            var data = null;
+
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                data = {
+                    success: false,
+                    message: "Server returned a non-JSON response."
+                };
+            }
 
             if (!response.ok) {
                 var errorMessage = data && data.message ? data.message : "Request failed.";
+                if (data && data.error) {
+                    if (typeof data.error === "string") {
+                        errorMessage += " " + data.error;
+                    } else if (data.error.message) {
+                        errorMessage += " " + data.error.message;
+                    }
+                }
                 throw new Error(errorMessage);
             }
 
@@ -1239,12 +1285,12 @@ function renderDashboard(options = {}) {
 
             showResult({
                 success: true,
-                message: "Sync preview ready for future InvoiceRite desktop import.",
+                message: "Sync preview ready for product export or future inventory workflows.",
                 count: preview.length,
                 items: preview
             });
 
-            showToast("Sync preview created. Desktop sync endpoint comes next.", "success");
+            showToast("Sync preview created.", "success");
         }
 
         bind("btnLoadTop", "click", loadItems);
@@ -1288,7 +1334,7 @@ function renderDashboard(options = {}) {
                 if (action === "delete") {
                     openConfirm(
                         "Delete Clover Item?",
-                        "This will delete " + itemName + " from the Clover sandbox merchant. This cannot be undone.",
+                        "This will delete " + itemName + " from the Clover merchant. This cannot be undone.",
                         function () { deleteItem(itemId); }
                     );
                 }
@@ -1314,6 +1360,10 @@ function renderDashboard(options = {}) {
 */
 
 app.get("/", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
     try {
         const code = req.query.code;
 
@@ -1331,7 +1381,7 @@ app.get("/", async (req, res) => {
 
         console.log("Clover OAuth code received.");
 
-        const tokenResponse = await axios.post(
+        const tokenResponse = await cloverApi.post(
             `${CLOVER_API_BASE_URL}/oauth/token`,
             new URLSearchParams({
                 client_id: CLOVER_CLIENT_ID,
@@ -1384,6 +1434,9 @@ app.get("/health", (req, res) => {
     res.json({
         success: true,
         message: "InventoryRite backend healthy",
+        appBaseUrl: APP_BASE_URL,
+        redirectUri: REDIRECT_URI,
+        cloverEnvironment: IS_PRODUCTION_CLOVER ? "production" : "sandbox",
         cloverClientIdLoaded: !!CLOVER_CLIENT_ID,
         cloverSecretLoaded: !!CLOVER_CLIENT_SECRET,
         latestConnection: {
@@ -1456,7 +1509,7 @@ app.get("/clover-merchant", async (req, res) => {
             });
         }
 
-        const merchantResponse = await axios.get(
+        const merchantResponse = await cloverApi.get(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}`,
             { headers: cloverHeaders(accessToken) }
         );
@@ -1469,10 +1522,11 @@ app.get("/clover-merchant", async (req, res) => {
     } catch (error) {
         console.error("Clover Merchant Error:", error.response?.data || error.message);
 
-        res.status(error.response?.status || 500).json({
+        const cloverError = getCloverError(error);
+        res.status(cloverError.status).json({
             success: false,
             message: "Failed to load Clover merchant info",
-            error: error.response?.data || error.message
+            error: cloverError.data
         });
     }
 });
@@ -1494,8 +1548,8 @@ app.get("/clover-items", async (req, res) => {
             });
         }
 
-        const itemsResponse = await axios.get(
-            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=100`,
+        const itemsResponse = await cloverApi.get(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${CLOVER_ITEM_LIMIT}`,
             { headers: cloverHeaders(accessToken) }
         );
 
@@ -1507,10 +1561,11 @@ app.get("/clover-items", async (req, res) => {
     } catch (error) {
         console.error("Clover Items Error:", error.response?.data || error.message);
 
-        res.status(error.response?.status || 500).json({
+        const cloverError = getCloverError(error);
+        res.status(cloverError.status).json({
             success: false,
             message: "Failed to load Clover inventory items",
-            error: error.response?.data || error.message
+            error: cloverError.data
         });
     }
 });
@@ -1535,14 +1590,14 @@ app.post("/clover-create-item", async (req, res) => {
         const itemName = String(req.body.name || "InvoiceRite Test Item").trim();
         const itemPrice = Number(req.body.price || 199);
 
-        if (!itemName || Number.isNaN(itemPrice) || itemPrice < 0) {
+        if (!itemName || !isValidMoneyCents(itemPrice)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid item name or price."
             });
         }
 
-        const createResponse = await axios.post(
+        const createResponse = await cloverApi.post(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items`,
             {
                 name: itemName,
@@ -1563,10 +1618,11 @@ app.post("/clover-create-item", async (req, res) => {
     } catch (error) {
         console.error("Clover Create Item Error:", error.response?.data || error.message);
 
-        res.status(error.response?.status || 500).json({
+        const cloverError = getCloverError(error);
+        res.status(cloverError.status).json({
             success: false,
             message: "Failed to create Clover item",
-            error: error.response?.data || error.message
+            error: cloverError.data
         });
     }
 });
@@ -1599,14 +1655,14 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
         const itemName = String(req.body.name || "").trim();
         const itemPrice = Number(req.body.price);
 
-        if (!itemName || Number.isNaN(itemPrice) || itemPrice < 0) {
+        if (!itemName || !isValidMoneyCents(itemPrice)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid item name or price."
             });
         }
 
-        const updateResponse = await axios.post(
+        const updateResponse = await cloverApi.post(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
             {
                 name: itemName,
@@ -1627,10 +1683,11 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
     } catch (error) {
         console.error("Clover Update Item Error:", error.response?.data || error.message);
 
-        res.status(error.response?.status || 500).json({
+        const cloverError = getCloverError(error);
+        res.status(cloverError.status).json({
             success: false,
             message: "Failed to update Clover item",
-            error: error.response?.data || error.message
+            error: cloverError.data
         });
     }
 });
@@ -1660,7 +1717,7 @@ app.post("/clover-delete-item/:itemId", async (req, res) => {
             });
         }
 
-        const deleteResponse = await axios.delete(
+        const deleteResponse = await cloverApi.delete(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
             { headers: cloverHeaders(accessToken) }
         );
@@ -1673,10 +1730,11 @@ app.post("/clover-delete-item/:itemId", async (req, res) => {
     } catch (error) {
         console.error("Clover Delete Item Error:", error.response?.data || error.message);
 
-        res.status(error.response?.status || 500).json({
+        const cloverError = getCloverError(error);
+        res.status(cloverError.status).json({
             success: false,
             message: "Failed to delete Clover item",
-            error: error.response?.data || error.message
+            error: cloverError.data
         });
     }
 });
@@ -1702,14 +1760,14 @@ app.get("/clover-create-test-item", async (req, res) => {
         const itemName = String(req.query.name || "InvoiceRite Test Item").trim();
         const itemPrice = Number(req.query.price || 199);
 
-        if (!itemName || Number.isNaN(itemPrice) || itemPrice < 0) {
+        if (!itemName || !isValidMoneyCents(itemPrice)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid item name or price."
             });
         }
 
-        const createResponse = await axios.post(
+        const createResponse = await cloverApi.post(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items`,
             {
                 name: itemName,
@@ -1730,12 +1788,32 @@ app.get("/clover-create-test-item", async (req, res) => {
     } catch (error) {
         console.error("Clover Create Test Item Error:", error.response?.data || error.message);
 
-        res.status(error.response?.status || 500).json({
+        const cloverError = getCloverError(error);
+        res.status(cloverError.status).json({
             success: false,
             message: "Failed to create Clover test item",
-            error: error.response?.data || error.message
+            error: cloverError.data
         });
     }
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC APP STATUS ROUTE
+|--------------------------------------------------------------------------
+*/
+
+app.get("/app-status", (req, res) => {
+    res.json({
+        success: true,
+        app: "InventoryRite Clover Connector",
+        status: "online",
+        environment: IS_PRODUCTION_CLOVER ? "production" : "sandbox",
+        connected: latestCloverConnection.connected,
+        hasMerchant: !!latestCloverConnection.merchant_id,
+        connectedAt: latestCloverConnection.connected_at || null
+    });
 });
 
 /*
