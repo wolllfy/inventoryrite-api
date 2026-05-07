@@ -767,6 +767,7 @@ function renderDashboard(options = {}) {
 
             <div class="hero-actions">
                 <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
+                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">⚡ Bulk Price Update</button>
                 <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
             </div>
         </section>
@@ -780,6 +781,7 @@ function renderDashboard(options = {}) {
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
                     <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh</button>
+                    <button id="btnToggleBulk" type="button" class="btn btn-amber">⚡ Bulk Price Update</button>
                     <button id="btnToggleAdd" type="button" class="btn btn-primary">Add Product</button>
                 </div>
             </div>
@@ -1058,19 +1060,10 @@ function renderDashboard(options = {}) {
 
         function syncBulkUI() {
             var count = selectedItemIds.size;
-            var bulkPanel = byId("bulkPanel");
             var countBadge = byId("bulkSelectedCount");
             var selectAll = byId("selectAllCheckbox");
 
             if (countBadge) countBadge.textContent = String(count);
-
-            if (bulkPanel) {
-                if (count > 0) {
-                    bulkPanel.classList.add("show");
-                } else {
-                    bulkPanel.classList.remove("show");
-                }
-            }
 
             // Update select-all checkbox visual state
             if (selectAll) {
@@ -1559,6 +1552,17 @@ function renderDashboard(options = {}) {
             }
         }
 
+        function toggleBulkPanel() {
+            var bulkPanel = byId("bulkPanel");
+            if (!bulkPanel) return;
+            bulkPanel.classList.toggle("show");
+
+            if (bulkPanel.classList.contains("show")) {
+                var pctInput = byId("bulkPct");
+                if (pctInput) pctInput.focus();
+            }
+        }
+
         /*
         |------------------------------------------------------------------
         | EVENT BINDINGS
@@ -1569,6 +1573,8 @@ function renderDashboard(options = {}) {
         bind("btnRefreshInventory", "click", loadItems);
         bind("btnToggleAddTop", "click", toggleAddPanel);
         bind("btnToggleAdd", "click", toggleAddPanel);
+        bind("btnToggleBulkTop", "click", toggleBulkPanel);
+        bind("btnToggleBulk", "click", toggleBulkPanel);
         bind("btnCreateItem", "click", createItem);
         bind("inventorySearch", "input", function () { renderItems(loadedItems); });
 
