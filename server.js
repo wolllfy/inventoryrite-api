@@ -132,6 +132,116 @@ app.get("/oauth/callback", async (req, res) => {
     }
 });
 
+/*
+|--------------------------------------------------------------------------
+| Clover Inventory Items Route
+|--------------------------------------------------------------------------
+| Test format:
+| https://inventoryrite-api.onrender.com/clover-items?token=YOUR_ACCESS_TOKEN
+|--------------------------------------------------------------------------
+*/
+
+app.get("/clover-items", async (req, res) => {
+
+    try {
+
+        const accessToken = req.query.token;
+
+        if (!accessToken) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing Clover access token. Add ?token=YOUR_ACCESS_TOKEN to the URL."
+            });
+        }
+
+        const itemsResponse = await axios.get(
+            `${CLOVER_BASE_URL}/v3/merchants/me/items`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        res.json({
+            success: true,
+            message: "Clover inventory items loaded successfully",
+            data: itemsResponse.data
+        });
+
+    } catch (error) {
+
+        console.error("Clover Items Error:");
+
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to load Clover inventory items",
+            error: error.response?.data || error.message
+        });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Clover Merchant Info Route
+|--------------------------------------------------------------------------
+| Test format:
+| https://inventoryrite-api.onrender.com/clover-merchant?token=YOUR_ACCESS_TOKEN
+|--------------------------------------------------------------------------
+*/
+
+app.get("/clover-merchant", async (req, res) => {
+
+    try {
+
+        const accessToken = req.query.token;
+
+        if (!accessToken) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing Clover access token. Add ?token=YOUR_ACCESS_TOKEN to the URL."
+            });
+        }
+
+        const merchantResponse = await axios.get(
+            `${CLOVER_BASE_URL}/v3/merchants/me`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        );
+
+        res.json({
+            success: true,
+            message: "Clover merchant info loaded successfully",
+            data: merchantResponse.data
+        });
+
+    } catch (error) {
+
+        console.error("Clover Merchant Error:");
+
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to load Clover merchant info",
+            error: error.response?.data || error.message
+        });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
