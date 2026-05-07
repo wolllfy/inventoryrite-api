@@ -604,13 +604,13 @@ function renderDashboard(options = {}) {
                 <h2>Manage Clover inventory through your InventoryRite connector.</h2>
                 <p class="hero-text">
                     This dashboard confirms that your Clover merchant connection works, reads Clover inventory,
-                    creates test items, edits items, deletes test items, and gives you a clean starting point for a real Clover App Market product.
+                    creates items, edits items, deletes items, and gives you a clean starting point for a real Clover App Market product.
                 </p>
 
                 <div class="actions">
                     <a class="btn btn-primary" href="/connect-clover">Connect Clover</a>
                     <button id="btnLoadTop" type="button" class="btn btn-secondary">Load Clover Items</button>
-                    <button id="btnCreateTop" type="button" class="btn btn-dark">Create Test Item</button>
+                    <button id="btnCreateTop" type="button" class="btn btn-dark">Create Item</button>
                     <button id="btnHealthTop" type="button" class="btn btn-light">Check Backend</button>
                 </div>
 
@@ -662,7 +662,7 @@ function renderDashboard(options = {}) {
             </div>
             <div class="card mini-card">
                 <h3>Edit + Delete</h3>
-                <p>Update names/prices and remove test items when needed.</p>
+                <p>Update names/prices and remove items when needed.</p>
             </div>
             <div class="card mini-card">
                 <h3>Product Export</h3>
@@ -686,7 +686,7 @@ function renderDashboard(options = {}) {
                 <div class="form-row">
                     <div>
                         <label for="itemName">Item Name</label>
-                        <input id="itemName" type="text" value="InvoiceRite Test Item" />
+                        <input id="itemName" type="text" value="New Clover Item" />
                     </div>
                     <div>
                         <label for="itemPrice">Price Cents</label>
@@ -699,7 +699,7 @@ function renderDashboard(options = {}) {
                     <button id="btnLoadPanel" type="button" class="btn btn-secondary">Load Items</button>
                 </div>
 
-                <button id="btnCreatePanel" type="button" class="btn btn-primary" style="width:100%; margin-top:10px;">Create Clover Item</button>
+                <button id="btnCreatePanel" type="button" class="btn btn-primary" style="width:100%; margin-top:10px;">Create Item</button>
             </div>
 
             <div class="card panel">
@@ -714,7 +714,7 @@ function renderDashboard(options = {}) {
 
                 <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:16px; padding:16px; color:#334155; font-size:14px; line-height:1.6;">
                     <strong>Merchant tools included:</strong><br>
-                    Load products, create test items, edit item names, edit prices, delete items, search inventory, and preview product data.
+                    Load products, create items, edit item names, edit prices, delete items, search inventory, and preview product data.
                 </div>
 
                 <details style="margin-top:14px;">
@@ -1152,7 +1152,7 @@ function renderDashboard(options = {}) {
                 var nameBox = byId("itemName");
                 var priceBox = byId("itemPrice");
 
-                var name = nameBox && nameBox.value ? nameBox.value.trim() : "InvoiceRite Test Item";
+                var name = nameBox && nameBox.value ? nameBox.value.trim() : "New Clover Item";
                 var price = priceBox && priceBox.value ? priceBox.value.trim() : "199";
 
                 if (!name) {
@@ -1587,7 +1587,7 @@ app.post("/clover-create-item", async (req, res) => {
             });
         }
 
-        const itemName = String(req.body.name || "InvoiceRite Test Item").trim();
+        const itemName = String(req.body.name || "New Clover Item").trim();
         const itemPrice = Number(req.body.price || 199);
 
         if (!itemName || !isValidMoneyCents(itemPrice)) {
@@ -1741,12 +1741,12 @@ app.post("/clover-delete-item/:itemId", async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| CLOVER CREATE TEST ITEM ROUTE - GET
+| LEGACY CREATE ITEM ROUTE - GET
 | Kept for backwards compatibility with older button/link tests.
 |--------------------------------------------------------------------------
 */
 
-app.get("/clover-create-test-item", async (req, res) => {
+app.get("/clover-create-item-legacy", async (req, res) => {
     try {
         const { accessToken, merchantId } = getConnectionFromRequest(req);
 
@@ -1757,7 +1757,7 @@ app.get("/clover-create-test-item", async (req, res) => {
             });
         }
 
-        const itemName = String(req.query.name || "InvoiceRite Test Item").trim();
+        const itemName = String(req.query.name || "New Clover Item").trim();
         const itemPrice = Number(req.query.price || 199);
 
         if (!itemName || !isValidMoneyCents(itemPrice)) {
@@ -1782,16 +1782,16 @@ app.get("/clover-create-test-item", async (req, res) => {
 
         res.json({
             success: true,
-            message: "Clover test item created successfully",
+            message: "Clover item created successfully",
             data: createResponse.data
         });
     } catch (error) {
-        console.error("Clover Create Test Item Error:", error.response?.data || error.message);
+        console.error("Clover Create Item Error:", error.response?.data || error.message);
 
         const cloverError = getCloverError(error);
         res.status(cloverError.status).json({
             success: false,
-            message: "Failed to create Clover test item",
+            message: "Failed to create Clover item",
             error: cloverError.data
         });
     }
