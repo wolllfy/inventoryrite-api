@@ -36,7 +36,6 @@ app.get("/", async (req, res) => {
 
         console.log("Clover OAuth code received.");
 
-        // FIXED TOKEN ENDPOINT
         const tokenResponse = await axios.post(
             `${CLOVER_API_BASE_URL}/oauth/token`,
             new URLSearchParams({
@@ -134,6 +133,9 @@ app.get("/connect-clover", (req, res) => {
 |--------------------------------------------------------------------------
 | CLOVER MERCHANT INFO ROUTE
 |--------------------------------------------------------------------------
+| Browser test:
+| /clover-merchant?token=TOKEN&merchantId=MERCHANT_ID
+|--------------------------------------------------------------------------
 */
 
 app.get("/clover-merchant", async (req, res) => {
@@ -191,6 +193,9 @@ app.get("/clover-merchant", async (req, res) => {
 |--------------------------------------------------------------------------
 | CLOVER ITEMS ROUTE
 |--------------------------------------------------------------------------
+| Browser test:
+| /clover-items?token=TOKEN&merchantId=MERCHANT_ID
+|--------------------------------------------------------------------------
 */
 
 app.get("/clover-items", async (req, res) => {
@@ -237,6 +242,172 @@ app.get("/clover-items", async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to load Clover inventory items",
+            error: error.response?.data || error.message
+        });
+
+    }
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLOVER CREATE ITEM ROUTE - POST
+|--------------------------------------------------------------------------
+| This is the real route your WPF app can use later.
+|
+| POST /clover-create-item?token=TOKEN&merchantId=MERCHANT_ID
+|
+| JSON body example:
+| {
+|   "name": "InvoiceRite Test Item",
+|   "price": 199
+| }
+|--------------------------------------------------------------------------
+*/
+
+app.post("/clover-create-item", async (req, res) => {
+
+    try {
+
+        const accessToken = req.query.token;
+        const merchantId = req.query.merchantId;
+
+        if (!accessToken || !merchantId) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Missing token or merchantId."
+            });
+
+        }
+
+        const itemName = req.body.name || "InvoiceRite Test Item";
+        const itemPrice = Number(req.body.price || 199);
+
+        if (!itemName || Number.isNaN(itemPrice)) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid item name or price."
+            });
+
+        }
+
+        const createResponse = await axios.post(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items`,
+            {
+                name: itemName,
+                price: itemPrice
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        res.json({
+            success: true,
+            message: "Clover item created successfully",
+            data: createResponse.data
+        });
+
+    } catch (error) {
+
+        console.error("Clover Create Item Error:");
+
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to create Clover item",
+            error: error.response?.data || error.message
+        });
+
+    }
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLOVER CREATE TEST ITEM ROUTE - GET
+|--------------------------------------------------------------------------
+| Easy browser test route.
+|
+| Browser test:
+| /clover-create-test-item?token=TOKEN&merchantId=MERCHANT_ID
+|
+| Optional:
+| /clover-create-test-item?token=TOKEN&merchantId=MERCHANT_ID&name=Snickers&price=199
+|--------------------------------------------------------------------------
+*/
+
+app.get("/clover-create-test-item", async (req, res) => {
+
+    try {
+
+        const accessToken = req.query.token;
+        const merchantId = req.query.merchantId;
+
+        if (!accessToken || !merchantId) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Missing token or merchantId."
+            });
+
+        }
+
+        const itemName = req.query.name || "InvoiceRite Test Item";
+        const itemPrice = Number(req.query.price || 199);
+
+        if (!itemName || Number.isNaN(itemPrice)) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid item name or price."
+            });
+
+        }
+
+        const createResponse = await axios.post(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items`,
+            {
+                name: itemName,
+                price: itemPrice
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        res.json({
+            success: true,
+            message: "Clover test item created successfully",
+            data: createResponse.data
+        });
+
+    } catch (error) {
+
+        console.error("Clover Create Test Item Error:");
+
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to create Clover test item",
             error: error.response?.data || error.message
         });
 
