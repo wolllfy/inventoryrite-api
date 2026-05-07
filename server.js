@@ -292,6 +292,16 @@ function renderDashboard(options = {}) {
 
         * { box-sizing: border-box; }
 
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        img, svg, table, input, button, select, textarea {
+            max-width: 100%;
+        }
+
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
@@ -345,7 +355,7 @@ function renderDashboard(options = {}) {
         .badge.connected { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
         .badge.disconnected { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
 
-        .wrap { max-width: 1180px; margin: 26px auto; padding: 0 22px 50px; }
+        .wrap { width: 100%; max-width: 1460px; margin: 26px auto; padding: 0 18px 50px; }
 
         .hero {
             background: rgba(255,255,255,0.96);
@@ -712,15 +722,51 @@ function renderDashboard(options = {}) {
         .table-wrap {
             border: 1px solid var(--line);
             border-radius: 16px;
-            overflow: auto;
+            overflow-x: hidden;
+            overflow-y: visible;
             background: white;
+            width: 100%;
+            max-width: 100%;
         }
 
-        table { width: 100%; border-collapse: collapse; min-width: 1320px; }
-        th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: middle; }
+        table {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            font-size: 13px;
+            vertical-align: middle;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            min-width: 0;
+        }
+
         th { background: #f8fafc; color: #334155; font-weight: 900; }
         tr:last-child td { border-bottom: 0; }
         td.muted { color: var(--muted); }
+
+        /* Clean one-window table: these columns total 100%, so no horizontal page scroll. */
+        .check-col { width: 4%; }
+        .name-col { width: 38%; }
+        .money-col { width: 13%; }
+        .metric-col { width: 12%; }
+        .actions-col { width: 20%; }
+        .product-name-cell { min-width: 0; }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 10px 14px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .detail-label { color: var(--muted); font-weight: 900; }
+        .detail-value { color: var(--text); font-weight: 700; word-break: break-word; }
 
         tr.row-updated { animation: rowFlash 1.4s ease; }
 
@@ -770,15 +816,18 @@ function renderDashboard(options = {}) {
         }
 
         .small-input {
-            min-width: 95px;
-            max-width: 115px;
-            padding: 9px 10px;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            padding: 9px 9px;
             margin: 0;
             border-radius: 10px;
         }
 
         .name-input {
-            min-width: 190px;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
             padding: 9px 10px;
             margin: 0;
             border-radius: 10px;
@@ -786,8 +835,17 @@ function renderDashboard(options = {}) {
 
         .row-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .row-actions .btn-small {
+            flex: 1 1 58px;
+            min-width: 0;
+            padding-left: 7px;
+            padding-right: 7px;
+            white-space: nowrap;
         }
 
         .setup-card {
@@ -889,6 +947,26 @@ function renderDashboard(options = {}) {
             .toolbar { width: 100%; justify-content: flex-start; }
             .search-input { width: 100%; min-width: 100%; max-width: 100%; }
             .bulk-controls { flex-direction: column; align-items: flex-start; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            th, td { padding: 10px 6px; font-size: 12px; }
+            .btn-small { padding: 7px 7px; font-size: 11px; }
+            .row-actions { gap: 5px; }
+        }
+
+        @media (max-width: 700px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .wrap { padding: 0 10px 40px; }
+            .inventory-card { padding: 14px; }
+            .hero { padding: 20px; }
+            .hero h2 { font-size: 24px; }
+            .table-wrap { border-radius: 12px; }
+            th, td { padding: 9px 5px; font-size: 11px; }
+            .check-col { width: 6%; }
+            .name-col { width: 40%; }
+            .money-col { width: 14%; }
+            .metric-col { width: 10%; }
+            .actions-col { width: 16%; }
+            .row-actions .btn-small { flex-basis: 100%; }
         }
     </style>
 </head>
@@ -1035,28 +1113,29 @@ function renderDashboard(options = {}) {
 
             <div class="table-wrap">
                 <table>
+                    <colgroup>
+                        <col class="check-col" />
+                        <col class="name-col" />
+                        <col class="money-col" />
+                        <col class="money-col" />
+                        <col class="metric-col" />
+                        <col class="actions-col" />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th class="col-check">
                                 <input type="checkbox" id="selectAllCheckbox" title="Select all visible" />
                             </th>
-                            <th>Product Name</th>
+                            <th>Product</th>
                             <th>Price</th>
                             <th>Cost</th>
                             <th>Margin</th>
-                            <th>Profit/Unit</th>
-                            <th>SKU / Code</th>
-                            <th>Available</th>
-                            <th>Hidden</th>
-                            <th>Revenue</th>
-                            <th>Modified</th>
-                            <th>Clover ID</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsBody">
                         <tr>
-                            <td colspan="13" class="empty">
+                            <td colspan="6" class="empty">
                                 <strong>Loading Clover inventory...</strong>
                                 Your products will appear here in a moment.
                             </td>
@@ -1089,6 +1168,17 @@ function renderDashboard(options = {}) {
             <div class="modal-actions">
                 <button id="confirmCancel" type="button" class="btn btn-light">Cancel</button>
                 <button id="confirmYes" type="button" class="btn btn-danger">Yes, Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="detailsModal">
+        <div class="modal">
+            <h3 id="detailsTitle">Product Details</h3>
+            <p>Extra Clover fields and profit details are kept here so the main product table stays clean with no left/right scroll.</p>
+            <div class="detail-grid" id="detailsGrid"></div>
+            <div class="modal-actions">
+                <button id="detailsClose" type="button" class="btn btn-light">Close</button>
             </div>
         </div>
     </div>
@@ -1489,7 +1579,7 @@ function renderDashboard(options = {}) {
 
             if (!items || !items.length) {
                 body.innerHTML =
-                    '<tr><td colspan="13" class="empty">' +
+                    '<tr><td colspan="6" class="empty">' +
                     '<strong>No Clover products found.</strong>' +
                     'Click Add Product to create your first item.' +
                     '</td></tr>';
@@ -1499,7 +1589,7 @@ function renderDashboard(options = {}) {
 
             if (!filtered.length) {
                 body.innerHTML =
-                    '<tr><td colspan="13" class="empty">' +
+                    '<tr><td colspan="6" class="empty">' +
                     '<strong>No matching products found.</strong>' +
                     'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
@@ -1542,19 +1632,13 @@ function renderDashboard(options = {}) {
 
                 row.innerHTML =
                     "<td class='col-check'><input type='checkbox' data-item-id='" + escapeHtml(itemId) + "' " + (isSelected ? "checked" : "") + " /></td>" +
-                    "<td><input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
+                    "<td class='product-name-cell'><input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
                     "<td><input class='small-input' data-price-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(priceDollars) + "' /></td>" +
-                    "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. This saves to your app database, not Clover.' /></td>" +
+                    "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. Saves to InventoryRite and attempts to sync to Clover.' /></td>" +
                     "<td>" + getMarginPill(priceCents, costCents) + "</td>" +
-                    "<td class='" + profitClass + "'>" + formatCurrencyFromCents(profitCents) + "</td>" +
-                    "<td class='muted'>" + escapeHtml(sku) + "</td>" +
-                    "<td>" + available + "</td>" +
-                    "<td>" + hidden + "</td>" +
-                    "<td>" + revenue + "</td>" +
-                    "<td class='muted'>" + formatDateFromClover(item.modifiedTime) + "</td>" +
-                    "<td class='muted'>" + escapeHtml(itemId || "—") + "</td>" +
                     "<td><div class='row-actions'>" +
                         "<button type='button' class='btn btn-secondary btn-small' data-action='save' data-id='" + escapeHtml(itemId) + "'>Save</button>" +
+                        "<button type='button' class='btn btn-light btn-small' data-action='details' data-id='" + escapeHtml(itemId) + "'>Details</button>" +
                         "<button type='button' class='btn btn-danger btn-small' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>Delete</button>" +
                     "</div></td>";
 
@@ -1647,6 +1731,46 @@ function renderDashboard(options = {}) {
             if (modal) modal.classList.remove("show");
         }
 
+        function openItemDetails(itemId) {
+            var item = loadedItems.find(function (it) { return it.id === itemId; });
+            if (!item) return;
+
+            var sku = item.sku || item.code || item.productCode || "—";
+            var available = item.available === false ? "No" : "Yes";
+            var hidden = item.hidden ? "Hidden" : "Visible";
+            var revenue = item.isRevenue === false ? "No" : "Yes";
+            var priceCents = Number(item.price || 0);
+            var costCents = getCostCents(item.id || "");
+            var profitCents = priceCents - costCents;
+            var margin = calculateMargin(priceCents, costCents);
+
+            var title = byId("detailsTitle");
+            var grid = byId("detailsGrid");
+            var modal = byId("detailsModal");
+
+            if (title) title.textContent = item.name || "Product Details";
+            if (grid) {
+                grid.innerHTML =
+                    "<div class='detail-label'>SKU / Code</div><div class='detail-value'>" + escapeHtml(sku) + "</div>" +
+                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "—") + "</div>" +
+                    "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
+                    "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
+                    "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
+                    "<div class='detail-label'>Modified</div><div class='detail-value'>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</div>" +
+                    "<div class='detail-label'>Price</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</div>" +
+                    "<div class='detail-label'>Cost</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</div>" +
+                    "<div class='detail-label'>Profit / Unit</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</div>" +
+                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</div>";
+            }
+
+            if (modal) modal.classList.add("show");
+        }
+
+        function closeItemDetails() {
+            var modal = byId("detailsModal");
+            if (modal) modal.classList.remove("show");
+        }
+
         async function saveItemCost(itemId, value) {
             try {
                 var connection = requireConnection();
@@ -1659,7 +1783,7 @@ function renderDashboard(options = {}) {
                     return;
                 }
 
-                await fetchJson(
+                var savedCost = await fetchJson(
                     "/item-cost/" + encodeURIComponent(itemId) +
                     "?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId),
@@ -1671,7 +1795,7 @@ function renderDashboard(options = {}) {
                 );
 
                 itemCosts[itemId] = costCents;
-                showToast("Cost saved. Margin updated.", "success");
+                showToast(savedCost && savedCost.message ? savedCost.message : "Cost saved. Margin updated.", "success");
                 renderItems(loadedItems);
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to save cost.", "error");
@@ -1699,6 +1823,14 @@ function renderDashboard(options = {}) {
 
                 loadedItems = data.data && data.data.elements ? data.data.elements : [];
                 itemCosts = costData.costs || {};
+
+                loadedItems.forEach(function (item) {
+                    if (!item || !item.id) return;
+                    if ((itemCosts[item.id] === undefined || Number(itemCosts[item.id]) === 0) && item.cost !== undefined && item.cost !== null) {
+                        itemCosts[item.id] = Number(item.cost || 0);
+                    }
+                });
+
                 renderItems(loadedItems);
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
             } catch (error) {
@@ -1873,6 +2005,7 @@ function renderDashboard(options = {}) {
             closeConfirm();
             if (typeof action === "function") action();
         });
+        bind("detailsClose", "click", closeItemDetails);
 
         // Select-all checkbox
         bind("selectAllCheckbox", "change", function (e) {
@@ -1894,6 +2027,13 @@ function renderDashboard(options = {}) {
             });
         }
 
+        var detailsModal = byId("detailsModal");
+        if (detailsModal) {
+            detailsModal.addEventListener("click", function (event) {
+                if (event.target === detailsModal) closeItemDetails();
+            });
+        }
+
         var itemsBody = byId("itemsBody");
         if (itemsBody) {
             itemsBody.addEventListener("click", function (event) {
@@ -1906,6 +2046,10 @@ function renderDashboard(options = {}) {
 
                 if (action === "save") {
                     updateItem(itemId);
+                }
+
+                if (action === "details") {
+                    openItemDetails(itemId);
                 }
 
                 if (action === "delete") {
@@ -2412,7 +2556,7 @@ app.get("/item-costs", async (req, res) => {
 
 app.post("/item-cost/:itemId", async (req, res) => {
     try {
-        const { merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = getConnectionFromRequest(req);
         const itemId = req.params.itemId;
         const costCents = Number(req.body.costCents || 0);
 
@@ -2431,13 +2575,34 @@ app.post("/item-cost/:itemId", async (req, res) => {
         }
 
         const savedCostCents = await saveItemCostForMerchant(merchantId, itemId, costCents);
+        let cloverCostSynced = false;
+        let cloverCostSyncError = null;
+
+        if (accessToken) {
+            try {
+                await cloverApi.post(
+                    `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+                    { cost: savedCostCents },
+                    { headers: cloverHeaders(accessToken) }
+                );
+                cloverCostSynced = true;
+            } catch (cloverError) {
+                cloverCostSynced = false;
+                cloverCostSyncError = cloverError.response?.data || cloverError.message || "Clover cost sync failed.";
+                console.warn("Clover cost sync warning:", cloverCostSyncError);
+            }
+        }
 
         res.json({
             success: true,
-            message: "Item cost saved successfully.",
+            message: cloverCostSynced
+                ? "Item cost saved and synced to Clover."
+                : "Item cost saved in InventoryRite. Clover cost sync was not confirmed.",
             databaseEnabled: USE_DATABASE,
             itemId,
-            costCents: savedCostCents
+            costCents: savedCostCents,
+            cloverCostSynced,
+            cloverCostSyncError
         });
     } catch (error) {
         console.error("Save Item Cost Error:", error.message);
