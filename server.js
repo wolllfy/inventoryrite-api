@@ -120,7 +120,7 @@ function renderDashboard(options = {}) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InventoryRite Clover Connector</title>
+    <title>InventoryRite for Clover</title>
     <style>
         :root {
             --bg: #f5f7fb;
@@ -148,14 +148,13 @@ function renderDashboard(options = {}) {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(22, 163, 74, 0.12), transparent 32%),
-                radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 30%),
+                radial-gradient(circle at top left, rgba(22, 163, 74, 0.10), transparent 32%),
                 linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
             color: var(--text);
         }
 
         .topbar {
-            background: rgba(255,255,255,0.92);
+            background: rgba(255,255,255,0.94);
             border-bottom: 1px solid var(--line);
             padding: 16px 28px;
             display: flex;
@@ -198,37 +197,31 @@ function renderDashboard(options = {}) {
         .badge.connected { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
         .badge.disconnected { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
 
-        .wrap { max-width: 1240px; margin: 28px auto; padding: 0 22px 50px; }
+        .wrap { max-width: 1180px; margin: 26px auto; padding: 0 22px 50px; }
 
         .hero {
-            display: grid;
-            grid-template-columns: 1.35fr 0.85fr;
-            gap: 22px;
-            align-items: stretch;
-            margin-bottom: 22px;
-        }
-
-        .card {
             background: rgba(255,255,255,0.96);
             border: 1px solid var(--line);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-        }
-
-        .hero-main {
-            padding: 34px;
+            padding: 28px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
             overflow: hidden;
             position: relative;
         }
 
-        .hero-main:after {
+        .hero:after {
             content: "";
             position: absolute;
-            width: 280px;
-            height: 280px;
+            width: 260px;
+            height: 260px;
             border-radius: 50%;
-            right: -90px;
-            top: -105px;
+            right: -120px;
+            top: -120px;
             background: rgba(34, 197, 94, 0.13);
             pointer-events: none;
         }
@@ -239,26 +232,39 @@ function renderDashboard(options = {}) {
             letter-spacing: .08em;
             text-transform: uppercase;
             font-size: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 9px;
         }
 
         .hero h2 {
             margin: 0;
-            font-size: 35px;
+            font-size: 34px;
             line-height: 1.08;
             letter-spacing: -0.035em;
             max-width: 760px;
         }
 
-        .hero-text {
-            margin: 15px 0 0;
+        .hero p {
+            margin: 12px 0 0;
             color: var(--muted);
-            line-height: 1.6;
-            max-width: 760px;
+            line-height: 1.55;
+            max-width: 720px;
             font-size: 15px;
         }
 
-        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; position: relative; z-index: 3; }
+        .hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.96);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
 
         .btn {
             border: 0;
@@ -270,8 +276,8 @@ function renderDashboard(options = {}) {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 44px;
-            transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+            min-height: 42px;
+            transition: transform .12s ease, opacity .12s ease;
             font-size: 13px;
             user-select: none;
         }
@@ -287,94 +293,6 @@ function renderDashboard(options = {}) {
         .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid #fecaca; }
         .btn-small { min-height: 34px; padding: 8px 11px; font-size: 12px; border-radius: 10px; }
 
-        .status-card { padding: 24px; }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 14px;
-            border-bottom: 1px solid var(--line);
-            padding: 13px 0;
-        }
-
-        .status-row:last-child { border-bottom: 0; }
-        .status-label { color: var(--muted); font-size: 13px; }
-        .status-value { font-weight: 900; font-size: 13px; text-align: right; word-break: break-all; }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-bottom: 22px;
-        }
-
-        .mini-card { padding: 20px; }
-        .mini-card h3 { margin: 0 0 8px; font-size: 17px; }
-        .mini-card p { margin: 0; color: var(--muted); line-height: 1.5; font-size: 14px; }
-
-        .workbench {
-            display: grid;
-            grid-template-columns: 0.9fr 1.1fr;
-            gap: 22px;
-            margin-bottom: 22px;
-        }
-
-        .panel { padding: 24px; }
-        .panel h3 { margin: 0 0 8px; font-size: 21px; }
-        .panel-desc { margin: 0 0 18px; color: var(--muted); line-height: 1.5; font-size: 14px; }
-
-        label { display: block; font-size: 13px; font-weight: 900; margin-bottom: 7px; }
-
-        input {
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 13px;
-            padding: 13px 14px;
-            font-size: 14px;
-            outline: none;
-            margin-bottom: 14px;
-            background: white;
-        }
-
-        input:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 0.45fr;
-            gap: 12px;
-        }
-
-        .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        .result {
-            background: #0f172a;
-            color: #e5e7eb;
-            border-radius: 15px;
-            padding: 18px;
-            min-height: 280px;
-            overflow: auto;
-            white-space: pre-wrap;
-            font-family: Consolas, Monaco, monospace;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .note {
-            background: #fffbeb;
-            color: #92400e;
-            border: 1px solid #fde68a;
-            padding: 13px 14px;
-            border-radius: 13px;
-            font-size: 13px;
-            line-height: 1.45;
-            margin-top: 14px;
-            position: relative;
-            z-index: 3;
-        }
-
         .inventory-card { padding: 24px; }
 
         .table-top {
@@ -385,7 +303,7 @@ function renderDashboard(options = {}) {
             margin-bottom: 16px;
         }
 
-        .table-top h3 { margin: 0 0 6px; font-size: 22px; }
+        .table-top h3 { margin: 0 0 6px; font-size: 23px; }
         .table-top p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 
         .toolbar {
@@ -393,12 +311,52 @@ function renderDashboard(options = {}) {
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 13px;
+            padding: 12px 14px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+        }
+
+        input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
         }
 
         .search-input {
-            min-width: 260px;
-            margin-bottom: 0;
-            padding: 12px 14px;
+            min-width: 300px;
+            max-width: 420px;
+        }
+
+        .add-panel {
+            display: none;
+            background: #f8fafc;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 0 0 16px;
+        }
+
+        .add-panel.show { display: block; }
+
+        .add-grid {
+            display: grid;
+            grid-template-columns: 1fr 180px auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 900;
+            margin-bottom: 7px;
         }
 
         .stats-row {
@@ -441,9 +399,7 @@ function renderDashboard(options = {}) {
         tr:last-child td { border-bottom: 0; }
         td.muted { color: var(--muted); }
 
-        tr.row-updated {
-            animation: rowFlash 1.4s ease;
-        }
+        tr.row-updated { animation: rowFlash 1.4s ease; }
 
         @keyframes rowFlash {
             0% { background: #dcfce7; }
@@ -499,6 +455,25 @@ function renderDashboard(options = {}) {
             flex-wrap: wrap;
         }
 
+        .setup-card {
+            padding: 24px;
+            text-align: center;
+            max-width: 720px;
+            margin: 40px auto;
+        }
+
+        .setup-card h2 {
+            margin: 0 0 10px;
+            font-size: 30px;
+            letter-spacing: -0.03em;
+        }
+
+        .setup-card p {
+            color: var(--muted);
+            line-height: 1.6;
+            margin: 0 0 18px;
+        }
+
         .toast-wrap {
             position: fixed;
             right: 22px;
@@ -534,9 +509,7 @@ function renderDashboard(options = {}) {
             padding: 22px;
         }
 
-        .modal-backdrop.show {
-            display: flex;
-        }
+        .modal-backdrop.show { display: flex; }
 
         .modal {
             width: 100%;
@@ -548,10 +521,7 @@ function renderDashboard(options = {}) {
             padding: 24px;
         }
 
-        .modal h3 {
-            margin: 0 0 8px;
-            font-size: 21px;
-        }
+        .modal h3 { margin: 0 0 8px; font-size: 21px; }
 
         .modal p {
             margin: 0;
@@ -569,14 +539,20 @@ function renderDashboard(options = {}) {
 
         .footer { color: var(--muted); text-align: center; margin-top: 30px; font-size: 13px; }
 
+        .dev-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 12px;
+        }
+
         @media (max-width: 980px) {
-            .hero, .workbench, .grid, .stats-row { grid-template-columns: 1fr; }
+            .hero, .stats-row, .add-grid { grid-template-columns: 1fr; }
+            .hero { flex-direction: column; }
             .hero h2 { font-size: 28px; }
             .topbar { align-items: flex-start; gap: 14px; flex-direction: column; }
-            .button-row { grid-template-columns: 1fr; }
             .table-top { flex-direction: column; }
-            .toolbar { width: 100%; }
-            .search-input { width: 100%; min-width: 100%; }
+            .toolbar { width: 100%; justify-content: flex-start; }
+            .search-input { width: 100%; min-width: 100%; max-width: 100%; }
         }
     </style>
 </head>
@@ -586,168 +562,70 @@ function renderDashboard(options = {}) {
         <div class="brand">
             <div class="logo">IR</div>
             <div>
-                <h1>InventoryRite Clover Connector</h1>
-                <p>Inventory bridge for Clover merchants</p>
+                <h1>InventoryRite for Clover</h1>
+                <p>Product and inventory manager for Clover merchants</p>
             </div>
         </div>
 
         <div class="badge ${connected ? "connected" : "disconnected"}" id="topBadge">
-            ${connected ? "Connected to Clover" : "Not Connected"}
+            ${connected ? "Connected" : "Connection Required"}
         </div>
     </div>
 
     <main class="wrap">
 
+        ${connected ? `
         <section class="hero">
-            <div class="card hero-main">
-                <div class="eyebrow">Clover Inventory App</div>
-                <h2>Manage Clover inventory through your InventoryRite connector.</h2>
-                <p class="hero-text">
-                    This dashboard confirms that your Clover merchant connection works, reads Clover inventory,
-                    creates items, edits items, deletes items, and gives you a clean starting point for a real Clover App Market product.
-                </p>
-
-                <div class="actions">
-                    <a class="btn btn-primary" href="/connect-clover">Connect Clover</a>
-                    <button id="btnLoadTop" type="button" class="btn btn-secondary">Load Clover Items</button>
-                    <button id="btnCreateTop" type="button" class="btn btn-dark">Create Item</button>
-                    <button id="btnHealthTop" type="button" class="btn btn-light">Check Backend</button>
-                </div>
-
-                <div class="note">
-                    Connect Clover to load and manage products. Advanced token entry is kept available for setup and support testing.
-                </div>
+            <div>
+                <div class="eyebrow">Clover Inventory</div>
+                <h2>Manage your Clover products in one clean workspace.</h2>
+                <p>Search products, update names and prices, create new items, and remove products from your Clover inventory.</p>
             </div>
 
-            <div class="card status-card">
-                <div class="status-row">
-                    <div class="status-label">Connection</div>
-                    <div class="status-value" id="connectionDisplay">${connected ? "Connected" : "Not connected"}</div>
-                </div>
-                <div class="status-row">
-                    <div class="status-label">Merchant ID</div>
-                    <div class="status-value" id="merchantDisplay">${safe(merchantId) || "Not detected"}</div>
-                </div>
-                <div class="status-row">
-                    <div class="status-label">Employee ID</div>
-                    <div class="status-value" id="employeeDisplay">${safe(employeeId) || "Not detected"}</div>
-                </div>
-                <div class="status-row">
-                    <div class="status-label">Token</div>
-                    <div class="status-value" id="tokenDisplay">${formatTokenForDisplay(accessToken) || "Not saved"}</div>
-                </div>
-                <div class="status-row">
-                    <div class="status-label">Backend</div>
-                    <div class="status-value">Render Live</div>
-                </div>
-                <div class="status-row">
-                    <div class="status-label">Mode</div>
-                    ${IS_PRODUCTION_CLOVER ? `<div class="status-value">Production</div>` : `<div class="status-value">Sandbox</div>`}
-                </div>
-                <div class="status-row">
-                    <div class="status-label">Connected At</div>
-                    <div class="status-value" id="connectedAtDisplay">${safe(connectedAt) || "Not connected"}</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="grid">
-            <div class="card mini-card">
-                <h3>Read Items</h3>
-                <p>Pull inventory from Clover and display it in a clean merchant-facing table.</p>
-            </div>
-            <div class="card mini-card">
-                <h3>Create Items</h3>
-                <p>Create Clover inventory items directly through your Render backend.</p>
-            </div>
-            <div class="card mini-card">
-                <h3>Edit + Delete</h3>
-                <p>Update names/prices and remove items when needed.</p>
-            </div>
-            <div class="card mini-card">
-                <h3>Product Export</h3>
-                <p>Ready for product export and future inventory workflows.</p>
-            </div>
-        </section>
-
-        <section class="workbench">
-            <div class="card panel">
-                <h3>Connection Test</h3>
-                <p class="panel-desc">
-                    Use the OAuth connection or paste your Merchant API token manually.
-                </p>
-
-                <label for="token">Merchant API Token</label>
-                <input id="token" type="password" value="${safe(accessToken)}" placeholder="Paste Clover Merchant API token here" />
-
-                <label for="merchantId">Merchant ID</label>
-                <input id="merchantId" type="text" value="${safe(merchantId)}" placeholder="Example: 7E2G3TE77A091" />
-
-                <div class="form-row">
-                    <div>
-                        <label for="itemName">Item Name</label>
-                        <input id="itemName" type="text" value="New Clover Item" />
-                    </div>
-                    <div>
-                        <label for="itemPrice">Price Cents</label>
-                        <input id="itemPrice" type="number" value="199" />
-                    </div>
-                </div>
-
-                <div class="button-row">
-                    <button id="btnMerchant" type="button" class="btn btn-secondary">Test Merchant</button>
-                    <button id="btnLoadPanel" type="button" class="btn btn-secondary">Load Items</button>
-                </div>
-
-                <button id="btnCreatePanel" type="button" class="btn btn-primary" style="width:100%; margin-top:10px;">Create Item</button>
-            </div>
-
-            <div class="card panel">
-                <h3>Activity Status</h3>
-                <p class="panel-desc">
-                    Use this panel to confirm connection, inventory loading, and product updates.
-                </p>
-
-                <div style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:16px; padding:18px; color:#166534; font-weight:900; margin-bottom:14px;">
-                    Ready to manage Clover inventory.
-                </div>
-
-                <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:16px; padding:16px; color:#334155; font-size:14px; line-height:1.6;">
-                    <strong>Merchant tools included:</strong><br>
-                    Load products, create items, edit item names, edit prices, delete items, search inventory, and preview product data.
-                </div>
-
-                <details style="margin-top:14px;">
-                    <summary style="cursor:pointer; font-weight:900; color:#2563eb;">Advanced developer log</summary>
-                    <pre class="result" id="result" style="margin-top:12px; min-height:180px;">Ready. Connect Clover, or paste your merchant token and click a button.</pre>
-                </details>
+            <div class="hero-actions">
+                <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
+                <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
             </div>
         </section>
 
         <section class="card inventory-card">
             <div class="table-top">
                 <div>
-                    <h3>Clover Inventory</h3>
-                    <p>Search, edit, refresh, and delete Clover items from one clean table.</p>
+                    <h3>Products</h3>
+                    <p>Loaded Clover products appear below. Edit a name or price, then click Save.</p>
                 </div>
                 <div class="toolbar">
-                    <input id="inventorySearch" class="search-input" type="text" placeholder="Search item, SKU, or Clover ID..." />
-                    <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                    <button id="btnSyncPreview" type="button" class="btn btn-light">Sync Preview</button>
+                    <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
+                    <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh</button>
+                    <button id="btnToggleAdd" type="button" class="btn btn-primary">Add Product</button>
+                </div>
+            </div>
+
+            <div class="add-panel" id="addPanel">
+                <div class="add-grid">
+                    <div>
+                        <label for="itemName">Product Name</label>
+                        <input id="itemName" type="text" value="New Clover Item" />
+                    </div>
+                    <div>
+                        <label for="itemPrice">Price Cents</label>
+                        <input id="itemPrice" type="number" value="199" />
+                    </div>
+                    <button id="btnCreateItem" type="button" class="btn btn-primary">Create Product</button>
                 </div>
             </div>
 
             <div class="stats-row">
                 <div class="stat-box">
-                    <div class="stat-label">Loaded Items</div>
+                    <div class="stat-label">Loaded Products</div>
                     <div class="stat-value" id="statLoaded">0</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">Visible Items</div>
+                    <div class="stat-label">Visible Products</div>
                     <div class="stat-value" id="statVisible">0</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">Available Items</div>
+                    <div class="stat-label">Available Products</div>
                     <div class="stat-value" id="statAvailable">0</div>
                 </div>
                 <div class="stat-box">
@@ -760,7 +638,7 @@ function renderDashboard(options = {}) {
                 <table>
                     <thead>
                         <tr>
-                            <th>Item Name</th>
+                            <th>Product Name</th>
                             <th>Price</th>
                             <th>SKU / Code</th>
                             <th>Available</th>
@@ -774,17 +652,25 @@ function renderDashboard(options = {}) {
                     <tbody id="itemsBody">
                         <tr>
                             <td colspan="9" class="empty">
-                                <strong>No Clover inventory loaded yet.</strong>
-                                Click “Load Clover Items” to pull inventory from your merchant.
+                                <strong>Loading Clover inventory...</strong>
+                                Your products will appear here in a moment.
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </section>
+        ` : `
+        <section class="card setup-card">
+            <div class="eyebrow">Clover Inventory</div>
+            <h2>Connect Clover to manage your products.</h2>
+            <p>This app needs permission to read and update Clover inventory. After connecting, your products will load automatically.</p>
+            <a class="btn btn-primary" href="/connect-clover">Connect Clover</a>
+        </section>
+        `}
 
         <div class="footer">
-            InventoryRite Clover Connector · Process Rite Inc
+            InventoryRite for Clover · Process Rite Inc · <a class="dev-link" href="/dev">Developer tools</a>
         </div>
 
     </main>
@@ -829,13 +715,11 @@ function renderDashboard(options = {}) {
         }
 
         function getToken() {
-            var tokenBox = byId("token");
-            return (tokenBox && tokenBox.value ? tokenBox.value.trim() : "") || embeddedConnection.access_token || "";
+            return embeddedConnection.access_token || "";
         }
 
         function getMerchantId() {
-            var merchantBox = byId("merchantId");
-            return (merchantBox && merchantBox.value ? merchantBox.value.trim() : "") || embeddedConnection.merchant_id || "";
+            return embeddedConnection.merchant_id || "";
         }
 
         function formatCurrencyFromCents(cents) {
@@ -868,23 +752,6 @@ function renderDashboard(options = {}) {
             }, 4200);
         }
 
-        function setBusyMessage(text) {
-            var result = byId("result");
-            if (result) result.textContent = text || "Loading...";
-        }
-
-        function showResult(data) {
-            var result = byId("result");
-            if (result) result.textContent = JSON.stringify(data, null, 2);
-        }
-
-        function showError(error) {
-            var message = error && error.message ? error.message : String(error || "Request failed.");
-            var result = byId("result");
-            if (result) result.textContent = "ERROR:\\n" + message;
-            showToast(message, "error");
-        }
-
         function setButtonsDisabled(disabled) {
             var buttons = document.querySelectorAll("button");
             buttons.forEach(function (btn) {
@@ -893,10 +760,9 @@ function renderDashboard(options = {}) {
             });
         }
 
-        function startBusy(message) {
+        function startBusy() {
             isBusy = true;
             setButtonsDisabled(true);
-            setBusyMessage(message || "Working...");
         }
 
         function stopBusy() {
@@ -909,7 +775,7 @@ function renderDashboard(options = {}) {
             var merchantId = getMerchantId();
 
             if (!token || !merchantId) {
-                showToast("Please connect Clover or enter both token and merchant ID.", "error");
+                showToast("Please connect Clover first.", "error");
                 return null;
             }
 
@@ -975,8 +841,8 @@ function renderDashboard(options = {}) {
             if (!items || !items.length) {
                 body.innerHTML =
                     '<tr><td colspan="9" class="empty">' +
-                    '<strong>No Clover inventory found.</strong>' +
-                    'Create your first item using the form above, then refresh inventory.' +
+                    '<strong>No Clover products found.</strong>' +
+                    'Click Add Product to create your first item.' +
                     '</td></tr>';
                 return;
             }
@@ -984,8 +850,8 @@ function renderDashboard(options = {}) {
             if (!filtered.length) {
                 body.innerHTML =
                     '<tr><td colspan="9" class="empty">' +
-                    '<strong>No matching items found.</strong>' +
-                    'Try a different item name, SKU, or Clover ID.' +
+                    '<strong>No matching products found.</strong>' +
+                    'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
                 return;
             }
@@ -997,7 +863,7 @@ function renderDashboard(options = {}) {
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var itemId = item.id || "";
-                var itemName = item.name || "Unnamed Item";
+                var itemName = item.name || "Unnamed Product";
                 var priceDollars = (Number(item.price || 0) / 100).toFixed(2);
 
                 if (lastUpdatedItemId && itemId === lastUpdatedItemId) {
@@ -1075,48 +941,6 @@ function renderDashboard(options = {}) {
             if (modal) modal.classList.remove("show");
         }
 
-        async function checkHealth() {
-            if (isBusy) return;
-
-            try {
-                startBusy("Checking backend health...");
-                var data = await fetchJson("/health");
-                showResult(data);
-                showToast("Backend is live.", "success");
-            } catch (error) {
-                showError(error);
-            } finally {
-                stopBusy();
-            }
-        }
-
-        async function loadMerchant() {
-            if (isBusy) return;
-
-            try {
-                var connection = requireConnection();
-                if (!connection) return;
-
-                startBusy("Loading merchant info...");
-
-                var data = await fetchJson(
-                    "/clover-merchant?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId)
-                );
-
-                showResult(data);
-
-                var merchantDisplay = byId("merchantDisplay");
-                if (merchantDisplay) merchantDisplay.textContent = connection.merchantId;
-
-                showToast("Merchant info loaded successfully.", "success");
-            } catch (error) {
-                showError(error);
-            } finally {
-                stopBusy();
-            }
-        }
-
         async function loadItems() {
             if (isBusy) return;
 
@@ -1124,19 +948,18 @@ function renderDashboard(options = {}) {
                 var connection = requireConnection();
                 if (!connection) return;
 
-                startBusy("Loading Clover inventory items...");
+                startBusy();
 
                 var data = await fetchJson(
                     "/clover-items?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId)
                 );
 
-                showResult(data);
                 loadedItems = data.data && data.data.elements ? data.data.elements : [];
                 renderItems(loadedItems);
-                showToast("Clover inventory loaded: " + loadedItems.length + " item(s).", "success");
+                showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
             } catch (error) {
-                showError(error);
+                showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
                 stopBusy();
             }
@@ -1156,7 +979,7 @@ function renderDashboard(options = {}) {
                 var price = priceBox && priceBox.value ? priceBox.value.trim() : "199";
 
                 if (!name) {
-                    showToast("Item name cannot be empty.", "error");
+                    showToast("Product name cannot be empty.", "error");
                     return;
                 }
 
@@ -1165,7 +988,7 @@ function renderDashboard(options = {}) {
                     return;
                 }
 
-                startBusy("Creating Clover item...");
+                startBusy();
 
                 var data = await fetchJson(
                     "/clover-create-item?token=" + encodeURIComponent(connection.token) +
@@ -1177,14 +1000,16 @@ function renderDashboard(options = {}) {
                     }
                 );
 
-                showResult(data);
                 lastUpdatedItemId = data && data.data && data.data.id ? data.data.id : "";
-                showToast("Clover item created successfully.", "success");
+                showToast("Product created successfully.", "success");
+
+                var addPanel = byId("addPanel");
+                if (addPanel) addPanel.classList.remove("show");
 
                 stopBusy();
                 await loadItems();
             } catch (error) {
-                showError(error);
+                showToast(error && error.message ? error.message : "Unable to create product.", "error");
                 stopBusy();
             }
         }
@@ -1203,7 +1028,7 @@ function renderDashboard(options = {}) {
                 var priceCents = priceToCentsFromDollarsString(priceBox && priceBox.value ? priceBox.value : "0");
 
                 if (!name) {
-                    showToast("Item name cannot be empty.", "error");
+                    showToast("Product name cannot be empty.", "error");
                     return;
                 }
 
@@ -1212,9 +1037,9 @@ function renderDashboard(options = {}) {
                     return;
                 }
 
-                startBusy("Updating Clover item...");
+                startBusy();
 
-                var data = await fetchJson(
+                await fetchJson(
                     "/clover-update-item/" + encodeURIComponent(itemId) +
                     "?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId),
@@ -1225,14 +1050,13 @@ function renderDashboard(options = {}) {
                     }
                 );
 
-                showResult(data);
                 lastUpdatedItemId = itemId;
-                showToast("Clover item updated.", "success");
+                showToast("Product updated.", "success");
 
                 stopBusy();
                 await loadItems();
             } catch (error) {
-                showError(error);
+                showToast(error && error.message ? error.message : "Unable to update product.", "error");
                 stopBusy();
             }
         }
@@ -1244,63 +1068,41 @@ function renderDashboard(options = {}) {
                 var connection = requireConnection();
                 if (!connection) return;
 
-                startBusy("Deleting Clover item...");
+                startBusy();
 
-                var data = await fetchJson(
+                await fetchJson(
                     "/clover-delete-item/" + encodeURIComponent(itemId) +
                     "?token=" + encodeURIComponent(connection.token) +
                     "&merchantId=" + encodeURIComponent(connection.merchantId),
                     { method: "POST" }
                 );
 
-                showResult(data);
-                showToast("Clover item deleted.", "success");
+                showToast("Product deleted.", "success");
 
                 stopBusy();
                 await loadItems();
             } catch (error) {
-                showError(error);
+                showToast(error && error.message ? error.message : "Unable to delete product.", "error");
                 stopBusy();
             }
         }
 
-        function prepareSyncPreview() {
-            if (isBusy) return;
+        function toggleAddPanel() {
+            var addPanel = byId("addPanel");
+            if (!addPanel) return;
+            addPanel.classList.toggle("show");
 
-            if (!loadedItems || !loadedItems.length) {
-                showToast("Load Clover inventory first.", "error");
-                return;
+            if (addPanel.classList.contains("show")) {
+                var itemName = byId("itemName");
+                if (itemName) itemName.focus();
             }
-
-            var preview = loadedItems.map(function (item) {
-                return {
-                    cloverId: item.id || "",
-                    productName: item.name || "",
-                    sku: item.sku || item.code || item.productCode || "",
-                    sellingPrice: Number(item.price || 0) / 100,
-                    available: item.available !== false,
-                    hidden: !!item.hidden
-                };
-            });
-
-            showResult({
-                success: true,
-                message: "Sync preview ready for product export or future inventory workflows.",
-                count: preview.length,
-                items: preview
-            });
-
-            showToast("Sync preview created.", "success");
         }
 
-        bind("btnLoadTop", "click", loadItems);
-        bind("btnCreateTop", "click", createItem);
-        bind("btnHealthTop", "click", checkHealth);
-        bind("btnMerchant", "click", loadMerchant);
-        bind("btnLoadPanel", "click", loadItems);
-        bind("btnCreatePanel", "click", createItem);
+        bind("btnRefreshInventoryTop", "click", loadItems);
         bind("btnRefreshInventory", "click", loadItems);
-        bind("btnSyncPreview", "click", prepareSyncPreview);
+        bind("btnToggleAddTop", "click", toggleAddPanel);
+        bind("btnToggleAdd", "click", toggleAddPanel);
+        bind("btnCreateItem", "click", createItem);
         bind("inventorySearch", "input", function () { renderItems(loadedItems); });
 
         bind("confirmCancel", "click", closeConfirm);
@@ -1325,7 +1127,7 @@ function renderDashboard(options = {}) {
 
                 var action = target.getAttribute("data-action");
                 var itemId = target.getAttribute("data-id");
-                var itemName = target.getAttribute("data-name") || "this item";
+                var itemName = target.getAttribute("data-name") || "this product";
 
                 if (action === "save") {
                     updateItem(itemId);
@@ -1333,8 +1135,8 @@ function renderDashboard(options = {}) {
 
                 if (action === "delete") {
                     openConfirm(
-                        "Delete Clover Item?",
-                        "This will delete " + itemName + " from the Clover merchant. This cannot be undone.",
+                        "Delete Product?",
+                        "This will delete " + itemName + " from Clover. This cannot be undone.",
                         function () { deleteItem(itemId); }
                     );
                 }
@@ -1342,18 +1144,14 @@ function renderDashboard(options = {}) {
         }
 
         if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
-            showToast("Clover OAuth connection saved for this sandbox session.", "success");
+            loadItems();
         }
-
-        updateStats([]);
     })();
     </script>
 
 </body>
 </html>`;
-}
-
-/*
+}/*
 |--------------------------------------------------------------------------
 | ROOT + CLOVER CALLBACK HANDLER
 |--------------------------------------------------------------------------
@@ -1797,6 +1595,67 @@ app.get("/clover-create-item-legacy", async (req, res) => {
     }
 });
 
+
+
+/*
+|--------------------------------------------------------------------------
+| DEVELOPER TOOLS ROUTE
+|--------------------------------------------------------------------------
+*/
+
+app.get("/dev", (req, res) => {
+    const connection = latestCloverConnection;
+
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>InventoryRite Developer Tools</title>
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; background:#f5f7fb; margin:0; padding:30px; color:#111827; }
+        .wrap { max-width: 980px; margin:0 auto; }
+        .card { background:white; border:1px solid #e5e7eb; border-radius:18px; padding:22px; margin-bottom:16px; box-shadow:0 12px 35px rgba(15,23,42,.08); }
+        h1 { margin-top:0; }
+        pre { background:#0f172a; color:#e5e7eb; padding:18px; border-radius:14px; overflow:auto; }
+        a { color:#15803d; font-weight:800; text-decoration:none; }
+        .row { display:flex; justify-content:space-between; border-bottom:1px solid #e5e7eb; padding:10px 0; gap:20px; }
+        .row:last-child { border-bottom:0; }
+        .label { color:#64748b; }
+        .value { font-weight:800; word-break:break-all; text-align:right; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <p><a href="/">← Back to Inventory</a></p>
+        <div class="card">
+            <h1>Developer Tools</h1>
+            <p>This page is for setup/support only. Merchants should use the main inventory page.</p>
+        </div>
+
+        <div class="card">
+            <h2>Connection</h2>
+            <div class="row"><div class="label">Connected</div><div class="value">${connection.connected ? "Yes" : "No"}</div></div>
+            <div class="row"><div class="label">Merchant ID</div><div class="value">${safe(connection.merchant_id) || "Not detected"}</div></div>
+            <div class="row"><div class="label">Employee ID</div><div class="value">${safe(connection.employee_id) || "Not detected"}</div></div>
+            <div class="row"><div class="label">Token</div><div class="value">${formatTokenForDisplay(connection.access_token) || "Not saved"}</div></div>
+            <div class="row"><div class="label">Environment</div><div class="value">${IS_PRODUCTION_CLOVER ? "Production" : "Sandbox"}</div></div>
+            <div class="row"><div class="label">Connected At</div><div class="value">${safe(connection.connected_at) || "Not connected"}</div></div>
+        </div>
+
+        <div class="card">
+            <h2>Routes</h2>
+            <pre>/health
+/app-status
+/clover-connection
+/clover-items
+/clover-create-item
+/clover-update-item/:itemId
+/clover-delete-item/:itemId</pre>
+        </div>
+    </div>
+</body>
+</html>`);
+});
 
 /*
 |--------------------------------------------------------------------------
