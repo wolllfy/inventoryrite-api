@@ -14,20 +14,9 @@ const PORT = process.env.PORT || 3000;
 const CLOVER_CLIENT_ID = process.env.CLOVER_CLIENT_ID?.trim();
 const CLOVER_CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET?.trim();
 
-const REDIRECT_URI = process.env.REDIRECT_URI?.trim() || "https://inventoryrite-api.onrender.com/";
-
-// Use CLOVER_ENV=production when Clover approves the live app.
-// Keep CLOVER_ENV=sandbox while testing with sandbox merchants.
-const CLOVER_ENV = (process.env.CLOVER_ENV || "sandbox").toLowerCase();
-const IS_CLOVER_PRODUCTION = CLOVER_ENV === "production";
-
-const CLOVER_BASE_URL = IS_CLOVER_PRODUCTION
-    ? "https://www.clover.com"
-    : "https://sandbox.dev.clover.com";
-
-const CLOVER_API_BASE_URL = IS_CLOVER_PRODUCTION
-    ? "https://api.clover.com"
-    : "https://apisandbox.dev.clover.com";
+const REDIRECT_URI = "https://inventoryrite-api.onrender.com/";
+const CLOVER_BASE_URL = "https://sandbox.dev.clover.com";
+const CLOVER_API_BASE_URL = "https://apisandbox.dev.clover.com";
 
 /*
 |--------------------------------------------------------------------------
@@ -332,24 +321,16 @@ function renderDashboard(options = {}) {
         .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         .result {
-            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-            color: #334155;
-            border: 1px solid var(--line);
+            background: #0f172a;
+            color: #e5e7eb;
             border-radius: 15px;
             padding: 18px;
-            min-height: 180px;
+            min-height: 280px;
             overflow: auto;
             white-space: pre-wrap;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 14px;
-            line-height: 1.55;
-        }
-
-        .result strong {
-            color: var(--text);
-            display: block;
-            font-size: 16px;
-            margin-bottom: 6px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.5;
         }
 
         .note {
@@ -593,18 +574,20 @@ function renderDashboard(options = {}) {
                 <div class="eyebrow">Clover Inventory App</div>
                 <h2>Manage Clover inventory through your InventoryRite connector.</h2>
                 <p class="hero-text">
-                    Connect your Clover account, review inventory, update product names and prices, and manage items from a clean merchant-friendly dashboard.
+                    This dashboard confirms that your Clover merchant connection works, reads Clover inventory,
+                    creates test items, edits items, deletes test items, and gives you a clean starting point for a real Clover App Market product.
                 </p>
 
                 <div class="actions">
                     <a class="btn btn-primary" href="/connect-clover">Connect Clover</a>
                     <button id="btnLoadTop" type="button" class="btn btn-secondary">Load Clover Items</button>
                     <button id="btnCreateTop" type="button" class="btn btn-dark">Create Test Item</button>
-                    <button id="btnHealthTop" type="button" class="btn btn-light">Status Check</button>
+                    <button id="btnHealthTop" type="button" class="btn btn-light">Check Backend</button>
                 </div>
 
                 <div class="note">
-                    Use this dashboard to connect Clover, review products, update prices, and keep your item list clean from one simple screen.
+                    Sandbox build: OAuth can auto-fill the merchant connection after Clover redirects back.
+                    You can also paste a Merchant API token manually for testing.
                 </div>
             </div>
 
@@ -622,8 +605,8 @@ function renderDashboard(options = {}) {
                     <div class="status-value" id="employeeDisplay">${safe(employeeId) || "Not detected"}</div>
                 </div>
                 <div class="status-row">
-                    <div class="status-label">App Access</div>
-                    <div class="status-value" id="tokenDisplay">${accessToken ? "Authorized" : "Not authorized"}</div>
+                    <div class="status-label">Token</div>
+                    <div class="status-value" id="tokenDisplay">${formatTokenForDisplay(accessToken) || "Not saved"}</div>
                 </div>
                 <div class="status-row">
                     <div class="status-label">Backend</div>
@@ -631,7 +614,7 @@ function renderDashboard(options = {}) {
                 </div>
                 <div class="status-row">
                     <div class="status-label">Mode</div>
-                    <div class="status-value">Clover</div>
+                    <div class="status-value">Sandbox</div>
                 </div>
                 <div class="status-row">
                     <div class="status-label">Connected At</div>
@@ -647,32 +630,35 @@ function renderDashboard(options = {}) {
             </div>
             <div class="card mini-card">
                 <h3>Create Items</h3>
-                <p>Create Clover inventory items directly from this dashboard.</p>
+                <p>Create sandbox inventory items directly through your Render backend.</p>
             </div>
             <div class="card mini-card">
                 <h3>Edit + Delete</h3>
-                <p>Update names/prices and remove test items when needed.</p>
+                <p>Update names/prices and remove sandbox test items when needed.</p>
             </div>
             <div class="card mini-card">
-                <h3>Merchant Ready</h3>
-                <p>Simple product management built for Clover merchants.</p>
+                <h3>Sync Foundation</h3>
+                <p>Ready to become Clover to InvoiceRite desktop sync.</p>
             </div>
         </section>
 
         <section class="workbench">
             <div class="card panel">
-                <h3>Add or Test Product</h3>
+                <h3>Connection Test</h3>
                 <p class="panel-desc">
-                    Create a Clover item, then use the table below to edit prices, rename items, or remove test products.
+                    Use the OAuth connection or paste your sandbox Merchant API token manually.
                 </p>
 
-                <input id="token" type="password" value="${safe(accessToken)}" style="display:none;" />
-                <input id="merchantId" type="text" value="${safe(merchantId)}" style="display:none;" />
+                <label for="token">Merchant API Token</label>
+                <input id="token" type="password" value="${safe(accessToken)}" placeholder="Paste Clover Merchant API token here" />
+
+                <label for="merchantId">Merchant ID</label>
+                <input id="merchantId" type="text" value="${safe(merchantId)}" placeholder="Example: 7E2G3TE77A091" />
 
                 <div class="form-row">
                     <div>
                         <label for="itemName">Item Name</label>
-                        <input id="itemName" type="text" value="InventoryRite Test Item" />
+                        <input id="itemName" type="text" value="InvoiceRite Test Item" />
                     </div>
                     <div>
                         <label for="itemPrice">Price Cents</label>
@@ -680,25 +666,32 @@ function renderDashboard(options = {}) {
                     </div>
                 </div>
 
-                <button id="btnCreatePanel" type="button" class="btn btn-primary" style="width:100%;">Create Clover Item</button>
-
-                <div class="note">
-                    Prices are entered in cents when creating a new item. Example: 199 = $1.99.
-                    In the inventory table, prices are edited as dollars.
+                <div class="button-row">
+                    <button id="btnMerchant" type="button" class="btn btn-secondary">Test Merchant</button>
+                    <button id="btnLoadPanel" type="button" class="btn btn-secondary">Load Items</button>
                 </div>
+
+                <button id="btnCreatePanel" type="button" class="btn btn-primary" style="width:100%; margin-top:10px;">Create Clover Item</button>
             </div>
 
             <div class="card panel">
                 <h3>Activity Status</h3>
                 <p class="panel-desc">
-                    Clean merchant activity updates replace the developer JSON console.
+                    Use this panel to confirm connection, inventory loading, and product updates.
                 </p>
-                <div class="result" id="result">
-                    Ready. Connect Clover or load inventory to begin.
+
+                <div style="background:#ecfdf5; border:1px solid #bbf7d0; border-radius:16px; padding:18px; color:#166534; font-weight:900; margin-bottom:14px;">
+                    Ready to manage Clover inventory.
                 </div>
+
+                <div style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:16px; padding:16px; color:#334155; font-size:14px; line-height:1.6;">
+                    <strong>Merchant tools included:</strong><br>
+                    Load products, create test items, edit item names, edit prices, delete items, search inventory, and preview sync data.
+                </div>
+
                 <details style="margin-top:14px;">
-                    <summary style="cursor:pointer; font-weight:900; color:#334155;">Advanced Details</summary>
-                    <pre id="developerLog" style="margin-top:12px; background:#0f172a; color:#e5e7eb; border-radius:14px; padding:14px; min-height:120px; max-height:260px; overflow:auto; white-space:pre-wrap; font-family:Consolas, Monaco, monospace; font-size:12px;">Developer details will appear here when actions run.</pre>
+                    <summary style="cursor:pointer; font-weight:900; color:#2563eb;">Advanced developer log</summary>
+                    <pre class="result" id="result" style="margin-top:12px; min-height:180px;">Ready. Connect Clover, or paste your merchant token and click a button.</pre>
                 </details>
             </div>
         </section>
@@ -707,12 +700,12 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Clover Inventory</h3>
-                    <p>Search, edit, refresh, and manage Clover items from one clean table.</p>
+                    <p>Search, edit, refresh, and delete sandbox Clover items from one clean table.</p>
                 </div>
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search item, SKU, or Clover ID..." />
                     <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                    <button id="btnSyncPreview" type="button" class="btn btn-light">Export Preview</button>
+                    <button id="btnSyncPreview" type="button" class="btn btn-light">Sync Preview</button>
                 </div>
             </div>
 
@@ -847,52 +840,20 @@ function renderDashboard(options = {}) {
             }, 4200);
         }
 
-        function setDeveloperLog(data) {
-            var log = byId("developerLog");
-            if (log) {
-                if (typeof data === "string") {
-                    log.textContent = data;
-                } else {
-                    log.textContent = JSON.stringify(data, null, 2);
-                }
-            }
-        }
-
         function setBusyMessage(text) {
             var result = byId("result");
-            if (result) {
-                result.innerHTML = "<strong>Working...</strong>" + escapeHtml(text || "Please wait while InventoryRite talks to Clover.");
-            }
+            if (result) result.textContent = text || "Loading...";
         }
 
         function showResult(data) {
-            setDeveloperLog(data);
-
             var result = byId("result");
-            if (!result) return;
-
-            var message = data && data.message ? data.message : "Action completed successfully.";
-            var count = "";
-
-            if (data && data.data && data.data.elements && Array.isArray(data.data.elements)) {
-                count = "
-
-Items loaded: " + data.data.elements.length;
-            }
-
-            result.innerHTML = "<strong>Success</strong>" + escapeHtml(message + count);
+            if (result) result.textContent = JSON.stringify(data, null, 2);
         }
 
         function showError(error) {
             var message = error && error.message ? error.message : String(error || "Request failed.");
-            setDeveloperLog("ERROR:
-" + message);
-
             var result = byId("result");
-            if (result) {
-                result.innerHTML = "<strong>Action Needed</strong>" + escapeHtml(message);
-            }
-
+            if (result) result.textContent = "ERROR:\\n" + message;
             showToast(message, "error");
         }
 
@@ -985,7 +946,7 @@ Items loaded: " + data.data.elements.length;
                 body.innerHTML =
                     '<tr><td colspan="9" class="empty">' +
                     '<strong>No Clover inventory found.</strong>' +
-                    'Create your first Clover item using the form above, then refresh inventory.' +
+                    'Create your first sandbox item using the form above, then refresh inventory.' +
                     '</td></tr>';
                 return;
             }
@@ -1278,12 +1239,12 @@ Items loaded: " + data.data.elements.length;
 
             showResult({
                 success: true,
-                message: "Export preview ready for review.",
+                message: "Sync preview ready for future InvoiceRite desktop import.",
                 count: preview.length,
                 items: preview
             });
 
-            showToast("Export preview created.", "success");
+            showToast("Sync preview created. Desktop sync endpoint comes next.", "success");
         }
 
         bind("btnLoadTop", "click", loadItems);
@@ -1327,7 +1288,7 @@ Items loaded: " + data.data.elements.length;
                 if (action === "delete") {
                     openConfirm(
                         "Delete Clover Item?",
-                        "This will delete " + itemName + " from this Clover merchant. This cannot be undone.",
+                        "This will delete " + itemName + " from the Clover sandbox merchant. This cannot be undone.",
                         function () { deleteItem(itemId); }
                     );
                 }
