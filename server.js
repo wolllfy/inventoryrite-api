@@ -3,6 +3,13 @@ const cors = require("cors");
 const axios = require("axios");
 require("dotenv").config();
 
+let Pool = null;
+try {
+    ({ Pool } = require("pg"));
+} catch (error) {
+    Pool = null;
+}
+
 const app = express();
 
 app.use(cors());
@@ -31,16 +38,30 @@ const CLOVER_API_BASE_URL = IS_PRODUCTION_CLOVER
 const CLOVER_ITEM_LIMIT = Number(process.env.CLOVER_ITEM_LIMIT || 100);
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 20000);
 
+const DATABASE_URL = process.env.DATABASE_URL?.trim() || "";
+const USE_DATABASE = !!DATABASE_URL && !!Pool;
+
+const dbPool = USE_DATABASE
+    ? new Pool({
+        connectionString: DATABASE_URL,
+        ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false }
+    })
+    : null;
+
 const cloverApi = axios.create({
     timeout: REQUEST_TIMEOUT_MS
 });
 
 /*
 |--------------------------------------------------------------------------
-| SIMPLE IN-MEMORY SESSION STORAGE
+| CONNECTION + COST STORAGE
 |--------------------------------------------------------------------------
-| Sandbox/testing only. Render restarts clear this.
-| For production, replace this with PostgreSQL/Supabase token storage.
+| Production path: PostgreSQL / Supabase / Render Postgres using DATABASE_URL.
+| Demo fallback: in-memory storage so the app still runs before the DB is added.
+|
+| IMPORTANT: For real Clover App Market behavior, add pg to package.json and set
+| DATABASE_URL in Render. Without DATABASE_URL, merchant cost data and tokens reset
+| whenever Render restarts.
 |--------------------------------------------------------------------------
 */
 
@@ -51,6 +72,133 @@ let latestCloverConnection = {
     access_token: "",
     connected_at: ""
 };
+
+const fallbackItemCosts = {};
+
+
+async function initDatabase() {
+    if (!USE_DATABASE || !dbPool) {
+        console.warn("DATABASE_URL/pg not available. Running in demo memory mode only.");
+        return;
+    }
+
+    await dbPool.query(`
+        CREATE TABLE IF NOT EXISTS merchant_connections (
+            merchant_id TEXT PRIMARY KEY,
+            employee_id TEXT,
+            access_token TEXT NOT NULL,
+            connected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+
+    await dbPool.query(`
+        CREATE TABLE IF NOT EXISTS item_costs (
+            merchant_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            cost_cents INTEGER NOT NULL DEFAULT 0,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (merchant_id, item_id)
+        );
+    `);
+
+    const lastConnection = await dbPool.query(`
+        SELECT merchant_id, employee_id, access_token, connected_at
+        FROM merchant_connections
+        ORDER BY updated_at DESC
+        LIMIT 1;
+    `);
+
+    if (lastConnection.rows.length > 0) {
+        const row = lastConnection.rows[0];
+        latestCloverConnection = {
+            connected: true,
+            merchant_id: row.merchant_id || "",
+            employee_id: row.employee_id || "",
+            access_token: row.access_token || "",
+            connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
+        };
+    }
+
+    console.log("Database ready: merchant_connections and item_costs tables verified.");
+}
+
+async function saveCloverConnection(connection) {
+    latestCloverConnection = {
+        connected: true,
+        merchant_id: connection.merchant_id || "",
+        employee_id: connection.employee_id || "",
+        access_token: connection.access_token || "",
+        connected_at: connection.connected_at || new Date().toISOString()
+    };
+
+    if (!USE_DATABASE || !dbPool || !latestCloverConnection.merchant_id || !latestCloverConnection.access_token) {
+        return latestCloverConnection;
+    }
+
+    await dbPool.query(
+        `INSERT INTO merchant_connections (merchant_id, employee_id, access_token, connected_at, updated_at)
+         VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (merchant_id)
+         DO UPDATE SET
+            employee_id = EXCLUDED.employee_id,
+            access_token = EXCLUDED.access_token,
+            connected_at = EXCLUDED.connected_at,
+            updated_at = NOW();`,
+        [
+            latestCloverConnection.merchant_id,
+            latestCloverConnection.employee_id,
+            latestCloverConnection.access_token,
+            latestCloverConnection.connected_at
+        ]
+    );
+
+    return latestCloverConnection;
+}
+
+async function getItemCostsForMerchant(merchantId) {
+    if (!merchantId) return {};
+
+    if (!USE_DATABASE || !dbPool) {
+        return fallbackItemCosts[merchantId] || {};
+    }
+
+    const result = await dbPool.query(
+        `SELECT item_id, cost_cents FROM item_costs WHERE merchant_id = $1;`,
+        [merchantId]
+    );
+
+    const costs = {};
+    result.rows.forEach((row) => {
+        costs[row.item_id] = Number(row.cost_cents || 0);
+    });
+
+    return costs;
+}
+
+async function saveItemCostForMerchant(merchantId, itemId, costCents) {
+    if (!merchantId || !itemId) {
+        throw new Error("Missing merchantId or itemId.");
+    }
+
+    const normalizedCost = Math.max(0, Math.round(Number(costCents || 0)));
+
+    if (!USE_DATABASE || !dbPool) {
+        if (!fallbackItemCosts[merchantId]) fallbackItemCosts[merchantId] = {};
+        fallbackItemCosts[merchantId][itemId] = normalizedCost;
+        return normalizedCost;
+    }
+
+    await dbPool.query(
+        `INSERT INTO item_costs (merchant_id, item_id, cost_cents, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (merchant_id, item_id)
+         DO UPDATE SET cost_cents = EXCLUDED.cost_cents, updated_at = NOW();`,
+        [merchantId, itemId, normalizedCost]
+    );
+
+    return normalizedCost;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -564,18 +712,13 @@ function renderDashboard(options = {}) {
         .table-wrap {
             border: 1px solid var(--line);
             border-radius: 16px;
-            overflow-x: hidden;
-            overflow-y: visible;
+            overflow: auto;
             background: white;
         }
 
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        table { width: 100%; border-collapse: collapse; min-width: 1320px; }
         th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; vertical-align: middle; }
-        th { background: #f8fafc; color: #334155; font-weight: 900; white-space: nowrap; }
-        .col-product { width: 44%; }
-        .col-price { width: 150px; }
-        .col-status { width: 120px; }
-        .col-actions { width: 230px; }
+        th { background: #f8fafc; color: #334155; font-weight: 900; }
         tr:last-child td { border-bottom: 0; }
         td.muted { color: var(--muted); }
 
@@ -605,6 +748,11 @@ function renderDashboard(options = {}) {
 
         .pill.good { color: #166534; background: #ecfdf5; border-color: #bbf7d0; }
         .pill.warn { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+        .pill.bad { color: #991b1b; background: #fee2e2; border-color: #fecaca; }
+        .profit-positive { color: #166534; font-weight: 900; }
+        .profit-negative { color: #991b1b; font-weight: 900; }
+        tr.row-below-cost td { background: #fff1f2; }
+        tr.row-below-cost.row-selected td { background: #fee2e2 !important; }
 
         .empty {
             padding: 28px;
@@ -622,51 +770,18 @@ function renderDashboard(options = {}) {
         }
 
         .small-input {
-            width: 100%;
-            max-width: 118px;
+            min-width: 95px;
+            max-width: 115px;
             padding: 9px 10px;
             margin: 0;
             border-radius: 10px;
         }
 
         .name-input {
-            width: 100%;
-            min-width: 0;
+            min-width: 190px;
             padding: 9px 10px;
             margin: 0;
             border-radius: 10px;
-        }
-
-        .product-cell {
-            display: grid;
-            gap: 6px;
-        }
-
-        .product-subline {
-            color: var(--muted);
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: 140px 1fr;
-            gap: 10px 14px;
-            margin-top: 18px;
-            font-size: 14px;
-        }
-
-        .details-label {
-            color: var(--muted);
-            font-weight: 900;
-        }
-
-        .details-value {
-            color: var(--text);
-            font-weight: 800;
-            word-break: break-word;
         }
 
         .row-actions {
@@ -774,21 +889,6 @@ function renderDashboard(options = {}) {
             .toolbar { width: 100%; justify-content: flex-start; }
             .search-input { width: 100%; min-width: 100%; max-width: 100%; }
             .bulk-controls { flex-direction: column; align-items: flex-start; }
-            table, thead, tbody, th, td, tr { display: block; }
-            thead { display: none; }
-            .table-wrap { border: 0; background: transparent; overflow: visible; }
-            tbody tr {
-                background: white;
-                border: 1px solid var(--line);
-                border-radius: 16px;
-                margin-bottom: 12px;
-                padding: 12px;
-                box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-            }
-            td { border: 0; padding: 8px 4px; }
-            td.col-check { width: auto; text-align: left; }
-            .row-actions { justify-content: flex-start; }
-            .small-input { max-width: 150px; }
         }
     </style>
 </head>
@@ -829,7 +929,7 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Loaded Clover products appear below in a clean, no-scroll layout. Edit a name or price, then click Save.</p>
+                    <p>Loaded Clover products appear below. Edit a name or price, then click Save.</p>
                 </div>
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
@@ -914,6 +1014,25 @@ function renderDashboard(options = {}) {
                 </div>
             </div>
 
+            <div class="stats-row" id="marginStatsRow">
+                <div class="stat-box">
+                    <div class="stat-label">Average Margin</div>
+                    <div class="stat-value" id="statAvgMargin">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Best Margin Item</div>
+                    <div class="stat-value" id="statBestMargin">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Lowest Margin Item</div>
+                    <div class="stat-value" id="statLowestMargin">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Below Cost</div>
+                    <div class="stat-value" id="statBelowCost">0</div>
+                </div>
+            </div>
+
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -921,15 +1040,23 @@ function renderDashboard(options = {}) {
                             <th class="col-check">
                                 <input type="checkbox" id="selectAllCheckbox" title="Select all visible" />
                             </th>
-                            <th class="col-product">Product</th>
-                            <th class="col-price">Price</th>
-                            <th class="col-status">Status</th>
-                            <th class="col-actions">Actions</th>
+                            <th>Product Name</th>
+                            <th>Price</th>
+                            <th>Cost</th>
+                            <th>Margin</th>
+                            <th>Profit/Unit</th>
+                            <th>SKU / Code</th>
+                            <th>Available</th>
+                            <th>Hidden</th>
+                            <th>Revenue</th>
+                            <th>Modified</th>
+                            <th>Clover ID</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsBody">
                         <tr>
-                            <td colspan="5" class="empty">
+                            <td colspan="13" class="empty">
                                 <strong>Loading Clover inventory...</strong>
                                 Your products will appear here in a moment.
                             </td>
@@ -966,17 +1093,6 @@ function renderDashboard(options = {}) {
         </div>
     </div>
 
-    <div class="modal-backdrop" id="detailsModal">
-        <div class="modal">
-            <h3 id="detailsTitle">Product Details</h3>
-            <p id="detailsSubtitle">More Clover product information.</p>
-            <div class="details-grid" id="detailsGrid"></div>
-            <div class="modal-actions">
-                <button id="detailsClose" type="button" class="btn btn-light">Close</button>
-            </div>
-        </div>
-    </div>
-
     <script>
     (function () {
         var embeddedConnection = {
@@ -988,6 +1104,7 @@ function renderDashboard(options = {}) {
         };
 
         var loadedItems = [];
+        var itemCosts = {};
         var lastUpdatedItemId = "";
         var bulkUpdatedItemIds = [];
         var isBusy = false;
@@ -1091,6 +1208,25 @@ function renderDashboard(options = {}) {
             return Math.round(dollars * 100);
         }
 
+        function getCostCents(itemId) {
+            return Number(itemCosts[itemId] || 0);
+        }
+
+        function calculateMargin(priceCents, costCents) {
+            priceCents = Number(priceCents || 0);
+            costCents = Number(costCents || 0);
+            if (priceCents <= 0) return null;
+            return ((priceCents - costCents) / priceCents) * 100;
+        }
+
+        function getMarginPill(priceCents, costCents) {
+            var margin = calculateMargin(priceCents, costCents);
+            if (margin === null) return '<span class="pill warn">No price</span>';
+            if (margin < 0) return '<span class="pill bad">' + margin.toFixed(1) + '%</span>';
+            if (margin < 30) return '<span class="pill warn">' + margin.toFixed(1) + '%</span>';
+            return '<span class="pill good">' + margin.toFixed(1) + '%</span>';
+        }
+
         function updateStats(items) {
             items = items || [];
             var loaded = items.length;
@@ -1100,15 +1236,46 @@ function renderDashboard(options = {}) {
                 return sum + Number(item.price || 0);
             }, 0);
 
+            var marginItems = items
+                .filter(function (item) { return Number(item.price || 0) > 0 && getCostCents(item.id || "") > 0; })
+                .map(function (item) {
+                    var price = Number(item.price || 0);
+                    var cost = getCostCents(item.id || "");
+                    var margin = calculateMargin(price, cost);
+                    return {
+                        id: item.id || "",
+                        name: item.name || "Unnamed Product",
+                        price: price,
+                        cost: cost,
+                        margin: margin,
+                        profit: price - cost
+                    };
+                });
+
+            var belowCost = marginItems.filter(function (item) { return item.profit < 0; }).length;
+            var avgMargin = marginItems.length
+                ? marginItems.reduce(function (sum, item) { return sum + item.margin; }, 0) / marginItems.length
+                : null;
+            var best = marginItems.length ? marginItems.slice().sort(function (a, b) { return b.margin - a.margin; })[0] : null;
+            var lowest = marginItems.length ? marginItems.slice().sort(function (a, b) { return a.margin - b.margin; })[0] : null;
+
             var statLoaded = byId("statLoaded");
             var statVisible = byId("statVisible");
             var statAvailable = byId("statAvailable");
             var statValue = byId("statValue");
+            var statAvgMargin = byId("statAvgMargin");
+            var statBestMargin = byId("statBestMargin");
+            var statLowestMargin = byId("statLowestMargin");
+            var statBelowCost = byId("statBelowCost");
 
             if (statLoaded) statLoaded.textContent = String(loaded);
             if (statVisible) statVisible.textContent = String(visible);
             if (statAvailable) statAvailable.textContent = String(available);
             if (statValue) statValue.textContent = formatCurrencyFromCents(totalCents);
+            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "—" : avgMargin.toFixed(1) + "%";
+            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " · " + best.margin.toFixed(1) + "%" : "—";
+            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " · " + lowest.margin.toFixed(1) + "%" : "—";
+            if (statBelowCost) statBelowCost.textContent = String(belowCost);
         }
 
         /*
@@ -1322,7 +1489,7 @@ function renderDashboard(options = {}) {
 
             if (!items || !items.length) {
                 body.innerHTML =
-                    '<tr><td colspan="5" class="empty">' +
+                    '<tr><td colspan="13" class="empty">' +
                     '<strong>No Clover products found.</strong>' +
                     'Click Add Product to create your first item.' +
                     '</td></tr>';
@@ -1332,7 +1499,7 @@ function renderDashboard(options = {}) {
 
             if (!filtered.length) {
                 body.innerHTML =
-                    '<tr><td colspan="5" class="empty">' +
+                    '<tr><td colspan="13" class="empty">' +
                     '<strong>No matching products found.</strong>' +
                     'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
@@ -1348,7 +1515,12 @@ function renderDashboard(options = {}) {
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var itemId = item.id || "";
                 var itemName = item.name || "Unnamed Product";
-                var priceDollars = (Number(item.price || 0) / 100).toFixed(2);
+                var priceCents = Number(item.price || 0);
+                var priceDollars = (priceCents / 100).toFixed(2);
+                var costCents = getCostCents(itemId);
+                var costDollars = (costCents / 100).toFixed(2);
+                var profitCents = priceCents - costCents;
+                var profitClass = profitCents < 0 ? "profit-negative" : "profit-positive";
                 var isSelected = selectedItemIds.has(itemId);
                 var isBulkUpdated = bulkUpdatedItemIds.indexOf(itemId) >= 0;
 
@@ -1360,21 +1532,29 @@ function renderDashboard(options = {}) {
                     row.className = "row-bulk-updated";
                 }
 
+                if (profitCents < 0 && costCents > 0) {
+                    row.classList.add("row-below-cost");
+                }
+
                 if (isSelected) {
                     row.classList.add("row-selected");
                 }
 
                 row.innerHTML =
                     "<td class='col-check'><input type='checkbox' data-item-id='" + escapeHtml(itemId) + "' " + (isSelected ? "checked" : "") + " /></td>" +
-                    "<td><div class='product-cell'>" +
-                        "<input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' />" +
-                        "<div class='product-subline'>SKU: " + escapeHtml(sku) + " · ID: " + escapeHtml(itemId || "—") + "</div>" +
-                    "</div></td>" +
+                    "<td><input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
                     "<td><input class='small-input' data-price-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(priceDollars) + "' /></td>" +
+                    "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. This saves to your app database, not Clover.' /></td>" +
+                    "<td>" + getMarginPill(priceCents, costCents) + "</td>" +
+                    "<td class='" + profitClass + "'>" + formatCurrencyFromCents(profitCents) + "</td>" +
+                    "<td class='muted'>" + escapeHtml(sku) + "</td>" +
                     "<td>" + available + "</td>" +
+                    "<td>" + hidden + "</td>" +
+                    "<td>" + revenue + "</td>" +
+                    "<td class='muted'>" + formatDateFromClover(item.modifiedTime) + "</td>" +
+                    "<td class='muted'>" + escapeHtml(itemId || "—") + "</td>" +
                     "<td><div class='row-actions'>" +
                         "<button type='button' class='btn btn-secondary btn-small' data-action='save' data-id='" + escapeHtml(itemId) + "'>Save</button>" +
-                        "<button type='button' class='btn btn-light btn-small' data-action='more' data-id='" + escapeHtml(itemId) + "'>More</button>" +
                         "<button type='button' class='btn btn-danger btn-small' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>Delete</button>" +
                     "</div></td>";
 
@@ -1401,6 +1581,20 @@ function renderDashboard(options = {}) {
                 cb.addEventListener("change", function (e) {
                     var id = e.target.getAttribute("data-item-id");
                     toggleItemSelection(id, e.target.checked);
+                });
+            });
+
+            // Wire up cost inputs after render
+            var costInputs = body.querySelectorAll("input[data-cost-for]");
+            costInputs.forEach(function (input) {
+                input.addEventListener("blur", function (e) {
+                    saveItemCost(e.target.getAttribute("data-cost-for"), e.target.value);
+                });
+                input.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.target.blur();
+                    }
                 });
             });
 
@@ -1453,44 +1647,35 @@ function renderDashboard(options = {}) {
             if (modal) modal.classList.remove("show");
         }
 
-        function openDetails(itemId) {
-            var item = loadedItems.find(function (it) { return it.id === itemId; });
-            if (!item) {
-                showToast("Product details could not be found. Refresh inventory and try again.", "error");
-                return;
+        async function saveItemCost(itemId, value) {
+            try {
+                var connection = requireConnection();
+                if (!connection || !itemId) return;
+
+                var costCents = priceToCentsFromDollarsString(value);
+                if (costCents === null) {
+                    showToast("Cost must be a valid dollar amount.", "error");
+                    renderItems(loadedItems);
+                    return;
+                }
+
+                await fetchJson(
+                    "/item-cost/" + encodeURIComponent(itemId) +
+                    "?token=" + encodeURIComponent(connection.token) +
+                    "&merchantId=" + encodeURIComponent(connection.merchantId),
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ costCents: costCents })
+                    }
+                );
+
+                itemCosts[itemId] = costCents;
+                showToast("Cost saved. Margin updated.", "success");
+                renderItems(loadedItems);
+            } catch (error) {
+                showToast(error && error.message ? error.message : "Unable to save cost.", "error");
             }
-
-            var sku = item.sku || item.code || item.productCode || "—";
-            var itemName = item.name || "Unnamed Product";
-            var availableText = item.available === false ? "No" : "Yes";
-            var hiddenText = item.hidden ? "Hidden" : "Visible";
-            var revenueText = item.isRevenue === false ? "No" : "Yes";
-            var modifiedText = formatDateFromClover(item.modifiedTime);
-
-            var title = byId("detailsTitle");
-            var subtitle = byId("detailsSubtitle");
-            var grid = byId("detailsGrid");
-            var modal = byId("detailsModal");
-
-            if (title) title.textContent = itemName;
-            if (subtitle) subtitle.textContent = "Clean detail view without crowding the main table.";
-            if (grid) {
-                grid.innerHTML =
-                    "<div class='details-label'>Price</div><div class='details-value'>" + escapeHtml(formatCurrencyFromCents(item.price || 0)) + "</div>" +
-                    "<div class='details-label'>SKU / Code</div><div class='details-value'>" + escapeHtml(sku) + "</div>" +
-                    "<div class='details-label'>Available</div><div class='details-value'>" + escapeHtml(availableText) + "</div>" +
-                    "<div class='details-label'>Visibility</div><div class='details-value'>" + escapeHtml(hiddenText) + "</div>" +
-                    "<div class='details-label'>Revenue Item</div><div class='details-value'>" + escapeHtml(revenueText) + "</div>" +
-                    "<div class='details-label'>Modified</div><div class='details-value'>" + escapeHtml(modifiedText) + "</div>" +
-                    "<div class='details-label'>Clover ID</div><div class='details-value'>" + escapeHtml(item.id || "—") + "</div>";
-            }
-
-            if (modal) modal.classList.add("show");
-        }
-
-        function closeDetails() {
-            var modal = byId("detailsModal");
-            if (modal) modal.classList.remove("show");
         }
 
         async function loadItems() {
@@ -1507,7 +1692,13 @@ function renderDashboard(options = {}) {
                     "&merchantId=" + encodeURIComponent(connection.merchantId)
                 );
 
+                var costData = await fetchJson(
+                    "/item-costs?token=" + encodeURIComponent(connection.token) +
+                    "&merchantId=" + encodeURIComponent(connection.merchantId)
+                );
+
                 loadedItems = data.data && data.data.elements ? data.data.elements : [];
+                itemCosts = costData.costs || {};
                 renderItems(loadedItems);
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
             } catch (error) {
@@ -1677,7 +1868,6 @@ function renderDashboard(options = {}) {
         bind("inventorySearch", "input", function () { renderItems(loadedItems); });
 
         bind("confirmCancel", "click", closeConfirm);
-        bind("detailsClose", "click", closeDetails);
         bind("confirmYes", "click", function () {
             var action = pendingConfirmAction;
             closeConfirm();
@@ -1704,13 +1894,6 @@ function renderDashboard(options = {}) {
             });
         }
 
-        var detailsModal = byId("detailsModal");
-        if (detailsModal) {
-            detailsModal.addEventListener("click", function (event) {
-                if (event.target === detailsModal) closeDetails();
-            });
-        }
-
         var itemsBody = byId("itemsBody");
         if (itemsBody) {
             itemsBody.addEventListener("click", function (event) {
@@ -1723,10 +1906,6 @@ function renderDashboard(options = {}) {
 
                 if (action === "save") {
                     updateItem(itemId);
-                }
-
-                if (action === "more") {
-                    openDetails(itemId);
                 }
 
                 if (action === "delete") {
@@ -1793,13 +1972,12 @@ app.get("/", async (req, res) => {
 
         const tokenData = tokenResponse.data;
 
-        latestCloverConnection = {
-            connected: true,
+        await saveCloverConnection({
             merchant_id: req.query.merchant_id || req.query.merchantId || tokenData.merchant_id || "",
             employee_id: req.query.employee_id || req.query.employeeId || tokenData.employee_id || "",
             access_token: tokenData.access_token || "",
             connected_at: new Date().toISOString()
-        };
+        });
 
         console.log("Clover connected successfully.");
         console.log({
@@ -1835,6 +2013,7 @@ app.get("/health", (req, res) => {
         cloverEnvironment: IS_PRODUCTION_CLOVER ? "production" : "sandbox",
         cloverClientIdLoaded: !!CLOVER_CLIENT_ID,
         cloverSecretLoaded: !!CLOVER_CLIENT_SECRET,
+        databaseEnabled: USE_DATABASE,
         latestConnection: {
             connected: latestCloverConnection.connected,
             merchant_id: latestCloverConnection.merchant_id,
@@ -2193,6 +2372,83 @@ app.get("/clover-create-item-legacy", async (req, res) => {
     }
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| ITEM COSTS ROUTES - APP DATABASE, NOT CLOVER
+|--------------------------------------------------------------------------
+| Clover does not store your cost-of-goods field. This app stores merchant
+| costs in your own database so margin and profit can be calculated safely.
+|--------------------------------------------------------------------------
+*/
+
+app.get("/item-costs", async (req, res) => {
+    try {
+        const { merchantId } = getConnectionFromRequest(req);
+
+        if (!merchantId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing merchantId."
+            });
+        }
+
+        const costs = await getItemCostsForMerchant(merchantId);
+
+        res.json({
+            success: true,
+            databaseEnabled: USE_DATABASE,
+            costs
+        });
+    } catch (error) {
+        console.error("Item Costs Error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to load item costs.",
+            error: error.message
+        });
+    }
+});
+
+app.post("/item-cost/:itemId", async (req, res) => {
+    try {
+        const { merchantId } = getConnectionFromRequest(req);
+        const itemId = req.params.itemId;
+        const costCents = Number(req.body.costCents || 0);
+
+        if (!merchantId || !itemId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing merchantId or itemId."
+            });
+        }
+
+        if (!isValidMoneyCents(costCents)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid cost amount."
+            });
+        }
+
+        const savedCostCents = await saveItemCostForMerchant(merchantId, itemId, costCents);
+
+        res.json({
+            success: true,
+            message: "Item cost saved successfully.",
+            databaseEnabled: USE_DATABASE,
+            itemId,
+            costCents: savedCostCents
+        });
+    } catch (error) {
+        console.error("Save Item Cost Error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to save item cost.",
+            error: error.message
+        });
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | DEVELOPER TOOLS ROUTE
@@ -2235,6 +2491,7 @@ app.get("/dev", (req, res) => {
             <div class="row"><div class="label">Employee ID</div><div class="value">${safe(connection.employee_id) || "Not detected"}</div></div>
             <div class="row"><div class="label">Token</div><div class="value">${formatTokenForDisplay(connection.access_token) || "Not saved"}</div></div>
             <div class="row"><div class="label">Environment</div><div class="value">${IS_PRODUCTION_CLOVER ? "Production" : "Sandbox"}</div></div>
+            <div class="row"><div class="label">Database</div><div class="value">${USE_DATABASE ? "Connected" : "Demo memory mode"}</div></div>
             <div class="row"><div class="label">Connected At</div><div class="value">${safe(connection.connected_at) || "Not connected"}</div></div>
         </div>
 
@@ -2246,7 +2503,9 @@ app.get("/dev", (req, res) => {
 /clover-items
 /clover-create-item
 /clover-update-item/:itemId
-/clover-delete-item/:itemId</pre>
+/clover-delete-item/:itemId
+/item-costs
+/item-cost/:itemId</pre>
         </div>
     </div>
 </body>
@@ -2267,7 +2526,8 @@ app.get("/app-status", (req, res) => {
         environment: IS_PRODUCTION_CLOVER ? "production" : "sandbox",
         connected: latestCloverConnection.connected,
         hasMerchant: !!latestCloverConnection.merchant_id,
-        connectedAt: latestCloverConnection.connected_at || null
+        connectedAt: latestCloverConnection.connected_at || null,
+        databaseEnabled: USE_DATABASE
     });
 });
 
@@ -2285,6 +2545,13 @@ app.use((req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+initDatabase()
+    .catch((error) => {
+        console.error("Database initialization warning:", error.message);
+    })
+    .finally(() => {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+            console.log(`Database mode: ${USE_DATABASE ? "PostgreSQL" : "Demo memory only"}`);
+        });
+    });
