@@ -14,7 +14,9 @@ const CLOVER_CLIENT_ID = process.env.CLOVER_CLIENT_ID?.trim();
 const CLOVER_CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET?.trim();
 
 const REDIRECT_URI = "https://inventoryrite-api.onrender.com/";
+
 const CLOVER_BASE_URL = "https://sandbox.dev.clover.com";
+const CLOVER_API_BASE_URL = "https://apisandbox.dev.clover.com";
 
 /*
 |--------------------------------------------------------------------------
@@ -28,7 +30,6 @@ app.get("/", async (req, res) => {
 
         const code = req.query.code;
 
-        // Normal homepage
         if (!code) {
             return res.send("InventoryRite API is running.");
         }
@@ -82,32 +83,36 @@ app.get("/", async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| Health Route
+| HEALTH ROUTE
 |--------------------------------------------------------------------------
 */
 
 app.get("/health", (req, res) => {
+
     res.json({
         success: true,
         message: "InventoryRite backend healthy",
         cloverClientIdLoaded: !!CLOVER_CLIENT_ID,
         cloverSecretLoaded: !!CLOVER_CLIENT_SECRET
     });
+
 });
 
 /*
 |--------------------------------------------------------------------------
-| Clover Connect Route
+| CLOVER CONNECT ROUTE
 |--------------------------------------------------------------------------
 */
 
 app.get("/connect-clover", (req, res) => {
 
     if (!CLOVER_CLIENT_ID) {
+
         return res.status(500).json({
             success: false,
             message: "Missing CLOVER_CLIENT_ID in environment variables."
         });
+
     }
 
     const cloverAuthUrl =
@@ -119,14 +124,12 @@ app.get("/connect-clover", (req, res) => {
     console.log("Redirecting to Clover OAuth...");
 
     res.redirect(cloverAuthUrl);
+
 });
 
 /*
 |--------------------------------------------------------------------------
-| Clover Merchant Info Route
-|--------------------------------------------------------------------------
-| Example:
-| /clover-merchant?token=TOKEN&merchantId=MERCHANT_ID
+| CLOVER MERCHANT INFO ROUTE
 |--------------------------------------------------------------------------
 */
 
@@ -138,14 +141,16 @@ app.get("/clover-merchant", async (req, res) => {
         const merchantId = req.query.merchantId;
 
         if (!accessToken || !merchantId) {
+
             return res.status(400).json({
                 success: false,
                 message: "Missing token or merchantId."
             });
+
         }
 
         const merchantResponse = await axios.get(
-            `${CLOVER_BASE_URL}/v3/merchants/${merchantId}`,
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}`,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`
@@ -163,20 +168,25 @@ app.get("/clover-merchant", async (req, res) => {
 
         console.error("Clover Merchant Error:");
 
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
         res.status(500).json({
             success: false,
             message: "Failed to load Clover merchant info",
             error: error.response?.data || error.message
         });
+
     }
+
 });
 
 /*
 |--------------------------------------------------------------------------
-| Clover Items Route
-|--------------------------------------------------------------------------
-| Example:
-| /clover-items?token=TOKEN&merchantId=MERCHANT_ID
+| CLOVER ITEMS ROUTE
 |--------------------------------------------------------------------------
 */
 
@@ -188,14 +198,16 @@ app.get("/clover-items", async (req, res) => {
         const merchantId = req.query.merchantId;
 
         if (!accessToken || !merchantId) {
+
             return res.status(400).json({
                 success: false,
                 message: "Missing token or merchantId."
             });
+
         }
 
         const itemsResponse = await axios.get(
-            `${CLOVER_BASE_URL}/v3/merchants/${merchantId}/items`,
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items`,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`
@@ -213,14 +225,24 @@ app.get("/clover-items", async (req, res) => {
 
         console.error("Clover Items Error:");
 
+        if (error.response?.data) {
+            console.error(error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
         res.status(500).json({
             success: false,
             message: "Failed to load Clover inventory items",
             error: error.response?.data || error.message
         });
+
     }
+
 });
 
 app.listen(PORT, () => {
+
     console.log(`Server running on port ${PORT}`);
+
 });
