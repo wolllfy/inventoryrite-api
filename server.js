@@ -1039,7 +1039,7 @@ function renderDashboard(options = {}) {
         ---------------------------------------------------------------- */
 
         .merchant-control-bar {
-            background: #0f172a;
+background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 16px;
             padding: 13px 14px;
