@@ -1329,7 +1329,7 @@ function renderDashboard(options = {}) {
 
 
         /* ----------------------------------------------------------------
-        | PRODUCTIVITY TOOLS HUB
+        | PRODUCTIVITY INTELLIGENCE HUB
         ---------------------------------------------------------------- */
 
         .productivity-hub {
@@ -1431,14 +1431,14 @@ function renderDashboard(options = {}) {
 
 
 
-        .review-strip {
+        .intelligence-strip {
             display: grid;
             grid-template-columns: 1.1fr 1fr 1fr 1.2fr;
             gap: 10px;
             margin: 0 0 14px;
         }
 
-        .review-box {
+        .intelligence-box {
             border: 1px solid #e2e8f0;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 16px;
@@ -1446,9 +1446,9 @@ function renderDashboard(options = {}) {
             box-shadow: 0 7px 18px rgba(15, 23, 42, 0.04);
         }
 
-        .review-label { color: #64748b; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
-        .review-value { color: #0f172a; font-size: 21px; font-weight: 900; line-height: 1.1; }
-        .review-help { color: #64748b; font-size: 11px; font-weight: 800; margin-top: 5px; line-height: 1.35; }
+        .intelligence-label { color: #64748b; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+        .intelligence-value { color: #0f172a; font-size: 21px; font-weight: 900; line-height: 1.1; }
+        .intelligence-help { color: #64748b; font-size: 11px; font-weight: 800; margin-top: 5px; line-height: 1.35; }
         .health-good { color: #166534; }
         .health-watch { color: #b45309; }
         .health-risk { color: #b91c1c; }
@@ -1511,6 +1511,149 @@ function renderDashboard(options = {}) {
             color: #475569;
         }
 
+
+
+        /* ----------------------------------------------------------------
+        | FINAL VALUE FEATURES - HISTORY, UNDO, DUPLICATES, COST LOCK, PRESETS
+        ---------------------------------------------------------------- */
+
+        .value-tools-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(132px, 1fr));
+            gap: 8px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .margin-preset-row {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px dashed #f59e0b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .margin-preset-copy {
+            color: #92400e;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
+        .margin-preset-actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            border: 1px solid #fcd34d;
+            background: #ffffff;
+            color: #92400e;
+            border-radius: 999px;
+            padding: 8px 11px;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .preset-btn:hover { background: #fffbeb; }
+
+        .recent-sidebar {
+            margin: 0 0 14px;
+            border: 1px solid #dbeafe;
+            background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+            border-radius: 16px;
+            padding: 13px 14px;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, 0.045);
+        }
+
+        .recent-sidebar-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .recent-sidebar-title {
+            color: #0f172a;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .recent-sidebar-subtitle {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+            margin-top: 2px;
+        }
+
+        .recent-list {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .recent-item {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 9px 10px;
+            min-height: 70px;
+        }
+
+        .recent-item strong {
+            display: block;
+            color: #111827;
+            font-size: 12px;
+            line-height: 1.25;
+            margin-bottom: 3px;
+        }
+
+        .recent-item span {
+            display: block;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .recent-empty {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 8px 0 2px;
+        }
+
+        .row-missing-cost td { background: #fffbeb; }
+        .row-missing-cost.row-selected td { background: #fef3c7 !important; }
+
+        .cost-warning-chip {
+            display: inline-flex;
+            margin-top: 5px;
+            border-radius: 999px;
+            padding: 3px 7px;
+            font-size: 10px;
+            font-weight: 900;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        @media (max-width: 980px) {
+            .value-tools-row { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+            .recent-list { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 620px) {
+            .value-tools-row { grid-template-columns: 1fr; }
+            .margin-preset-actions .preset-btn { flex: 1 1 70px; }
+        }
+
         @media (max-width: 1100px) {
             .merchant-control-actions { grid-template-columns: repeat(3, minmax(112px, 1fr)); }
         }
@@ -1527,7 +1670,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 980px) {
             .productivity-hub { grid-template-columns: 1fr 1fr; }
-            .review-strip { grid-template-columns: 1fr 1fr; }
+            .intelligence-strip { grid-template-columns: 1fr 1fr; }
             .risk-score-row { grid-template-columns: 1fr; }
             .hero, .stats-row, .add-grid { grid-template-columns: 1fr; }
             .hero { flex-direction: column; }
@@ -1550,7 +1693,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 700px) {
             .productivity-hub { grid-template-columns: 1fr; }
-            .review-strip { grid-template-columns: 1fr; }
+            .intelligence-strip { grid-template-columns: 1fr; }
             .stats-row { grid-template-columns: 1fr; }
             .wrap { padding: 0 10px 40px; }
             .inventory-card { padding: 14px; }
@@ -1576,7 +1719,7 @@ function renderDashboard(options = {}) {
             <div class="logo">IR</div>
             <div>
                 <h1>InventoryRite for Clover</h1>
-                <p>Inventory tools for pricing, profit checks, cleanup, and faster Clover product updates</p>
+                <p>Inventory tools for pricing, margin checks, cleanup, and faster Clover product updates</p>
             </div>
         </div>
 
@@ -1601,7 +1744,7 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Loaded Clover products appear below. Search, refresh, bulk update, review product issues, or add a new Clover item from one clean control area.</p>
+                    <p>Loaded Clover products appear below. Search, refresh, bulk update, review pricing, or add a new Clover item from one clean control area.</p>
                     <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
@@ -1678,6 +1821,15 @@ function renderDashboard(options = {}) {
                         </div>
                     </div>
                 </div>
+                <div class="margin-preset-row">
+                    <div class="margin-preset-copy">Quick margin presets use the saved Cost field to calculate new selling prices for selected products.</div>
+                    <div class="margin-preset-actions">
+                        <button type="button" class="preset-btn" data-margin-preset="35">35%</button>
+                        <button type="button" class="preset-btn" data-margin-preset="40">40%</button>
+                        <button type="button" class="preset-btn" data-margin-preset="45">45%</button>
+                        <button type="button" class="preset-btn" data-margin-preset="50">50%</button>
+                    </div>
+                </div>
                 <div class="bulk-progress" id="bulkProgress">
                     <div class="bulk-progress-bar" id="bulkProgressBar"></div>
                 </div>
@@ -1697,6 +1849,10 @@ function renderDashboard(options = {}) {
                     <button id="btnReorder" type="button" class="control-btn control-reorder">Reorder</button>
                     <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
                     <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
+                    <button id="btnDuplicateReview" type="button" class="control-btn control-rules">Duplicate Review</button>
+                    <button id="btnMissingCostLock" type="button" class="control-btn control-low">Missing Costs</button>
+                    <button id="btnSmart99" type="button" class="control-btn control-reorder">Smart .99</button>
+                    <button id="btnUndoBulk" type="button" class="control-btn control-profit">Undo Bulk</button>
                     <button id="btnPriceRules" type="button" class="control-btn control-rules">Pricing Tools</button>
                     <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Margin Alerts</button>
                     <button id="btnCleanupScan" type="button" class="control-btn control-rules">Inventory Cleanup</button>
@@ -1705,7 +1861,7 @@ function renderDashboard(options = {}) {
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
             <div class="productivity-hub" id="productivityHub">
-                <button id="btnProfitReview" type="button" class="productivity-card">
+                <button id="btnProfitIntelligence" type="button" class="productivity-card">
                     <div class="productivity-kicker">Profit</div>
                     <div class="productivity-title">Profit Review</div>
                     <div class="productivity-copy">Review pricing performance, low margins, and missing costs quickly.</div>
@@ -1732,32 +1888,44 @@ function renderDashboard(options = {}) {
                 </button>
             </div>
 
-            <div class="review-strip" id="intelligenceStrip">
-                <div class="review-box">
-                    <div class="review-label">Product Review Score</div>
-                    <div class="review-value" id="healthScoreText">--/100</div>
-                    <div class="review-help" id="healthScoreHelp">Refresh Clover inventory to score product health.</div>
+            <div class="intelligence-strip" id="intelligenceStrip">
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Product Review Score</div>
+                    <div class="intelligence-value" id="healthScoreText">--/100</div>
+                    <div class="intelligence-help" id="healthScoreHelp">Refresh Clover inventory to score product health.</div>
                 </div>
-                <div class="review-box">
-                    <div class="review-label">Pricing Risks</div>
-                    <div class="review-value health-risk" id="criticalIssueText">0</div>
-                    <div class="review-help">Below-cost, missing price, and suspicious price risks.</div>
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Pricing Risks</div>
+                    <div class="intelligence-value health-risk" id="criticalIssueText">0</div>
+                    <div class="intelligence-help">Below-cost, missing price, and suspicious price risks.</div>
                 </div>
-                <div class="review-box">
-                    <div class="review-label">Review Alerts</div>
-                    <div class="review-value health-watch" id="warningIssueText">0</div>
-                    <div class="review-help">Weak margins, missing costs, duplicates, and stale items.</div>
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Review Alerts</div>
+                    <div class="intelligence-value health-watch" id="warningIssueText">0</div>
+                    <div class="intelligence-help">Weak margins, missing costs, duplicates, and stale items.</div>
                 </div>
-                <div class="review-box">
-                    <div class="review-label">Margin Opportunities</div>
-                    <div class="review-value health-good" id="profitOpportunityText">$0.00</div>
-                    <div class="review-help" id="profitOpportunityHelp">Estimated using costed products and conservative monthly assumptions.</div>
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Margin Opportunities</div>
+                    <div class="intelligence-value health-good" id="profitOpportunityText">$0.00</div>
+                    <div class="intelligence-help" id="profitOpportunityHelp">Estimated using costed products and conservative monthly assumptions.</div>
                 </div>
             </div>
 
             <div class="last-action-strip" id="lastActionStrip">
                 <strong>Last Action</strong>
                 <span id="lastActionText">Ready. No recent actions yet.</span>
+            </div>
+            <div class="recent-sidebar" id="recentChangesPanel">
+                <div class="recent-sidebar-top">
+                    <div>
+                        <div class="recent-sidebar-title">Recent Changes</div>
+                        <div class="recent-sidebar-subtitle">Price edits, bulk updates, CSV actions, and margin tools from this browser.</div>
+                    </div>
+                    <button id="btnOpenPriceHistory" type="button" class="btn btn-small btn-light">View History</button>
+                </div>
+                <div class="recent-list" id="recentChangesList">
+                    <div class="recent-empty">No recent changes yet. Updates will appear here after the first save or bulk action.</div>
+                </div>
             </div>
             <input id="csvImportInput" type="file" accept=".csv,text/csv" style="display:none;" />
 
@@ -1865,7 +2033,7 @@ function renderDashboard(options = {}) {
     <div class="modal-backdrop" id="detailsModal">
         <div class="modal">
             <h3 id="detailsTitle">Product Details</h3>
-            <p>Extra Clover fields and profit details are kept here so the main product table stays clean with no left/right scroll.</p>
+            <p>Extra Clover fields and margin details are kept here so the main product table stays clean with no left/right scroll.</p>
             <div class="detail-grid" id="detailsGrid"></div>
             <div class="modal-actions">
                 <button id="detailsClose" type="button" class="btn btn-light">Close</button>
@@ -1917,6 +2085,11 @@ function renderDashboard(options = {}) {
         var pendingConfirmAction = null;
         var activeViewMode = "all";
         var activityLog = [];
+        var priceChangeHistory = [];
+        var lastBulkUndoSnapshot = null;
+        var currentUserLabel = embeddedConnection.employee_id ? ("Employee " + embeddedConnection.employee_id) : "Current Clover user";
+        var HISTORY_STORAGE_KEY = "inventoryrite_price_history_" + (embeddedConnection.merchant_id || "demo");
+        var UNDO_STORAGE_KEY = "inventoryrite_last_bulk_undo_" + (embeddedConnection.merchant_id || "demo");
 
         // Track selected item IDs for bulk operations
         var selectedItemIds = new Set();
@@ -1980,6 +2153,8 @@ function renderDashboard(options = {}) {
 
             activityLog.unshift(entry);
 
+            renderRecentChangesPanel();
+
             if (activityLog.length > 50) {
                 activityLog = activityLog.slice(0, 50);
             }
@@ -1991,6 +2166,102 @@ function renderDashboard(options = {}) {
             var text = byId("lastActionText");
             if (!text || !entry) return;
             text.textContent = entry.title + " - " + entry.message + " - " + entry.time;
+        }
+
+
+        function loadStoredHistory() {
+            try {
+                var saved = localStorage.getItem(HISTORY_STORAGE_KEY);
+                priceChangeHistory = saved ? JSON.parse(saved) : [];
+                if (!Array.isArray(priceChangeHistory)) priceChangeHistory = [];
+            } catch (e) {
+                priceChangeHistory = [];
+            }
+
+            try {
+                var undoSaved = localStorage.getItem(UNDO_STORAGE_KEY);
+                lastBulkUndoSnapshot = undoSaved ? JSON.parse(undoSaved) : null;
+            } catch (e2) {
+                lastBulkUndoSnapshot = null;
+            }
+
+            renderRecentChangesPanel();
+        }
+
+        function saveStoredHistory() {
+            try {
+                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(priceChangeHistory.slice(0, 75)));
+            } catch (e) {}
+            try {
+                if (lastBulkUndoSnapshot) {
+                    localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(lastBulkUndoSnapshot));
+                } else {
+                    localStorage.removeItem(UNDO_STORAGE_KEY);
+                }
+            } catch (e2) {}
+        }
+
+        function formatRelativeTime(timestamp) {
+            var date = timestamp ? new Date(timestamp) : new Date();
+            var diff = Math.max(0, Date.now() - date.getTime());
+            var minutes = Math.floor(diff / 60000);
+            if (minutes < 1) return "just now";
+            if (minutes < 60) return minutes + " min ago";
+            var hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + " hr ago";
+            var days = Math.floor(hours / 24);
+            return days + " day" + (days === 1 ? "" : "s") + " ago";
+        }
+
+        function recordPriceChange(item, oldCents, newCents, source) {
+            oldCents = Number(oldCents || 0);
+            newCents = Number(newCents || 0);
+            if (oldCents === newCents && source !== "create") return;
+
+            var entry = {
+                id: item && item.id ? item.id : "",
+                name: item && item.name ? item.name : "Unnamed Product",
+                oldCents: oldCents,
+                newCents: newCents,
+                source: source || "Price Update",
+                user: currentUserLabel,
+                timestamp: new Date().toISOString()
+            };
+
+            priceChangeHistory.unshift(entry);
+            priceChangeHistory = priceChangeHistory.slice(0, 75);
+            saveStoredHistory();
+            renderRecentChangesPanel();
+        }
+
+        function renderRecentChangesPanel() {
+            var list = byId("recentChangesList");
+            if (!list) return;
+
+            var recent = priceChangeHistory.slice(0, 3);
+            if (!recent.length && activityLog.length) {
+                recent = activityLog.slice(0, 3).map(function (entry) {
+                    return {
+                        name: entry.title,
+                        oldCents: 0,
+                        newCents: 0,
+                        source: entry.status,
+                        user: currentUserLabel,
+                        timestamp: new Date().toISOString(),
+                        message: entry.message
+                    };
+                });
+            }
+
+            if (!recent.length) {
+                list.innerHTML = '<div class="recent-empty">No recent changes yet. Updates will appear here after the first save or bulk action.</div>';
+                return;
+            }
+
+            list.innerHTML = recent.map(function (entry) {
+                var priceLine = entry.message || (formatCurrencyFromCents(entry.oldCents) + " → " + formatCurrencyFromCents(entry.newCents));
+                return "<div class='recent-item'><strong>" + escapeHtml(entry.name || "Change") + "</strong><span>" + escapeHtml(priceLine) + "</span><span>" + escapeHtml(entry.source || "Updated") + " by " + escapeHtml(entry.user || currentUserLabel) + " - " + escapeHtml(formatRelativeTime(entry.timestamp)) + "</span></div>";
+            }).join("");
         }
 
         function setStatText(id, value) {
@@ -2239,7 +2510,7 @@ function renderDashboard(options = {}) {
 
             openConfirm(
                 "Bulk Price " + (direction === "increase" ? "Increase" : "Decrease"),
-                dirWord + " prices by " + pct + "% for " + selectedIds.length + " product(s). This cannot be undone.",
+                dirWord + " prices by " + pct + "% for " + selectedIds.length + " product(s). You can use Undo Bulk immediately after this if needed.",
                 async function () {
                     await executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel);
                 }
@@ -2259,6 +2530,13 @@ function renderDashboard(options = {}) {
             var total = selectedIds.length;
             var successCount = 0;
             var failCount = 0;
+            var undoSnapshot = {
+                source: "Bulk Price Update",
+                direction: direction,
+                pct: pct,
+                timestamp: new Date().toISOString(),
+                items: []
+            };
 
             bulkUpdatedItemIds = [];
 
@@ -2295,6 +2573,8 @@ function renderDashboard(options = {}) {
                         }
                     );
                     successCount++;
+                    undoSnapshot.items.push({ id: itemId, name: item.name || "Unnamed Product", oldCents: currentCents, newCents: newCents });
+                    recordPriceChange(item, currentCents, newCents, "Bulk Price Update");
                     bulkUpdatedItemIds.push(itemId);
                 } catch (err) {
                     failCount++;
@@ -2311,6 +2591,11 @@ function renderDashboard(options = {}) {
                 if (progressLabel) progressLabel.classList.remove("show");
                 if (progressBar) progressBar.style.width = "0%";
             }, 2400);
+
+            if (undoSnapshot.items.length > 0) {
+                lastBulkUndoSnapshot = undoSnapshot;
+                saveStoredHistory();
+            }
 
             if (failCount === 0) {
                 showToast("Bulk update complete: " + successCount + " price(s) " + dirLabel + " by " + pct + "%.", "success");
@@ -2374,7 +2659,13 @@ function renderDashboard(options = {}) {
                     note.textContent = "Showing Margin Alerts view. Low-margin and below-cost items are highlighted here.";
                     note.classList.add("show");
                 } else if (activeViewMode === "cleanup") {
-                    note.textContent = "Showing Cleanup view. Products with missing price, missing cost, duplicate names, bad names, missing SKU, or below-cost risk appear here.";
+                    note.textContent = "Showing Inventory Cleanup view. Products with missing price, missing cost, duplicate names, bad names, missing SKU, or below-cost risk appear here.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "missingCost") {
+                    note.textContent = "Showing Missing Costs view. Products with no saved cost are highlighted so margin reviews become accurate.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "duplicates") {
+                    note.textContent = "Showing Duplicate Review view. Products with similar names are grouped for cleanup.";
                     note.classList.add("show");
                 } else {
                     note.textContent = "";
@@ -2486,7 +2777,7 @@ function renderDashboard(options = {}) {
 
             openFeatureModal(
                 "Margin Alerts",
-                alerts.length ? (alerts.length + " product(s) need margin review and are now shown in the table.") : "No profit alerts right now. No below-cost or low-margin products were found.",
+                alerts.length ? (alerts.length + " product(s) need margin review and are now shown in the table.") : "No margin alerts right now. No below-cost or low-margin products were found.",
                 rows
             );
             setViewMode("profitAlerts");
@@ -2501,7 +2792,7 @@ function renderDashboard(options = {}) {
                 return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested action: reorder or confirm stock count</span></div><div><span>Plan</span></div>";
             });
             openFeatureModal(
-                "Smart Reorder Planning",
+                "Reorder Planning",
                 lowItems.length ? "Reorder planning is based on products with quantity 5 or less." : "No reorder suggestions yet. This becomes stronger when Clover sends quantity data.",
                 rows
             );
@@ -2520,8 +2811,8 @@ function renderDashboard(options = {}) {
                 "Pricing Tools is staged as safe merchant guidance. No automatic price overwrite happens without confirmation.",
                 rows
             );
-            logActivity("Price Rules", "Price rule options reviewed.", "Viewed");
-            showToast("Price Rules opened.", "info");
+            logActivity("Pricing Tools", "Price rule options reviewed.", "Viewed");
+            showToast("Pricing Tools opened.", "info");
         }
 
         function showActivityLog() {
@@ -2568,7 +2859,7 @@ function renderDashboard(options = {}) {
                     issues.push({ item: item, type: "Missing Price", message: "Product has no sell price. This can cause checkout mistakes." });
                 }
                 if (cost <= 0) {
-                    issues.push({ item: item, type: "Missing Cost", message: "No cost entered, so margin and profit intelligence are incomplete." });
+                    issues.push({ item: item, type: "Missing Cost", message: "No cost entered, so margin and margin review are incomplete." });
                 }
                 if (price > 0 && cost > 0 && price < cost) {
                     issues.push({ item: item, type: "Below Cost", message: "Sell price is lower than cost. This product may lose money." });
@@ -2888,7 +3179,7 @@ function renderDashboard(options = {}) {
 
                 if (cost <= 0) {
                     penalty += 8;
-                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and profit checks cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This unlocks real profit alerts.", 0, "fix_cost"));
+                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and margin checks cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This unlocks real margin alerts.", 0, "fix_cost"));
                 }
 
                 if (price > 0 && cost > 0 && price < cost) {
@@ -2987,7 +3278,7 @@ function renderDashboard(options = {}) {
 
             if (health) {
                 health.textContent = intelligence.healthScore + "/100";
-                health.className = "review-value " + (intelligence.healthScore >= 85 ? "health-good" : (intelligence.healthScore >= 65 ? "health-watch" : "health-risk"));
+                health.className = "intelligence-value " + (intelligence.healthScore >= 85 ? "health-good" : (intelligence.healthScore >= 65 ? "health-watch" : "health-risk"));
             }
             if (healthHelp) healthHelp.textContent = intelligence.healthScore >= 85 ? "Inventory looks healthy. Keep reviewing costs and margins." : (intelligence.healthScore >= 65 ? "Inventory is usable, but cleanup and margin work can improve it." : "Inventory needs attention before it feels merchant-ready.");
             if (critical) critical.textContent = intelligence.criticalIssues.length;
@@ -3180,6 +3471,217 @@ function renderDashboard(options = {}) {
             showToast("Quick Actions opened.", "info");
         }
 
+
+        function getDuplicateProductGroups() {
+            var groups = {};
+            (loadedItems || []).forEach(function (item) {
+                var raw = String(item.name || "").toLowerCase();
+                var key = raw
+                    .replace(/[^a-z0-9 ]/g, " ")
+                    .replace(/\b(oz|ounce|ounces|lb|lbs|pack|ct|count|small|medium|large|xl|bottle|can|bag)\b/g, " ")
+                    .replace(/\b\d+(\.\d+)?\b/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                if (!key || key.length < 3) return;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+            });
+
+            return Object.keys(groups).map(function (key) {
+                return { key: key, items: groups[key] };
+            }).filter(function (group) {
+                return group.items.length > 1;
+            }).sort(function (a, b) {
+                return b.items.length - a.items.length;
+            });
+        }
+
+        function getDuplicateProductIds() {
+            var ids = {};
+            getDuplicateProductGroups().forEach(function (group) {
+                group.items.forEach(function (item) { ids[item.id || ""] = true; });
+            });
+            return ids;
+        }
+
+        function showDuplicateDetector() {
+            var groups = getDuplicateProductGroups();
+            var rows = [];
+            groups.slice(0, 25).forEach(function (group) {
+                rows.push("<div><strong>" + escapeHtml(group.key) + "</strong><span>" + escapeHtml(group.items.map(function (item) { return item.name || "Unnamed"; }).join(" | ")) + "</span></div><div><span>" + group.items.length + " similar</span></div>");
+            });
+            openFeatureModal(
+                "Duplicate Product Review",
+                groups.length ? (groups.length + " possible duplicate group(s) found. Review before editing or deleting products.") : "No obvious duplicate product groups were found.",
+                rows
+            );
+            setViewMode("duplicates");
+            logActivity("Duplicate Review", groups.length + " possible duplicate group(s) reviewed.", "Viewed");
+            showToast("Duplicate review complete.", groups.length ? "info" : "success");
+        }
+
+        function showMissingCostLock() {
+            var missing = (loadedItems || []).filter(function (item) { return getCostCents(item.id || "") <= 0; });
+            var rows = missing.slice(0, 35).map(function (item) {
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + " - Cost missing. Margin presets and margin review need a cost first.</span></div><div><span>Needs Cost</span></div>";
+            });
+            openFeatureModal(
+                "Missing Cost Lock",
+                missing.length ? (missing.length + " product(s) need a cost before margin tools can be trusted.") : "Every loaded product has a saved cost. Margin tools are ready.",
+                rows
+            );
+            setViewMode("missingCost");
+            logActivity("Missing Costs", missing.length + " product(s) checked for cost lock.", "Viewed");
+            showToast("Missing Costs view enabled.", missing.length ? "info" : "success");
+        }
+
+        async function applyQuickMarginPreset(targetMarginPercent) {
+            if (isBusy) return;
+            var connection = requireConnection();
+            if (!connection) return;
+            if (selectedItemIds.size === 0) {
+                showToast("Select products before applying a margin preset.", "error");
+                return;
+            }
+
+            var selectedIds = Array.from(selectedItemIds);
+            var ready = [];
+            var skipped = 0;
+            selectedIds.forEach(function (itemId) {
+                var item = loadedItems.find(function (it) { return it.id === itemId; });
+                var cost = getCostCents(itemId);
+                if (!item || cost <= 0) { skipped++; return; }
+                ready.push({ item: item, oldCents: Number(item.price || 0), newCents: getTargetPriceForMargin(cost, targetMarginPercent) });
+            });
+
+            if (!ready.length) {
+                showToast("No selected products have saved costs. Add costs first.", "error");
+                showMissingCostLock();
+                return;
+            }
+
+            openConfirm(
+                "Apply " + targetMarginPercent + "% Margin?",
+                "This will calculate new selling prices for " + ready.length + " selected product(s) using saved costs" + (skipped ? ". " + skipped + " product(s) will be skipped because cost is missing." : "."),
+                async function () {
+                    await executeDirectPriceUpdates(connection, ready, targetMarginPercent + "% Margin Preset");
+                }
+            );
+        }
+
+        async function applySmart99Rounding() {
+            if (isBusy) return;
+            var connection = requireConnection();
+            if (!connection) return;
+
+            var sourceItems = selectedItemIds.size
+                ? (loadedItems || []).filter(function (item) { return selectedItemIds.has(item.id || ""); })
+                : (loadedItems || []);
+
+            var ready = [];
+            sourceItems.forEach(function (item) {
+                var oldCents = Number(item.price || 0);
+                var newCents = roundToRetail99(oldCents);
+                if (oldCents > 0 && newCents !== oldCents) {
+                    ready.push({ item: item, oldCents: oldCents, newCents: newCents });
+                }
+            });
+
+            if (!ready.length) {
+                showToast("No prices need .99 rounding in the selected/current list.", "success");
+                return;
+            }
+
+            openConfirm(
+                "Apply Smart .99 Rounding?",
+                "This will round " + ready.length + " price(s) to clean retail .99 endings. Select rows first to limit the action, or run it on the visible inventory.",
+                async function () {
+                    await executeDirectPriceUpdates(connection, ready, "Smart .99 Rounding");
+                }
+            );
+        }
+
+        async function executeDirectPriceUpdates(connection, updateList, sourceLabel) {
+            startBusy();
+            var successCount = 0;
+            var failCount = 0;
+            var undoSnapshot = {
+                source: sourceLabel,
+                timestamp: new Date().toISOString(),
+                items: []
+            };
+
+            for (var i = 0; i < updateList.length; i++) {
+                var row = updateList[i];
+                var item = row.item;
+                try {
+                    await fetchJson(
+                        "/clover-update-item/" + encodeURIComponent(item.id || "") +
+                        "?token=" + encodeURIComponent(connection.token) +
+                        "&merchantId=" + encodeURIComponent(connection.merchantId),
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: item.name || "", price: row.newCents })
+                        }
+                    );
+                    successCount++;
+                    undoSnapshot.items.push({ id: item.id || "", name: item.name || "Unnamed Product", oldCents: row.oldCents, newCents: row.newCents });
+                    recordPriceChange(item, row.oldCents, row.newCents, sourceLabel);
+                    bulkUpdatedItemIds.push(item.id || "");
+                } catch (err) {
+                    failCount++;
+                    console.error(sourceLabel + " failed for item", item.id, err);
+                }
+            }
+
+            if (undoSnapshot.items.length) {
+                lastBulkUndoSnapshot = undoSnapshot;
+                saveStoredHistory();
+            }
+
+            showToast(sourceLabel + ": " + successCount + " updated" + (failCount ? ", " + failCount + " failed." : "."), failCount && !successCount ? "error" : "success");
+            logActivity(sourceLabel, successCount + " product(s) updated" + (failCount ? ", " + failCount + " failed." : "."), failCount ? "Partial" : "Success");
+            clearSelection();
+            stopBusy();
+            await loadItems();
+        }
+
+        async function undoLastBulkUpdate() {
+            if (isBusy) return;
+            var connection = requireConnection();
+            if (!connection) return;
+
+            if (!lastBulkUndoSnapshot || !lastBulkUndoSnapshot.items || !lastBulkUndoSnapshot.items.length) {
+                showToast("No bulk update is available to undo in this browser session.", "error");
+                return;
+            }
+
+            var rows = lastBulkUndoSnapshot.items.map(function (entry) {
+                return { item: { id: entry.id, name: entry.name }, oldCents: entry.newCents, newCents: entry.oldCents };
+            });
+
+            openConfirm(
+                "Undo Last Bulk Update?",
+                "This will restore " + rows.length + " product price(s) from the last bulk/margin/.99 action back to their previous prices.",
+                async function () {
+                    await executeDirectPriceUpdates(connection, rows, "Undo Bulk Update");
+                    lastBulkUndoSnapshot = null;
+                    saveStoredHistory();
+                }
+            );
+        }
+
+        function showFullPriceHistory() {
+            var rows = priceChangeHistory.length ? priceChangeHistory.slice(0, 50).map(function (entry) {
+                return "<div><strong>" + escapeHtml(entry.name || "Product") + "</strong><span>" + escapeHtml(formatCurrencyFromCents(entry.oldCents) + " → " + formatCurrencyFromCents(entry.newCents) + " - " + formatRelativeTime(entry.timestamp) + " - " + (entry.user || currentUserLabel)) + "</span></div><div><span>" + escapeHtml(entry.source || "Updated") + "</span></div>";
+            }) : [
+                "<div><strong>No price history yet</strong><span>Manual saves, bulk updates, margin presets, and .99 rounding will appear here.</span></div><div><span>Ready</span></div>"
+            ];
+            openFeatureModal("Price Change History", "Recent product price changes stored in this browser for the connected merchant.", rows);
+            logActivity("Price History", "Price history opened.", "Viewed");
+        }
+
         function importCsvClicked() {
             openFeatureModal(
                 "Import CSV",
@@ -3223,6 +3725,13 @@ function renderDashboard(options = {}) {
                     var cleanupIssues = getCleanupIssues();
                     var cleanupIds = cleanupIssues.map(function (issue) { return issue.item.id || ""; });
                     if (cleanupIds.indexOf(item.id || "") < 0) return false;
+                }
+                if (activeViewMode === "missingCost") {
+                    if (getCostCents(item.id || "") > 0) return false;
+                }
+                if (activeViewMode === "duplicates") {
+                    var duplicateIds = getDuplicateProductIds();
+                    if (!duplicateIds[item.id || ""]) return false;
                 }
                 return true;
             });
@@ -3287,6 +3796,10 @@ function renderDashboard(options = {}) {
                     row.classList.add("row-below-cost");
                 }
 
+                if (costCents <= 0) {
+                    row.classList.add("row-missing-cost");
+                }
+
                 if (isSelected) {
                     row.classList.add("row-selected");
                 }
@@ -3295,7 +3808,7 @@ function renderDashboard(options = {}) {
                     "<td class='col-check'><input type='checkbox' data-item-id='" + escapeHtml(itemId) + "' " + (isSelected ? "checked" : "") + " /></td>" +
                     "<td class='product-name-cell'><input class='name-input' data-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(itemName) + "' /></td>" +
                     "<td><input class='small-input' data-price-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(priceDollars) + "' /></td>" +
-                    "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. Saves to InventoryRite and attempts to sync to Clover.' /></td>" +
+                    "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. Saves to InventoryRite and attempts to sync to Clover.' />" + (costCents <= 0 ? "<span class='cost-warning-chip'>Cost needed</span>" : "") + "</td>" +
                     "<td>" + getMarginPill(priceCents, costCents) + "</td>" +
                     "<td><div class='row-actions'>" +
                         "<button type='button' class='btn btn-secondary btn-small icon-action' title='Save product' aria-label='Save product' data-action='save' data-id='" + escapeHtml(itemId) + "'>&#10003;</button>" +
@@ -3481,6 +3994,8 @@ function renderDashboard(options = {}) {
                 );
 
                 itemCosts[itemId] = costCents;
+                var costItem = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; }) || { name: itemId };
+                logActivity("Cost Saved", (costItem.name || "Product") + " cost saved at " + formatCurrencyFromCents(costCents) + ".", "Success");
                 showToast(savedCost && savedCost.message ? savedCost.message : "Cost saved. Margin updated.", "success");
                 renderItems(loadedItems);
             } catch (error) {
@@ -3519,6 +4034,7 @@ function renderDashboard(options = {}) {
                     }
                 });
 
+                loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
@@ -3570,6 +4086,7 @@ function renderDashboard(options = {}) {
                 );
 
                 lastUpdatedItemId = data && data.data && data.data.id ? data.data.id : "";
+                recordPriceChange({ id: lastUpdatedItemId, name: name }, 0, Number(price), "Product Created");
                 showToast("Product created successfully.", "success");
                 logActivity("Product Created", name + " was created in Clover.", "Success");
 
@@ -3596,6 +4113,8 @@ function renderDashboard(options = {}) {
 
                 var name = nameBox && nameBox.value ? nameBox.value.trim() : "";
                 var priceCents = priceToCentsFromDollarsString(priceBox && priceBox.value ? priceBox.value : "0");
+                var existingItem = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
+                var oldPriceCents = existingItem ? Number(existingItem.price || 0) : 0;
 
                 if (!name) {
                     showToast("Product name cannot be empty.", "error");
@@ -3621,6 +4140,7 @@ function renderDashboard(options = {}) {
                 );
 
                 lastUpdatedItemId = itemId;
+                recordPriceChange({ id: itemId, name: name }, oldPriceCents, priceCents, "Manual Price Save");
                 showToast("Product updated.", "success");
                 logActivity("Product Updated", name + " was updated.", "Success");
 
@@ -3693,11 +4213,16 @@ function renderDashboard(options = {}) {
         bind("btnReorder", "click", showReorderPlanning);
         bind("btnExportCsv", "click", exportProductsCsv);
         bind("btnImportCsv", "click", importCsvClicked);
+        bind("btnDuplicateReview", "click", showDuplicateDetector);
+        bind("btnMissingCostLock", "click", showMissingCostLock);
+        bind("btnSmart99", "click", applySmart99Rounding);
+        bind("btnUndoBulk", "click", undoLastBulkUpdate);
+        bind("btnOpenPriceHistory", "click", showFullPriceHistory);
         bind("btnPriceRules", "click", showSmartPricing);
         bind("btnProfitAlerts", "click", showProfitAlerts);
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
-        bind("btnProfitReview", "click", showProfitIntelligence);
+        bind("btnProfitIntelligence", "click", showProfitIntelligence);
         bind("btnBulkOperationsHub", "click", showBulkOperationsHub);
         bind("btnSmartPricingHub", "click", showSmartPricing);
         bind("btnCleanupToolsHub", "click", showCleanupTools);
@@ -3732,6 +4257,12 @@ function renderDashboard(options = {}) {
         bind("btnBulkClearPanel", "click", function () {
             clearSelection();
             renderItems(loadedItems);
+        });
+
+        document.querySelectorAll("[data-margin-preset]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                applyQuickMarginPreset(Number(btn.getAttribute("data-margin-preset")));
+            });
         });
 
         var modal = byId("confirmModal");
@@ -3790,6 +4321,8 @@ function renderDashboard(options = {}) {
                 }
             });
         }
+
+        loadStoredHistory();
 
         if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
             loadItems();
@@ -4389,7 +4922,7 @@ app.get("/support", (req, res) => {
         <ul>
             <li>Clover connection and authorization issues</li>
             <li>Inventory loading, product updates, and cost tracking</li>
-            <li>Bulk price updates, profit alerts, cleanup tools, and CSV exports</li>
+            <li>Bulk price updates, margin alerts, cleanup tools, and CSV exports</li>
         </ul>
     `));
 });
@@ -4402,7 +4935,7 @@ app.get("/privacy", (req, res) => {
         <h2>Data We Store</h2>
         <p>The app may store merchant connection details and item cost values so profit, margin, and cleanup tools can work across sessions.</p>
         <h2>How Data Is Used</h2>
-        <p>Data is used only to provide inventory management, bulk operations, profit intelligence, smart pricing guidance, cleanup tools, and merchant support.</p>
+        <p>Data is used only to provide inventory management, bulk operations, margin review, smart pricing guidance, cleanup tools, and merchant support.</p>
         <h2>Contact</h2>
         <p>Questions can be sent to <a href="mailto:muheisenone@outlook.com">muheisenone@outlook.com</a>.</p>
     `));
