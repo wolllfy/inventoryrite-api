@@ -2750,12 +2750,15 @@ function renderDashboard(options = {}) {
             var token = getToken();
             var merchantId = getMerchantId();
 
-            if (!token || !merchantId) {
+            // Tokens stay server-side now. Do not block inventory sync only because
+            // the browser does not have a merchant id embedded. The server can use
+            // the saved Clover connection from memory/database.
+            if (!token) {
                 showToast("Please connect Clover first.", "error");
                 return null;
             }
 
-            return { merchantId: merchantId };
+            return { merchantId: merchantId || "server" };
         }
 
         function escapeHtml(value) {
@@ -4974,6 +4977,34 @@ app.get("/clover-connection", (req, res) => {
     });
 });
 
+app.get("/sync-debug", async (req, res) => {
+    try {
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
+        res.json({
+            success: true,
+            message: accessToken && merchantId ? "Server has a Clover connection." : "Server is missing Clover connection data.",
+            databaseEnabled: USE_DATABASE,
+            merchantIdPresent: !!merchantId,
+            accessTokenPresent: !!accessToken,
+            latestConnection: {
+                connected: latestCloverConnection.connected,
+                merchant_id: latestCloverConnection.merchant_id,
+                employee_id: latestCloverConnection.employee_id,
+                connected_at: latestCloverConnection.connected_at,
+                hasAccessToken: !!latestCloverConnection.access_token,
+                hasRefreshToken: !!latestCloverConnection.refresh_token,
+                token_expires_at: latestCloverConnection.token_expires_at
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Sync debug failed.",
+            error: error.message
+        });
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | CLOVER MERCHANT INFO ROUTE
@@ -4987,7 +5018,7 @@ app.get("/clover-merchant", async (req, res) => {
         if (!accessToken || !merchantId) {
             return res.status(400).json({
                 success: false,
-                message: "Missing token or merchantId."
+                message: "Clover is not connected on the server. Click Connect Clover again, then refresh inventory. If this happens after every deploy, add DATABASE_URL so the connection persists."
             });
         }
 
@@ -5026,7 +5057,7 @@ app.get("/clover-items", async (req, res) => {
         if (!accessToken || !merchantId) {
             return res.status(400).json({
                 success: false,
-                message: "Missing token or merchantId."
+                message: "Clover inventory cannot sync because the server does not have a saved Clover connection. Click Connect Clover again. For production, set DATABASE_URL so tokens survive Render restarts/deploys."
             });
         }
 
