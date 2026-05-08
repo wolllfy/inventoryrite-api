@@ -1311,7 +1311,7 @@ function renderDashboard(options = {}) {
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
                     <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh</button>
                     <button id="btnToggleBulk" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
-                    <button id="btnToggleAdd" type="button" class="btn btn-primary">Add Product</button>
+                    
                 </div>
             </div>
 
