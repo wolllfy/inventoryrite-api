@@ -1189,16 +1189,31 @@ function renderDashboard(options = {}) {
             transition: transform .12s ease, opacity .12s ease, filter .12s ease;
         }
 
-        .control-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+        .control-btn:hover { transform: translateY(-1px); filter: brightness(1.04); }
         .control-btn:disabled { opacity: .58; cursor: not-allowed; transform: none; }
-        .control-all { background:#475569; }
-        .control-low { background:#f97316; }
-        .control-reorder { background:#0891b2; }
-        .control-export { background:#334155; border:1px solid rgba(255,255,255,.18); }
-        .control-import { background:#16a34a; }
-        .control-rules { background:#7c3aed; }
-        .control-profit { background:#dc2626; }
-        .control-log { background:#64748b; }
+        .control-neutral,
+        .control-all,
+        .control-low,
+        .control-reorder,
+        .control-export,
+        .control-rules,
+        .control-log {
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+        .control-neutral:hover,
+        .control-all:hover,
+        .control-low:hover,
+        .control-reorder:hover,
+        .control-export:hover,
+        .control-rules:hover,
+        .control-log:hover {
+            background: #eef2f7;
+            border-color: #94a3b8;
+        }
+        .control-import { background:#16a34a; color: #ffffff; border: 1px solid #15803d; }
+        .control-profit { background:#dc2626; color: #ffffff; border: 1px solid #b91c1c; }
 
         .view-filter-note {
             display:none;
@@ -1635,6 +1650,15 @@ function renderDashboard(options = {}) {
             white-space: nowrap;
         }
 
+        .stats-row {
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+
+        .merchant-control-bar {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+
         @media (max-width: 760px) {
             .operations-summary-main { align-items: flex-start; flex-direction: column; gap: 3px; }
             .operations-summary-pills { justify-content: flex-start; }
@@ -1971,19 +1995,19 @@ function renderDashboard(options = {}) {
                     <div class="merchant-control-subtitle">Filters, reorder planning, CSV tools, price checks, cleanup, and action history in one place.</div>
                 </div>
                 <div class="merchant-control-actions">
-                    <button id="btnShowAllProducts" type="button" class="control-btn control-all">All Products</button>
-                    <button id="btnLowStock" type="button" class="control-btn control-low">Low Stock</button>
-                    <button id="btnReorder" type="button" class="control-btn control-reorder">Reorder</button>
-                    <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
+                    <button id="btnShowAllProducts" type="button" class="control-btn control-neutral">All Products</button>
+                    <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
+                    <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
+                    <button id="btnExportCsv" type="button" class="control-btn control-neutral">Export CSV</button>
                     <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
-                    <button id="btnDuplicateReview" type="button" class="control-btn control-rules">Duplicate Review</button>
-                    <button id="btnMissingCostLock" type="button" class="control-btn control-low">Missing Costs</button>
-                    <button id="btnSmart99" type="button" class="control-btn control-reorder">Smart .99</button>
-                    <button id="btnUndoBulk" type="button" class="control-btn control-profit">Undo Bulk</button>
-                    <button id="btnPriceRules" type="button" class="control-btn control-rules">Pricing Tools</button>
+                    <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
+                    <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
+                    <button id="btnSmart99" type="button" class="control-btn control-neutral">Smart .99</button>
+                    <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
+                    <button id="btnPriceRules" type="button" class="control-btn control-neutral">Pricing Tools</button>
                     <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Margin Alerts</button>
-                    <button id="btnCleanupScan" type="button" class="control-btn control-rules">Inventory Cleanup</button>
-                    <button id="btnActivityLog" type="button" class="control-btn control-log">Activity Log</button>
+                    <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Inventory Cleanup</button>
+                    <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
                 </div>
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
