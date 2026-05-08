@@ -1429,6 +1429,37 @@ function renderDashboard(options = {}) {
             margin-left: 6px;
         }
 
+
+
+        .intelligence-strip {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1fr 1.2fr;
+            gap: 10px;
+            margin: 0 0 14px;
+        }
+
+        .intelligence-box {
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            padding: 13px 14px;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, 0.04);
+        }
+
+        .intelligence-label { color: #64748b; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+        .intelligence-value { color: #0f172a; font-size: 21px; font-weight: 900; line-height: 1.1; }
+        .intelligence-help { color: #64748b; font-size: 11px; font-weight: 800; margin-top: 5px; line-height: 1.35; }
+        .health-good { color: #166534; }
+        .health-watch { color: #b45309; }
+        .health-risk { color: #b91c1c; }
+        .severity-pill { display: inline-flex; border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .035em; margin-right: 6px; }
+        .severity-critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .severity-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .severity-opportunity { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .severity-suggestion { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
+        .insight-fix-btn { border: 0; border-radius: 999px; background: #111827; color: white; font-size: 11px; font-weight: 900; padding: 7px 10px; cursor: pointer; white-space: nowrap; }
+        .insight-fix-btn:hover { filter: brightness(1.08); }
+
         @media (max-width: 980px) {
             .merchant-control-bar { align-items: flex-start; }
             .merchant-control-actions { justify-content: flex-start; }
@@ -1436,6 +1467,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 980px) {
             .productivity-hub { grid-template-columns: 1fr 1fr; }
+            .intelligence-strip { grid-template-columns: 1fr 1fr; }
             .risk-score-row { grid-template-columns: 1fr; }
             .hero, .stats-row, .add-grid { grid-template-columns: 1fr; }
             .hero { flex-direction: column; }
@@ -1458,6 +1490,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 700px) {
             .productivity-hub { grid-template-columns: 1fr; }
+            .intelligence-strip { grid-template-columns: 1fr; }
             .stats-row { grid-template-columns: 1fr; }
             .wrap { padding: 0 10px 40px; }
             .inventory-card { padding: 14px; }
@@ -1483,7 +1516,7 @@ function renderDashboard(options = {}) {
             <div class="logo">IR</div>
             <div>
                 <h1>InventoryRite for Clover</h1>
-                <p>Product and inventory manager for Clover merchants</p>
+                <p>Inventory intelligence and product optimization for Clover merchants</p>
             </div>
         </div>
 
@@ -1498,8 +1531,8 @@ function renderDashboard(options = {}) {
         <section class="hero">
             <div>
                 <div class="eyebrow">Clover Inventory</div>
-                <h2>Manage your Clover products in one clean workspace.</h2>
-                <p>Search products, update names and prices, create new items, and remove products from your Clover inventory.</p>
+                <h2>Optimize your Clover products, pricing, and inventory health in one clean workspace.</h2>
+                <p>Find below-cost items, weak margins, cleanup problems, pricing opportunities, and fast product fixes before they cost the merchant money.</p>
             </div>
 
         </section>
@@ -1508,7 +1541,7 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Loaded Clover products appear below. Search, refresh, bulk update, or add a new Clover item from one clean control area.</p>
+                    <p>Loaded Clover products appear below. Search, refresh, bulk update, review intelligence, or add a new Clover item from one clean control area.</p>
                     <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
@@ -1637,6 +1670,29 @@ function renderDashboard(options = {}) {
                     <div class="productivity-title">Operational Shortcuts</div>
                     <div class="productivity-copy">Merchant-friendly shortcuts for daily product fixes.</div>
                 </button>
+            </div>
+
+            <div class="intelligence-strip" id="intelligenceStrip">
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Inventory Health</div>
+                    <div class="intelligence-value" id="healthScoreText">--/100</div>
+                    <div class="intelligence-help" id="healthScoreHelp">Refresh Clover inventory to score product health.</div>
+                </div>
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Critical Issues</div>
+                    <div class="intelligence-value health-risk" id="criticalIssueText">0</div>
+                    <div class="intelligence-help">Below-cost, missing price, and suspicious price risks.</div>
+                </div>
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Warnings</div>
+                    <div class="intelligence-value health-watch" id="warningIssueText">0</div>
+                    <div class="intelligence-help">Weak margins, missing costs, duplicates, and stale items.</div>
+                </div>
+                <div class="intelligence-box">
+                    <div class="intelligence-label">Profit Opportunity</div>
+                    <div class="intelligence-value health-good" id="profitOpportunityText">$0.00</div>
+                    <div class="intelligence-help" id="profitOpportunityHelp">Estimated using costed products and conservative monthly assumptions.</div>
+                </div>
             </div>
 
             <div class="last-action-strip" id="lastActionStrip">
@@ -2021,6 +2077,7 @@ function renderDashboard(options = {}) {
             setStatText("statBestMargin", best ? best.name.substring(0, 18) + " - " + best.margin.toFixed(1) + "%" : "-");
             setStatText("statLowestMargin", lowest ? lowest.name.substring(0, 18) + " - " + lowest.margin.toFixed(1) + "%" : "-");
             setStatText("statBelowCost", belowCost);
+            renderIntelligencePanel();
         }
 
         /*
@@ -2608,6 +2665,448 @@ function renderDashboard(options = {}) {
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
+
+
+        /*
+        |------------------------------------------------------------------
+        | REAL INVENTORY INTELLIGENCE ENGINE - V1
+        |------------------------------------------------------------------
+        | This intentionally uses transparent rules, not fake AI wording.
+        | Every insight should answer: what is wrong, why it matters, and
+        | what the merchant can do next.
+        |------------------------------------------------------------------
+        */
+
+        function normalizeProductNameKey(value) {
+            return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+        }
+
+        function cleanProductName(value) {
+            return String(value || "").replace(/\s+/g, " ").trim().replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
+        }
+
+        function getItemCategory(item) {
+            if (!item) return "Uncategorized";
+            if (item.category && item.category.name) return item.category.name;
+            if (item.categories && item.categories.elements && item.categories.elements.length && item.categories.elements[0].name) return item.categories.elements[0].name;
+            if (item.categories && Array.isArray(item.categories) && item.categories.length && item.categories[0].name) return item.categories[0].name;
+            return "Uncategorized";
+        }
+
+        function getItemBarcode(item) {
+            return item.barcode || item.upc || item.ean || item.code || "";
+        }
+
+        function getLastTouchedTime(item) {
+            var candidates = [item.modifiedTime, item.createdTime, item.updatedTime, item.updateTime];
+            for (var i = 0; i < candidates.length; i++) {
+                var value = Number(candidates[i] || 0);
+                if (value > 0) return value;
+            }
+            return 0;
+        }
+
+        function roundToRetail99(cents) {
+            cents = Math.max(0, Math.round(Number(cents || 0)));
+            if (cents <= 0) return 99;
+            var dollars = cents / 100;
+            var rounded = Math.max(0.99, Math.ceil(dollars) - 0.01);
+            if (rounded * 100 < cents) rounded += 1;
+            return Math.round(rounded * 100);
+        }
+
+        function getTargetPriceForMargin(costCents, targetMarginPercent) {
+            costCents = Math.max(0, Number(costCents || 0));
+            var marginDecimal = Math.max(1, Math.min(95, Number(targetMarginPercent || 40))) / 100;
+            if (costCents <= 0) return 0;
+            return roundToRetail99(Math.ceil(costCents / (1 - marginDecimal)));
+        }
+
+        function makeIssue(type, severity, item, title, explanation, recommendation, estimatedImpactCents, action) {
+            return {
+                type: type,
+                severity: severity,
+                item: item,
+                itemId: item && item.id ? item.id : "",
+                itemName: item && item.name ? item.name : "Unnamed Product",
+                title: title,
+                explanation: explanation,
+                recommendation: recommendation,
+                message: explanation + " " + recommendation,
+                estimatedImpactCents: Number(estimatedImpactCents || 0),
+                action: action || "review"
+            };
+        }
+
+        function analyzeInventoryIntelligence(items) {
+            items = items || [];
+            var duplicateMap = {};
+            var barcodeMap = {};
+            var categoryBuckets = {};
+            var issues = [];
+            var safeAutoFixes = [];
+            var estimatedMonthlyLoss = 0;
+            var estimatedProfitOpportunity = 0;
+            var penalty = 0;
+            var assumedMonthlyUnits = 30;
+
+            items.forEach(function (item) {
+                var nameKey = normalizeProductNameKey(item.name || "");
+                var barcodeKey = String(getItemBarcode(item) || "").trim();
+                if (nameKey) {
+                    if (!duplicateMap[nameKey]) duplicateMap[nameKey] = [];
+                    duplicateMap[nameKey].push(item);
+                }
+                if (barcodeKey) {
+                    if (!barcodeMap[barcodeKey]) barcodeMap[barcodeKey] = [];
+                    barcodeMap[barcodeKey].push(item);
+                }
+
+                var category = getItemCategory(item);
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                if (!categoryBuckets[category]) categoryBuckets[category] = { name: category, count: 0, marginSum: 0, marginCount: 0, belowCost: 0, totalPrice: 0 };
+                categoryBuckets[category].count++;
+                categoryBuckets[category].totalPrice += price;
+                if (price > 0 && cost > 0) {
+                    var marginForCategory = calculateMargin(price, cost);
+                    if (marginForCategory !== null) {
+                        categoryBuckets[category].marginSum += marginForCategory;
+                        categoryBuckets[category].marginCount++;
+                    }
+                    if (price < cost) categoryBuckets[category].belowCost++;
+                }
+            });
+
+            var storeMarginSum = 0;
+            var storeMarginCount = 0;
+            items.forEach(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                if (price > 0 && cost > 0) {
+                    var margin = calculateMargin(price, cost);
+                    if (margin !== null) {
+                        storeMarginSum += margin;
+                        storeMarginCount++;
+                    }
+                }
+            });
+            var storeAvgMargin = storeMarginCount ? (storeMarginSum / storeMarginCount) : null;
+
+            items.forEach(function (item) {
+                var name = String(item.name || "").trim();
+                var normalizedName = cleanProductName(name);
+                var nameKey = normalizeProductNameKey(name);
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                var sku = getItemSku(item);
+                var barcode = getItemBarcode(item);
+                var category = getItemCategory(item);
+                var margin = calculateMargin(price, cost);
+                var duplicateNameCount = nameKey ? ((duplicateMap[nameKey] || []).length) : 0;
+                var duplicateBarcodeCount = barcode ? ((barcodeMap[barcode] || []).length) : 0;
+                var target40 = cost > 0 ? getTargetPriceForMargin(cost, 40) : 0;
+                var target30 = cost > 0 ? getTargetPriceForMargin(cost, 30) : 0;
+                var perUnitLoss = Math.max(0, cost - price);
+                var perUnitOpportunity = target40 > price ? (target40 - price) : 0;
+                var lastTouched = getLastTouchedTime(item);
+                var staleDays = lastTouched ? Math.floor((Date.now() - lastTouched) / 86400000) : 0;
+
+                if (!name || normalizeProductNameKey(name) === "new clover item") {
+                    penalty += 6;
+                    issues.push(makeIssue("bad_name", "warning", item, "Bad product name", "This product name is missing or still looks like a default placeholder.", "Rename it so reports, search, and staff checkout are easier to trust.", 0, "fix_name"));
+                } else if (name !== normalizedName || /\s{2,}/.test(name)) {
+                    penalty += 2;
+                    issues.push(makeIssue("name_cleanup", "suggestion", item, "Name cleanup", "This product name has spacing or capitalization that can make inventory look messy.", "Suggested cleanup: " + normalizedName + ".", 0, "fix_name"));
+                    safeAutoFixes.push({ item: item, type: "name_cleanup", value: normalizedName });
+                }
+
+                if (price <= 0) {
+                    penalty += 15;
+                    issues.push(makeIssue("missing_price", "critical", item, "Missing sell price", "This product has no sell price, which can create checkout mistakes and revenue leakage.", cost > 0 ? "Suggested starting price at 40% margin: " + formatCurrencyFromCents(target40) + "." : "Add a real selling price before using this product.", cost > 0 ? target40 * assumedMonthlyUnits : 0, "fix_price"));
+                }
+
+                if (cost <= 0) {
+                    penalty += 8;
+                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and profit intelligence cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This unlocks real profit alerts.", 0, "fix_cost"));
+                }
+
+                if (price > 0 && cost > 0 && price < cost) {
+                    penalty += 18;
+                    estimatedMonthlyLoss += perUnitLoss * assumedMonthlyUnits;
+                    estimatedProfitOpportunity += perUnitOpportunity * assumedMonthlyUnits;
+                    issues.push(makeIssue("below_cost", "critical", item, "Selling below cost", "This item is priced below cost and may lose about " + formatCurrencyFromCents(perUnitLoss) + " every sale.", "Suggested 40% margin price: " + formatCurrencyFromCents(target40) + ".", (perUnitLoss + perUnitOpportunity) * assumedMonthlyUnits, "fix_price"));
+                } else if (price > 0 && cost > 0 && margin !== null && margin < 15) {
+                    penalty += 10;
+                    estimatedProfitOpportunity += perUnitOpportunity * assumedMonthlyUnits;
+                    issues.push(makeIssue("weak_margin", "warning", item, "Weak margin", "This item margin is only " + margin.toFixed(1) + "%" + (storeAvgMargin !== null ? ", compared with your costed store average of " + storeAvgMargin.toFixed(1) + "%" : "") + ".", "Review pricing. Suggested 40% margin price: " + formatCurrencyFromCents(target40) + ".", perUnitOpportunity * assumedMonthlyUnits, "fix_price"));
+                } else if (price > 0 && cost > 0 && margin !== null && margin < 30) {
+                    penalty += 5;
+                    estimatedProfitOpportunity += perUnitOpportunity * assumedMonthlyUnits;
+                    issues.push(makeIssue("margin_opportunity", "opportunity", item, "Margin opportunity", "This item is profitable, but margin is " + margin.toFixed(1) + "% and may be weaker than the store target.", "Optional target: " + formatCurrencyFromCents(target40) + " for about 40% margin.", perUnitOpportunity * assumedMonthlyUnits, "fix_price"));
+                }
+
+                if (price > 0 && price <= 50) {
+                    penalty += 7;
+                    issues.push(makeIssue("suspicious_price", "critical", item, "Suspicious low price", "This product is priced at " + formatCurrencyFromCents(price) + ", which may be a cents/dollars mistake.", "Review the price before this item is sold accidentally too cheap.", 0, "fix_price"));
+                }
+
+                if (price >= 10000000) {
+                    penalty += 7;
+                    issues.push(makeIssue("suspicious_price", "warning", item, "Suspicious high price", "This product price is unusually high and may be a data-entry mistake.", "Review the price for extra zeros or decimal mistakes.", 0, "fix_price"));
+                }
+
+                if (duplicateNameCount > 1) {
+                    penalty += 6;
+                    issues.push(makeIssue("duplicate_name", "warning", item, "Duplicate product name", duplicateNameCount + " products appear to use the same normalized name. This can confuse reporting and staff searches.", "Review duplicates before editing or deleting. Keep the cleanest product record.", 0, "review"));
+                }
+
+                if (duplicateBarcodeCount > 1) {
+                    penalty += 8;
+                    issues.push(makeIssue("duplicate_barcode", "critical", item, "Duplicate barcode", duplicateBarcodeCount + " products appear to share the same barcode/code. This can cause scan mistakes.", "Review barcode duplicates before relying on scanning workflows.", 0, "review"));
+                }
+
+                if (!sku) {
+                    penalty += 3;
+                    issues.push(makeIssue("missing_sku", "suggestion", item, "Missing SKU", "No SKU or code was detected. Searching, auditing, and cleanup become harder over time.", "Use a consistent SKU format for this merchant, such as CAT-001 or ITEM-001.", 0, "review"));
+                }
+
+                if (category === "Uncategorized") {
+                    penalty += 4;
+                    issues.push(makeIssue("missing_category", "suggestion", item, "Missing category", "This product does not appear to have a category in the loaded Clover data.", "Assign categories so margin comparisons and cleanup insights become more useful.", 0, "review"));
+                }
+
+                if (staleDays >= 365) {
+                    penalty += 5;
+                    issues.push(makeIssue("stale_product", "warning", item, "Stale product", "This item has not been modified in about " + staleDays + " days based on Clover timestamps.", "Review old pricing and cost. Stale records are often underpriced or outdated.", 0, "review"));
+                }
+            });
+
+            var categoryInsights = [];
+            Object.keys(categoryBuckets).forEach(function (key) {
+                var bucket = categoryBuckets[key];
+                if (bucket.marginCount > 0) {
+                    bucket.avgMargin = bucket.marginSum / bucket.marginCount;
+                    categoryInsights.push(bucket);
+                }
+            });
+            categoryInsights.sort(function (a, b) { return a.avgMargin - b.avgMargin; });
+
+            var criticalIssues = issues.filter(function (issue) { return issue.severity === "critical"; });
+            var warnings = issues.filter(function (issue) { return issue.severity === "warning"; });
+            var opportunities = issues.filter(function (issue) { return issue.severity === "opportunity" || issue.severity === "suggestion"; });
+            var healthScore = Math.max(0, Math.min(100, Math.round(100 - penalty)));
+
+            return {
+                healthScore: healthScore,
+                criticalIssues: criticalIssues,
+                warnings: warnings,
+                opportunities: opportunities,
+                allIssues: issues,
+                estimatedMonthlyLoss: estimatedMonthlyLoss,
+                estimatedProfitOpportunity: estimatedProfitOpportunity,
+                storeAvgMargin: storeAvgMargin,
+                categoryInsights: categoryInsights,
+                safeAutoFixes: safeAutoFixes,
+                assumedMonthlyUnits: assumedMonthlyUnits
+            };
+        }
+
+        function getInventoryIntelligence() {
+            return analyzeInventoryIntelligence(loadedItems || []);
+        }
+
+        function renderIntelligencePanel() {
+            var intelligence = getInventoryIntelligence();
+            var health = byId("healthScoreText");
+            var healthHelp = byId("healthScoreHelp");
+            var critical = byId("criticalIssueText");
+            var warning = byId("warningIssueText");
+            var opportunity = byId("profitOpportunityText");
+            var opportunityHelp = byId("profitOpportunityHelp");
+
+            if (health) {
+                health.textContent = intelligence.healthScore + "/100";
+                health.className = "intelligence-value " + (intelligence.healthScore >= 85 ? "health-good" : (intelligence.healthScore >= 65 ? "health-watch" : "health-risk"));
+            }
+            if (healthHelp) healthHelp.textContent = intelligence.healthScore >= 85 ? "Inventory looks healthy. Keep reviewing costs and margins." : (intelligence.healthScore >= 65 ? "Inventory is usable, but cleanup and margin work can improve it." : "Inventory needs attention before it feels merchant-ready.");
+            if (critical) critical.textContent = intelligence.criticalIssues.length;
+            if (warning) warning.textContent = intelligence.warnings.length;
+            if (opportunity) opportunity.textContent = formatCurrencyFromCents(intelligence.estimatedProfitOpportunity);
+            if (opportunityHelp) opportunityHelp.textContent = "Estimate assumes about " + intelligence.assumedMonthlyUnits + " sales/month on affected products until sales history is connected.";
+        }
+
+        function getCleanupIssues() {
+            return getInventoryIntelligence().allIssues;
+        }
+
+        function getProfitSummary() {
+            var intelligence = getInventoryIntelligence();
+            var priced = 0;
+            var costed = 0;
+            var missingCost = 0;
+            var missingPrice = 0;
+            var totalProfitCents = 0;
+            var marginSum = 0;
+            var marginCount = 0;
+
+            (loadedItems || []).forEach(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                if (price > 0) priced++;
+                if (cost > 0) costed++;
+                if (price <= 0) missingPrice++;
+                if (cost <= 0) missingCost++;
+                if (price > 0 && cost > 0) {
+                    var margin = calculateMargin(price, cost);
+                    totalProfitCents += (price - cost);
+                    if (margin !== null) {
+                        marginSum += margin;
+                        marginCount++;
+                    }
+                }
+            });
+
+            return {
+                priced: priced,
+                costed: costed,
+                belowCost: intelligence.criticalIssues.filter(function (issue) { return issue.type === "below_cost"; }).length,
+                lowMargin: intelligence.warnings.filter(function (issue) { return issue.type === "weak_margin"; }).length,
+                missingCost: missingCost,
+                missingPrice: missingPrice,
+                avgMargin: marginCount ? (marginSum / marginCount) : null,
+                totalProfitCents: totalProfitCents,
+                marginCount: marginCount,
+                estimatedMonthlyLoss: intelligence.estimatedMonthlyLoss,
+                estimatedProfitOpportunity: intelligence.estimatedProfitOpportunity,
+                healthScore: intelligence.healthScore
+            };
+        }
+
+        function severityBadge(severity) {
+            return "<span class='severity-pill severity-" + escapeHtml(severity || "suggestion") + "'>" + escapeHtml(severity || "suggestion") + "</span>";
+        }
+
+        function getIssueActionButton(issue) {
+            var label = "Review";
+            if (issue.action === "fix_price") label = "Price";
+            if (issue.action === "fix_cost") label = "Cost";
+            if (issue.action === "fix_name") label = "Fix Name";
+            return "<button type='button' class='insight-fix-btn' data-fix-action='" + escapeHtml(issue.action || "review") + "' data-fix-id='" + escapeHtml(issue.itemId || "") + "'>" + escapeHtml(label) + "</button>";
+        }
+
+        function issueToRow(issue) {
+            var impact = issue.estimatedImpactCents > 0 ? " Estimated impact: " + formatCurrencyFromCents(issue.estimatedImpactCents) + "/month." : "";
+            return "<div><strong>" + severityBadge(issue.severity) + escapeHtml(issue.itemName) + " <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong><span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span></div><div>" + getIssueActionButton(issue) + "</div>";
+        }
+
+        function showProfitIntelligence() {
+            var summary = getProfitSummary();
+            var intelligence = getInventoryIntelligence();
+            var rows = [];
+
+            rows.push("<div><strong>Inventory Health Score</strong><span>" + escapeHtml(summary.healthScore + "/100. This score drops when products are below cost, missing price, missing cost, duplicated, stale, or messy.") + "</span></div><div><span>Score</span></div>");
+            rows.push("<div><strong>Estimated Monthly Loss</strong><span>" + escapeHtml(formatCurrencyFromCents(summary.estimatedMonthlyLoss) + " from below-cost products, using a conservative " + intelligence.assumedMonthlyUnits + " sales/month assumption until sales history is connected.") + "</span></div><div><span>Risk</span></div>");
+            rows.push("<div><strong>Profit Opportunity</strong><span>" + escapeHtml(formatCurrencyFromCents(summary.estimatedProfitOpportunity) + " potential monthly improvement from pricing affected items toward a 40% margin target.") + "</span></div><div><span>Opportunity</span></div>");
+            rows.push("<div><strong>Average Margin</strong><span>" + escapeHtml(summary.avgMargin === null ? "Add costs to calculate average margin." : summary.avgMargin.toFixed(1) + "% across " + summary.marginCount + " costed item(s).") + "</span></div><div><span>Profit</span></div>");
+            intelligence.criticalIssues.concat(intelligence.warnings).slice(0, 14).forEach(function (issue) { rows.push(issueToRow(issue)); });
+            if (intelligence.categoryInsights.length) {
+                var weakest = intelligence.categoryInsights[0];
+                rows.push("<div><strong>Weakest Category</strong><span>" + escapeHtml(weakest.name + " averages " + weakest.avgMargin.toFixed(1) + "% margin across " + weakest.marginCount + " costed item(s).") + "</span></div><div><span>Category</span></div>");
+            }
+            openFeatureModal("Profit Intelligence", "Real intelligence means risk, reason, recommendation, and impact. Nothing here changes Clover until the merchant confirms it.", rows);
+            logActivity("Profit Intelligence", "Health " + summary.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s).", "Viewed");
+            showToast("Profit Intelligence opened.", "info");
+        }
+
+        function getSmartPriceSuggestion(item) {
+            var price = Number(item.price || 0);
+            var cost = getCostCents(item.id || "");
+            var target30 = cost > 0 ? getTargetPriceForMargin(cost, 30) : 0;
+            var target40 = cost > 0 ? getTargetPriceForMargin(cost, 40) : 0;
+            var target50 = cost > 0 ? getTargetPriceForMargin(cost, 50) : 0;
+            var currentMargin = calculateMargin(price, cost);
+            var rounded99 = price > 0 ? roundToRetail99(price) : 0;
+            if (price <= 0 && cost > 0) return { label: "Set Price", text: "No selling price found. Suggested 40% margin price: " + formatCurrencyFromCents(target40) + ".", suggestedPrice: target40 };
+            if (price > 0 && cost > 0 && price < cost) return { label: "Below Cost", text: "Current price loses " + formatCurrencyFromCents(cost - price) + " per sale. Suggested: " + formatCurrencyFromCents(target40) + " for about 40% margin.", suggestedPrice: target40 };
+            if (price > 0 && cost > 0 && currentMargin !== null && currentMargin < 15) return { label: "Weak Margin", text: "Current margin is " + currentMargin.toFixed(1) + "%. Suggested: " + formatCurrencyFromCents(target40) + " for about 40% margin.", suggestedPrice: target40 };
+            if (price > 0 && cost > 0 && currentMargin !== null && currentMargin < 30) return { label: "Opportunity", text: "Current margin is " + currentMargin.toFixed(1) + "%. 30% target: " + formatCurrencyFromCents(target30) + "; 40% target: " + formatCurrencyFromCents(target40) + ".", suggestedPrice: target40 };
+            if (price > 0 && rounded99 > 0 && Math.abs(rounded99 - price) > 0 && Math.abs(rounded99 - price) <= 100) return { label: ".99 Round", text: "Optional retail rounding idea: " + formatCurrencyFromCents(rounded99) + ".", suggestedPrice: rounded99 };
+            if (price > 0 && cost > 0) return { label: "Healthy", text: "Current margin is " + currentMargin.toFixed(1) + "%. 50% margin target would be " + formatCurrencyFromCents(target50) + ".", suggestedPrice: 0 };
+            return { label: "Needs Cost", text: "Add cost first so pricing suggestions become meaningful.", suggestedPrice: 0 };
+        }
+
+        function showSmartPricing() {
+            var sourceItems = selectedItemIds.size ? (loadedItems || []).filter(function (item) { return selectedItemIds.has(item.id || ""); }) : (loadedItems || []);
+            var intelligence = getInventoryIntelligence();
+            var priorityIds = intelligence.criticalIssues.concat(intelligence.warnings).filter(function (issue) { return issue.action === "fix_price"; }).map(function (issue) { return issue.itemId; });
+            if (!selectedItemIds.size && priorityIds.length) {
+                sourceItems = sourceItems.slice().sort(function (a, b) { return priorityIds.indexOf(b.id || "") - priorityIds.indexOf(a.id || ""); });
+            }
+            var rows = sourceItems.slice(0, 25).map(function (item) {
+                var suggestion = getSmartPriceSuggestion(item);
+                var button = suggestion.suggestedPrice > 0 ? "<button type='button' class='insight-fix-btn' data-fix-action='fix_price' data-fix-id='" + escapeHtml(item.id || "") + "'>Stage</button>" : "<span>Review</span>";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + " - Cost " + escapeHtml(formatCurrencyFromCents(getCostCents(item.id || ""))) + " - " + escapeHtml(suggestion.text) + "</span></div><div>" + button + "</div>";
+            });
+            if (!rows.length) rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Smart Pricing will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
+            openFeatureModal("Smart Pricing", selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions stage values in the table and still require the checkmark save." : "Showing pricing ideas prioritized by risk. Suggestions stage values in the table and still require the checkmark save.", rows);
+            logActivity("Smart Pricing", "Smart pricing suggestions reviewed.", "Viewed");
+            showToast("Smart Pricing opened.", "info");
+        }
+
+        function showCleanupTools() {
+            var intelligence = getInventoryIntelligence();
+            var issues = intelligence.allIssues;
+            var rows = [];
+            rows.push("<div><strong>Inventory Health</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
+            issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
+            if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
+            openFeatureModal("Cleanup Intelligence", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
+            setViewMode("cleanup");
+            logActivity("Cleanup Intelligence", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
+            showToast("Cleanup scan complete.", issues.length ? "info" : "success");
+        }
+
+        function handleInsightFixAction(action, itemId) {
+            var item = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
+            if (!item) { showToast("Product not found. Refresh inventory and try again.", "error"); return; }
+            if (action === "fix_cost") {
+                closeFeatureModal();
+                setViewMode("all");
+                setTimeout(function () {
+                    var input = document.querySelector("[data-cost-for='" + itemId + "']");
+                    if (input) { input.focus(); input.select(); showToast("Enter the true cost, then press Enter.", "info"); }
+                    else showToast("Cost field is not visible. Search or show all products first.", "info");
+                }, 150);
+                return;
+            }
+            if (action === "fix_name") {
+                var cleanName = cleanProductName(item.name || "");
+                if (!cleanName || cleanName.toLowerCase() === "new clover item") { showToast("This name needs a real merchant decision. Rename it in the product row.", "info"); closeFeatureModal(); return; }
+                closeFeatureModal();
+                setViewMode("all");
+                setTimeout(function () {
+                    var nameInput = document.querySelector("[data-name-for='" + itemId + "']");
+                    if (nameInput) { nameInput.value = cleanName; showToast("Cleaned name staged. Click the checkmark to save it to Clover.", "info"); nameInput.focus(); }
+                }, 150);
+                return;
+            }
+            if (action === "fix_price") {
+                var suggestion = getSmartPriceSuggestion(item);
+                if (!suggestion.suggestedPrice || suggestion.suggestedPrice <= 0) { showToast("Add cost first before applying smart price suggestions.", "info"); return; }
+                closeFeatureModal();
+                setViewMode("all");
+                setTimeout(function () {
+                    var priceInput = document.querySelector("[data-price-for='" + itemId + "']");
+                    if (priceInput) { priceInput.value = (suggestion.suggestedPrice / 100).toFixed(2); showToast("Suggested price staged. Click the checkmark to save it to Clover.", "info"); priceInput.focus(); priceInput.select(); }
+                }, 150);
+                return;
+            }
+            showToast("Review this item in the table before making changes.", "info");
+            closeFeatureModal();
+            setViewMode("all");
+        }
+
         function showOperationalShortcuts() {
             var rows = [
                 "<div><strong>Fast Cost Entry</strong><span>Click any Cost cell, type the true cost, then press Enter. Margin updates after save.</span></div><div><span>Active</span></div>",
@@ -3193,7 +3692,14 @@ function renderDashboard(options = {}) {
         var featureModal = byId("featureModal");
         if (featureModal) {
             featureModal.addEventListener("click", function (event) {
-                if (event.target === featureModal) closeFeatureModal();
+                if (event.target === featureModal) {
+                    closeFeatureModal();
+                    return;
+                }
+                var target = event.target;
+                if (target && target.getAttribute && target.getAttribute("data-fix-action")) {
+                    handleInsightFixAction(target.getAttribute("data-fix-action"), target.getAttribute("data-fix-id"));
+                }
             });
         }
 
