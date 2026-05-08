@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const crypto = require("crypto");
 require("dotenv").config();
 
 let Pool = null;
@@ -38,6 +39,12 @@ const CLOVER_API_BASE_URL = IS_PRODUCTION_CLOVER
 const CLOVER_ITEM_LIMIT = Number(process.env.CLOVER_ITEM_LIMIT || 100);
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 20000);
 
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 300);
+const CSRF_TOKEN_TTL_MS = Number(process.env.CSRF_TOKEN_TTL_MS || 2 * 60 * 60 * 1000);
+const OAUTH_STATE_TTL_MS = Number(process.env.OAUTH_STATE_TTL_MS || 10 * 60 * 1000);
+const SECURE_COOKIE_FLAG = APP_BASE_URL.startsWith("https://") ? "; Secure" : "";
+
 const DATABASE_URL = process.env.DATABASE_URL?.trim() || "";
 const USE_DATABASE = !!DATABASE_URL && !!Pool;
 
@@ -51,6 +58,115 @@ const dbPool = USE_DATABASE
 const cloverApi = axios.create({
     timeout: REQUEST_TIMEOUT_MS
 });
+
+/*
+|--------------------------------------------------------------------------
+| SECURITY MIDDLEWARE - RATE LIMIT, REQUEST IDS, CSRF, AND OAUTH STATE
+|--------------------------------------------------------------------------
+*/
+
+const rateLimitStore = new Map();
+const csrfTokens = new Map();
+const oauthStates = new Map();
+
+function createToken(bytes = 32) {
+    return crypto.randomBytes(bytes).toString("hex");
+}
+
+function nowMs() {
+    return Date.now();
+}
+
+function cleanupSecurityStores() {
+    const now = nowMs();
+
+    for (const [key, bucket] of rateLimitStore.entries()) {
+        if (!bucket || bucket.resetAt <= now) rateLimitStore.delete(key);
+    }
+
+    for (const [token, expiresAt] of csrfTokens.entries()) {
+        if (expiresAt <= now) csrfTokens.delete(token);
+    }
+
+    for (const [state, data] of oauthStates.entries()) {
+        if (!data || data.expiresAt <= now) oauthStates.delete(state);
+    }
+}
+
+function parseCookies(req) {
+    const header = req.headers.cookie || "";
+    return header.split(";").reduce((cookies, pair) => {
+        const index = pair.indexOf("=");
+        if (index > -1) {
+            const key = pair.slice(0, index).trim();
+            const value = pair.slice(index + 1).trim();
+            if (key) cookies[key] = decodeURIComponent(value);
+        }
+        return cookies;
+    }, {});
+}
+
+function issueCsrfToken() {
+    cleanupSecurityStores();
+    const token = createToken(24);
+    csrfTokens.set(token, nowMs() + CSRF_TOKEN_TTL_MS);
+    return token;
+}
+
+function verifyCsrfToken(req, res, next) {
+    if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+        return next();
+    }
+
+    const token = req.headers["x-csrf-token"] || req.body?.csrfToken || "";
+    const expiresAt = csrfTokens.get(token);
+
+    if (!token || !expiresAt || expiresAt <= nowMs()) {
+        return res.status(403).json({
+            success: false,
+            message: "Security check failed. Please refresh the page and try again."
+        });
+    }
+
+    csrfTokens.set(token, nowMs() + CSRF_TOKEN_TTL_MS);
+    return next();
+}
+
+function rateLimit(req, res, next) {
+    cleanupSecurityStores();
+
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+    const key = `${ip}:${req.path}`;
+    const now = nowMs();
+    const existing = rateLimitStore.get(key);
+
+    if (!existing || existing.resetAt <= now) {
+        rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+        return next();
+    }
+
+    existing.count += 1;
+
+    if (existing.count > RATE_LIMIT_MAX_REQUESTS) {
+        return res.status(429).json({
+            success: false,
+            message: "Too many requests. Please slow down and try again shortly."
+        });
+    }
+
+    return next();
+}
+
+app.use((req, res, next) => {
+    req.id = crypto.randomUUID ? crypto.randomUUID() : createToken(16);
+    res.setHeader("X-Request-Id", req.id);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "same-origin");
+    next();
+});
+
+app.use(rateLimit);
+app.use(verifyCsrfToken);
 
 /*
 |--------------------------------------------------------------------------
@@ -70,6 +186,9 @@ let latestCloverConnection = {
     merchant_id: "",
     employee_id: "",
     access_token: "",
+    refresh_token: "",
+    token_expires_at: "",
+    scopes: "",
     connected_at: ""
 };
 
@@ -87,10 +206,19 @@ async function initDatabase() {
             merchant_id TEXT PRIMARY KEY,
             employee_id TEXT,
             access_token TEXT NOT NULL,
+            refresh_token TEXT,
+            token_expires_at TIMESTAMPTZ,
+            scopes TEXT,
             connected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
     `);
+
+
+
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS refresh_token TEXT;`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMPTZ;`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS scopes TEXT;`);
 
     await dbPool.query(`
         CREATE TABLE IF NOT EXISTS item_costs (
@@ -103,7 +231,7 @@ async function initDatabase() {
     `);
 
     const lastConnection = await dbPool.query(`
-        SELECT merchant_id, employee_id, access_token, connected_at
+        SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
         FROM merchant_connections
         ORDER BY updated_at DESC
         LIMIT 1;
@@ -116,6 +244,9 @@ async function initDatabase() {
             merchant_id: row.merchant_id || "",
             employee_id: row.employee_id || "",
             access_token: row.access_token || "",
+            refresh_token: row.refresh_token || "",
+            token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
+            scopes: row.scopes || "",
             connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
         };
     }
@@ -129,6 +260,9 @@ async function saveCloverConnection(connection) {
         merchant_id: connection.merchant_id || "",
         employee_id: connection.employee_id || "",
         access_token: connection.access_token || "",
+        refresh_token: connection.refresh_token || latestCloverConnection.refresh_token || "",
+        token_expires_at: connection.token_expires_at || latestCloverConnection.token_expires_at || "",
+        scopes: connection.scopes || latestCloverConnection.scopes || "",
         connected_at: connection.connected_at || new Date().toISOString()
     };
 
@@ -137,18 +271,24 @@ async function saveCloverConnection(connection) {
     }
 
     await dbPool.query(
-        `INSERT INTO merchant_connections (merchant_id, employee_id, access_token, connected_at, updated_at)
-         VALUES ($1, $2, $3, $4, NOW())
+        `INSERT INTO merchant_connections (merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
          ON CONFLICT (merchant_id)
          DO UPDATE SET
             employee_id = EXCLUDED.employee_id,
             access_token = EXCLUDED.access_token,
+            refresh_token = COALESCE(EXCLUDED.refresh_token, merchant_connections.refresh_token),
+            token_expires_at = EXCLUDED.token_expires_at,
+            scopes = EXCLUDED.scopes,
             connected_at = EXCLUDED.connected_at,
             updated_at = NOW();`,
         [
             latestCloverConnection.merchant_id,
             latestCloverConnection.employee_id,
             latestCloverConnection.access_token,
+            latestCloverConnection.refresh_token || null,
+            latestCloverConnection.token_expires_at || null,
+            latestCloverConnection.scopes || null,
             latestCloverConnection.connected_at
         ]
     );
@@ -221,13 +361,82 @@ function formatTokenForDisplay(token) {
     return token.substring(0, 6) + "..." + token.substring(token.length - 4);
 }
 
-function getConnectionFromRequest(req) {
-    const tokenFromQuery = req.query.token || req.body?.token || "";
-    const merchantFromQuery = req.query.merchantId || req.body?.merchantId || "";
+async function refreshTokenIfNeeded(connection) {
+    if (!connection || !connection.refresh_token || !connection.token_expires_at) {
+        return connection;
+    }
+
+    const expiresAt = new Date(connection.token_expires_at).getTime();
+    if (!Number.isFinite(expiresAt) || expiresAt - nowMs() > 5 * 60 * 1000) {
+        return connection;
+    }
+
+    try {
+        const tokenResponse = await cloverApi.post(
+            `${CLOVER_API_BASE_URL}/oauth/token`,
+            new URLSearchParams({
+                client_id: CLOVER_CLIENT_ID,
+                client_secret: CLOVER_CLIENT_SECRET,
+                grant_type: "refresh_token",
+                refresh_token: connection.refresh_token
+            }).toString(),
+            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+        );
+
+        const tokenData = tokenResponse.data || {};
+        const expiresInSeconds = Number(tokenData.expires_in || tokenData.expiresIn || 0);
+
+        return await saveCloverConnection({
+            merchant_id: connection.merchant_id,
+            employee_id: connection.employee_id,
+            access_token: tokenData.access_token || connection.access_token,
+            refresh_token: tokenData.refresh_token || connection.refresh_token,
+            token_expires_at: expiresInSeconds ? new Date(nowMs() + expiresInSeconds * 1000).toISOString() : connection.token_expires_at,
+            scopes: tokenData.scope || tokenData.scopes || connection.scopes || "",
+            connected_at: connection.connected_at || new Date().toISOString()
+        });
+    } catch (error) {
+        console.error("Clover token refresh failed:", error.response?.data || error.message);
+        return connection;
+    }
+}
+
+async function getConnectionFromRequest(req) {
+    // Security note: tokens are intentionally not accepted from query strings.
+    // The server uses the saved merchant connection instead of exposing bearer tokens in URLs.
+    const merchantFromRequest = req.headers["x-merchant-id"] || req.body?.merchantId || req.query.merchantId || "";
+    let connection = latestCloverConnection;
+
+    if (USE_DATABASE && dbPool && merchantFromRequest) {
+        const result = await dbPool.query(
+            `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
+             FROM merchant_connections
+             WHERE merchant_id = $1
+             LIMIT 1;`,
+            [merchantFromRequest]
+        );
+
+        if (result.rows.length > 0) {
+            const row = result.rows[0];
+            connection = {
+                connected: true,
+                merchant_id: row.merchant_id || "",
+                employee_id: row.employee_id || "",
+                access_token: row.access_token || "",
+                refresh_token: row.refresh_token || "",
+                token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
+                scopes: row.scopes || "",
+                connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
+            };
+        }
+    }
+
+    connection = await refreshTokenIfNeeded(connection);
 
     return {
-        accessToken: tokenFromQuery || latestCloverConnection.access_token,
-        merchantId: merchantFromQuery || latestCloverConnection.merchant_id
+        accessToken: connection.access_token || "",
+        merchantId: connection.merchant_id || merchantFromRequest || "",
+        connection
     };
 }
 
@@ -260,6 +469,7 @@ function renderDashboard(options = {}) {
     const merchantId = options.merchant_id || latestCloverConnection.merchant_id || "";
     const employeeId = options.employee_id || latestCloverConnection.employee_id || "";
     const accessToken = options.access_token || latestCloverConnection.access_token || "";
+    const csrfToken = issueCsrfToken();
     const connected = !!accessToken || latestCloverConnection.connected;
     const connectedAt = options.connected_at || latestCloverConnection.connected_at || "";
 
@@ -2238,7 +2448,8 @@ function renderDashboard(options = {}) {
             connected: ${connected ? "true" : "false"},
             merchant_id: ${JSON.stringify(merchantId)},
             employee_id: ${JSON.stringify(employeeId)},
-            access_token: ${JSON.stringify(accessToken)},
+            access_token: "",
+            csrf_token: ${JSON.stringify(csrfToken)},
             connected_at: ${JSON.stringify(connectedAt)}
         };
 
@@ -2272,7 +2483,8 @@ function renderDashboard(options = {}) {
         }
 
         function getToken() {
-            return embeddedConnection.access_token || "";
+            // Bearer tokens stay on the server. The browser never needs to see them.
+            return "server";
         }
 
         function getMerchantId() {
@@ -2516,7 +2728,7 @@ function renderDashboard(options = {}) {
                 return null;
             }
 
-            return { token: token, merchantId: merchantId };
+            return { merchantId: merchantId };
         }
 
         function escapeHtml(value) {
@@ -2758,9 +2970,7 @@ function renderDashboard(options = {}) {
 
                 try {
                     await fetchJson(
-                        "/clover-update-item/" + encodeURIComponent(itemId) +
-                        "?token=" + encodeURIComponent(connection.token) +
-                        "&merchantId=" + encodeURIComponent(connection.merchantId),
+                        "/clover-update-item/" + encodeURIComponent(itemId) +,
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -3844,9 +4054,7 @@ function renderDashboard(options = {}) {
                 var item = row.item;
                 try {
                     await fetchJson(
-                        "/clover-update-item/" + encodeURIComponent(item.id || "") +
-                        "?token=" + encodeURIComponent(connection.token) +
-                        "&merchantId=" + encodeURIComponent(connection.merchantId),
+                        "/clover-update-item/" + encodeURIComponent(item.id || "") +,
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -4101,6 +4309,14 @@ function renderDashboard(options = {}) {
                 options.signal = controller.signal;
             }
 
+            options.headers = options.headers || {};
+            if (options.method && String(options.method).toUpperCase() !== "GET") {
+                options.headers["X-CSRF-Token"] = embeddedConnection.csrf_token || "";
+            }
+            if (embeddedConnection.merchant_id) {
+                options.headers["X-Merchant-Id"] = embeddedConnection.merchant_id;
+            }
+
             var response;
             try {
                 response = await fetch(url, options);
@@ -4211,9 +4427,7 @@ function renderDashboard(options = {}) {
                 }
 
                 var savedCost = await fetchJson(
-                    "/item-cost/" + encodeURIComponent(itemId) +
-                    "?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId),
+                    "/item-cost/" + encodeURIComponent(itemId) +,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -4244,13 +4458,11 @@ function renderDashboard(options = {}) {
                 setButtonText("btnRefreshInventoryTop", "Refreshing...");
 
                 var data = await fetchJson(
-                    "/clover-items?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId)
+                    "/clover-items"
                 );
 
                 var costData = await fetchJson(
-                    "/item-costs?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId)
+                    "/item-costs"
                 );
 
                 loadedItems = data.data && data.data.elements ? data.data.elements : [];
@@ -4305,8 +4517,7 @@ function renderDashboard(options = {}) {
                 setButtonText("btnRefreshInventoryTop", "Refreshing...");
 
                 var data = await fetchJson(
-                    "/clover-create-item?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId),
+                    "/clover-create-item",
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -4358,9 +4569,7 @@ function renderDashboard(options = {}) {
                 startBusy();
 
                 await fetchJson(
-                    "/clover-update-item/" + encodeURIComponent(itemId) +
-                    "?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId),
+                    "/clover-update-item/" + encodeURIComponent(itemId) +,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -4391,9 +4600,7 @@ function renderDashboard(options = {}) {
                 startBusy();
 
                 await fetchJson(
-                    "/clover-delete-item/" + encodeURIComponent(itemId) +
-                    "?token=" + encodeURIComponent(connection.token) +
-                    "&merchantId=" + encodeURIComponent(connection.merchantId),
+                    "/clover-delete-item/" + encodeURIComponent(itemId) +,
                     { method: "POST" }
                 );
 
@@ -4591,6 +4798,22 @@ app.get("/", async (req, res) => {
             `);
         }
 
+        const state = String(req.query.state || "");
+        const cookies = parseCookies(req);
+        const cookieState = cookies.inventoryrite_oauth_state || "";
+        const storedState = oauthStates.get(state);
+
+        if (!state || !cookieState || state !== cookieState || !storedState || storedState.expiresAt <= nowMs()) {
+            return res.status(400).send(`
+                <h1>Clover OAuth security check failed</h1>
+                <p>Please restart the Clover connection from InventoryRite.</p>
+                <a href="/">Back to InventoryRite</a>
+            `);
+        }
+
+        oauthStates.delete(state);
+        res.setHeader("Set-Cookie", `inventoryrite_oauth_state=; HttpOnly; SameSite=Lax; Max-Age=0; Path=/`);
+
         console.log("Clover OAuth code received.");
 
         const tokenResponse = await cloverApi.post(
@@ -4613,6 +4836,9 @@ app.get("/", async (req, res) => {
             merchant_id: req.query.merchant_id || req.query.merchantId || tokenData.merchant_id || "",
             employee_id: req.query.employee_id || req.query.employeeId || tokenData.employee_id || "",
             access_token: tokenData.access_token || "",
+            refresh_token: tokenData.refresh_token || "",
+            token_expires_at: tokenData.expires_in ? new Date(nowMs() + Number(tokenData.expires_in) * 1000).toISOString() : "",
+            scopes: tokenData.scope || tokenData.scopes || "",
             connected_at: new Date().toISOString()
         });
 
@@ -4620,7 +4846,9 @@ app.get("/", async (req, res) => {
         console.log({
             merchant_id: latestCloverConnection.merchant_id,
             employee_id: latestCloverConnection.employee_id,
-            hasAccessToken: !!latestCloverConnection.access_token
+            hasAccessToken: !!latestCloverConnection.access_token,
+            hasRefreshToken: !!latestCloverConnection.refresh_token,
+            token_expires_at: latestCloverConnection.token_expires_at
         });
 
         return res.send(renderDashboard(latestCloverConnection));
@@ -4656,7 +4884,9 @@ app.get("/health", (req, res) => {
             merchant_id: latestCloverConnection.merchant_id,
             employee_id: latestCloverConnection.employee_id,
             connected_at: latestCloverConnection.connected_at,
-            hasAccessToken: !!latestCloverConnection.access_token
+            hasAccessToken: !!latestCloverConnection.access_token,
+            hasRefreshToken: !!latestCloverConnection.refresh_token,
+            token_expires_at: latestCloverConnection.token_expires_at
         }
     });
 });
@@ -4675,11 +4905,22 @@ app.get("/connect-clover", (req, res) => {
         });
     }
 
+    const state = createToken(24);
+    oauthStates.set(state, { expiresAt: nowMs() + OAUTH_STATE_TTL_MS });
+    res.setHeader(
+        "Set-Cookie",
+        `inventoryrite_oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${SECURE_COOKIE_FLAG}`
+    );
+
+    const scope = process.env.CLOVER_SCOPES || "merchant_read item_read item_write";
+
     const cloverAuthUrl =
         `${CLOVER_BASE_URL}/oauth/authorize` +
         `?client_id=${encodeURIComponent(CLOVER_CLIENT_ID)}` +
         `&response_type=code` +
-        `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+        `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+        `&state=${encodeURIComponent(state)}` +
+        `&scope=${encodeURIComponent(scope)}`;
 
     console.log("Redirecting to Clover OAuth...");
     return res.redirect(cloverAuthUrl);
@@ -4699,7 +4940,9 @@ app.get("/clover-connection", (req, res) => {
             merchant_id: latestCloverConnection.merchant_id,
             employee_id: latestCloverConnection.employee_id,
             connected_at: latestCloverConnection.connected_at,
-            hasAccessToken: !!latestCloverConnection.access_token
+            hasAccessToken: !!latestCloverConnection.access_token,
+            hasRefreshToken: !!latestCloverConnection.refresh_token,
+            token_expires_at: latestCloverConnection.token_expires_at
         }
     });
 });
@@ -4712,7 +4955,7 @@ app.get("/clover-connection", (req, res) => {
 
 app.get("/clover-merchant", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
 
         if (!accessToken || !merchantId) {
             return res.status(400).json({
@@ -4751,7 +4994,7 @@ app.get("/clover-merchant", async (req, res) => {
 
 app.get("/clover-items", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
 
         if (!accessToken || !merchantId) {
             return res.status(400).json({
@@ -4790,7 +5033,7 @@ app.get("/clover-items", async (req, res) => {
 
 app.post("/clover-create-item", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
 
         if (!accessToken || !merchantId) {
             return res.status(400).json({
@@ -4847,7 +5090,7 @@ app.post("/clover-create-item", async (req, res) => {
 
 app.post("/clover-update-item/:itemId", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
 
         if (!accessToken || !merchantId) {
@@ -4912,7 +5155,7 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
 
 app.post("/clover-delete-item/:itemId", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
 
         if (!accessToken || !merchantId) {
@@ -4960,7 +5203,7 @@ app.post("/clover-delete-item/:itemId", async (req, res) => {
 
 app.get("/clover-create-item-legacy", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
 
         if (!accessToken || !merchantId) {
             return res.status(400).json({
@@ -5021,7 +5264,7 @@ app.get("/clover-create-item-legacy", async (req, res) => {
 
 app.get("/item-costs", async (req, res) => {
     try {
-        const { merchantId } = getConnectionFromRequest(req);
+        const { merchantId } = await getConnectionFromRequest(req);
 
         if (!merchantId) {
             return res.status(400).json({
@@ -5049,7 +5292,7 @@ app.get("/item-costs", async (req, res) => {
 
 app.post("/item-cost/:itemId", async (req, res) => {
     try {
-        const { accessToken, merchantId } = getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
         const costCents = Number(req.body.costCents || 0);
 
@@ -5143,6 +5386,11 @@ function renderSimplePage(title, bodyHtml) {
 </html>`;
 }
 
+app.post("/clover-webhook", (req, res) => {
+    console.log("Clover webhook received", { requestId: req.id, body: req.body });
+    res.json({ success: true, message: "Webhook received." });
+});
+
 app.get("/support", (req, res) => {
     res.send(renderSimplePage("Support", `
         <p>Need help with InventoryRite for Clover? Contact Process Rite Inc for setup, product syncing, pricing tools, and account support.</p>
@@ -5170,6 +5418,25 @@ app.get("/privacy", (req, res) => {
         <h2>Contact</h2>
         <p>Questions can be sent to <a href="mailto:muheisenone@outlook.com">muheisenone@outlook.com</a>.</p>
     `));
+});
+
+app.get("/data-retention", (req, res) => {
+    res.send(`
+        <h1>InventoryRite Data Retention and Deletion Policy</h1>
+        <p>InventoryRite stores only the merchant connection and product cost data needed to operate the app. Merchants may request deletion of stored app data by contacting support.</p>
+        <p>When a merchant disconnects or requests deletion, InventoryRite will remove stored Clover connection tokens and merchant-specific app data unless retention is required for legal, fraud prevention, or accounting reasons.</p>
+        <p>Support: muheisenone@outlook.com</p>
+        <a href="/">Back</a>
+    `);
+});
+
+app.get("/dmca", (req, res) => {
+    res.send(`
+        <h1>InventoryRite Copyright / DMCA Policy</h1>
+        <p>If you believe content in InventoryRite infringes your copyright, contact support with the copyrighted work, the allegedly infringing material, your contact information, and a good-faith statement.</p>
+        <p>Support: muheisenone@outlook.com</p>
+        <a href="/">Back</a>
+    `);
 });
 
 app.get("/terms", (req, res) => {
