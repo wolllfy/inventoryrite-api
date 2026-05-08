@@ -1424,6 +1424,19 @@ function renderDashboard(options = {}) {
 
     <script>
     (function () {
+        window.addEventListener("error", function (event) {
+            try {
+                var wrap = document.getElementById("toastWrap");
+                if (wrap) {
+                    var toast = document.createElement("div");
+                    toast.className = "toast error";
+                    toast.textContent = "Page script error: " + (event && event.message ? event.message : "Unknown error");
+                    wrap.appendChild(toast);
+                }
+            } catch (e) {}
+            console.error("InventoryRite page error", event);
+        });
+
         var embeddedConnection = {
             connected: ${connected ? "true" : "false"},
             merchant_id: ${JSON.stringify(merchantId)},
@@ -1507,7 +1520,10 @@ function renderDashboard(options = {}) {
         function setButtonsDisabled(disabled) {
             var buttons = document.querySelectorAll("button");
             buttons.forEach(function (btn) {
-                if (btn.id === "confirmCancel" || btn.id === "confirmYes") return;
+                if (btn.id === "confirmCancel" || btn.id === "confirmYes" || btn.id === "detailsClose" || btn.id === "featureClose") return;
+                if (btn.id === "btnRefreshInventory" || btn.id === "btnRefreshInventoryTop") return;
+                if (btn.id === "btnToggleAdd" || btn.id === "btnToggleAddTop" || btn.id === "btnToggleBulk" || btn.id === "btnToggleBulkTop") return;
+                if (btn.id === "btnAllProducts" || btn.id === "btnLowStock" || btn.id === "btnReorder" || btn.id === "btnExportCsv" || btn.id === "btnImportCsv" || btn.id === "btnPriceRules" || btn.id === "btnProfitAlerts" || btn.id === "btnActivityLog") return;
                 btn.disabled = disabled;
             });
         }
@@ -2155,7 +2171,22 @@ function renderDashboard(options = {}) {
         }
 
         async function fetchJson(url, options) {
-            var response = await fetch(url, options || {});
+            options = options || {};
+            var controller = new AbortController();
+            var timer = setTimeout(function () { controller.abort(); }, 30000);
+            options.signal = controller.signal;
+
+            var response;
+            try {
+                response = await fetch(url, options);
+            } catch (networkError) {
+                clearTimeout(timer);
+                if (networkError && networkError.name === "AbortError") {
+                    throw new Error("Request timed out. Refresh and try again.");
+                }
+                throw networkError;
+            }
+            clearTimeout(timer);
             var data = null;
 
             try {
@@ -2302,7 +2333,9 @@ function renderDashboard(options = {}) {
                     }
                 });
 
+                activeMoneyFilter = activeMoneyFilter || "all";
                 renderItems(loadedItems);
+                setActiveMoneyFilter(activeMoneyFilter);
                 updateLastSyncNote();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
             } catch (error) {
@@ -2557,8 +2590,6 @@ function renderDashboard(options = {}) {
                 }
             });
         }
-
-        setActiveMoneyFilter("all");
 
         if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
             loadItems();
