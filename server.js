@@ -1460,6 +1460,66 @@ function renderDashboard(options = {}) {
         .insight-fix-btn { border: 0; border-radius: 999px; background: #111827; color: white; font-size: 11px; font-weight: 900; padding: 7px 10px; cursor: pointer; white-space: nowrap; }
         .insight-fix-btn:hover { filter: brightness(1.08); }
 
+
+
+        /* ----------------------------------------------------------------
+        | FINAL POLISH - CLEAN MERCHANT LAUNCH UI
+        ---------------------------------------------------------------- */
+
+        .topbar {
+            padding-top: 11px;
+            padding-bottom: 11px;
+        }
+
+        .logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .brand h1 { font-size: 19px; }
+        .brand p { font-size: 12px; }
+
+        .hero {
+            min-height: 96px;
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+
+        .hero h2 { font-size: 25px; }
+
+        .merchant-control-actions {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(116px, 1fr));
+            width: 100%;
+        }
+
+        .merchant-control-actions .control-btn {
+            width: 100%;
+        }
+
+        .merchant-control-left {
+            flex: 0 0 250px;
+        }
+
+        .productivity-card {
+            min-height: 104px;
+        }
+
+        .productivity-kicker {
+            color: #475569;
+        }
+
+        @media (max-width: 1100px) {
+            .merchant-control-actions { grid-template-columns: repeat(3, minmax(112px, 1fr)); }
+        }
+
+        @media (max-width: 700px) {
+            .merchant-control-actions { grid-template-columns: 1fr 1fr; }
+            .hero h2 { font-size: 21px; }
+        }
+
         @media (max-width: 980px) {
             .merchant-control-bar { align-items: flex-start; }
             .merchant-control-actions { justify-content: flex-start; }
@@ -1516,7 +1576,7 @@ function renderDashboard(options = {}) {
             <div class="logo">IR</div>
             <div>
                 <h1>InventoryRite for Clover</h1>
-                <p>Inventory intelligence and product optimization for Clover merchants</p>
+                <p>Inventory tools for pricing, profit checks, cleanup, and faster Clover product updates</p>
             </div>
         </div>
 
@@ -1531,8 +1591,8 @@ function renderDashboard(options = {}) {
         <section class="hero">
             <div>
                 <div class="eyebrow">Clover Inventory</div>
-                <h2>Optimize your Clover products, pricing, and inventory health in one clean workspace.</h2>
-                <p>Find below-cost items, weak margins, cleanup problems, pricing opportunities, and fast product fixes before they cost the merchant money.</p>
+                <h2>Clean up Clover products, protect margins, and update pricing faster from one workspace.</h2>
+                <p>Spot below-cost items, weak margins, missing costs, duplicate names, and pricing problems before they cost the merchant money.</p>
             </div>
 
         </section>
@@ -1628,8 +1688,8 @@ function renderDashboard(options = {}) {
 
             <div class="merchant-control-bar" id="merchantControlBar">
                 <div class="merchant-control-left">
-                    <div class="merchant-control-title">Productivity Control Bar</div>
-                    <div class="merchant-control-subtitle">Profit, smart pricing, cleanup, CSV tools, reorder planning, and shortcuts in one place.</div>
+                    <div class="merchant-control-title">Merchant Tools</div>
+                    <div class="merchant-control-subtitle">Filters, reorder planning, CSV tools, price checks, cleanup, and action history in one place.</div>
                 </div>
                 <div class="merchant-control-actions">
                     <button id="btnShowAllProducts" type="button" class="control-btn control-all">All Products</button>
@@ -1637,7 +1697,7 @@ function renderDashboard(options = {}) {
                     <button id="btnReorder" type="button" class="control-btn control-reorder">Reorder</button>
                     <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
                     <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
-                    <button id="btnPriceRules" type="button" class="control-btn control-rules">Smart Pricing</button>
+                    <button id="btnPriceRules" type="button" class="control-btn control-rules">Price Helper</button>
                     <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
                     <button id="btnCleanupScan" type="button" class="control-btn control-rules">Cleanup Scan</button>
                     <button id="btnActivityLog" type="button" class="control-btn control-log">Activity Log</button>
@@ -1647,28 +1707,28 @@ function renderDashboard(options = {}) {
             <div class="productivity-hub" id="productivityHub">
                 <button id="btnProfitIntelligence" type="button" class="productivity-card">
                     <div class="productivity-kicker">Profit</div>
-                    <div class="productivity-title">Profit Intelligence</div>
-                    <div class="productivity-copy">Find below-cost, low-margin, and missing-cost products fast.</div>
+                    <div class="productivity-title">Profit Guard</div>
+                    <div class="productivity-copy">Find below-cost, low-margin, and missing-cost items fast.</div>
                 </button>
                 <button id="btnBulkOperationsHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Bulk</div>
-                    <div class="productivity-title">Bulk Operations</div>
+                    <div class="productivity-title">Bulk Tools</div>
                     <div class="productivity-copy">Select rows, update prices, export CSV, and move faster.</div>
                 </button>
                 <button id="btnSmartPricingHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Pricing</div>
-                    <div class="productivity-title">Smart Pricing</div>
-                    <div class="productivity-copy">Suggested margins, .99 rounding, and price-protection checks.</div>
+                    <div class="productivity-title">Price Helper</div>
+                    <div class="productivity-copy">Margin targets, .99 rounding, and price-protection checks.</div>
                 </button>
                 <button id="btnCleanupToolsHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Cleanup</div>
-                    <div class="productivity-title">Cleanup Tools</div>
-                    <div class="productivity-copy">Detect missing prices, duplicate names, bad costs, and weak records.</div>
+                    <div class="productivity-title">Cleanup Scan</div>
+                    <div class="productivity-copy">Detect missing prices, duplicate names, bad costs, and messy records.</div>
                 </button>
                 <button id="btnShortcutHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Speed</div>
-                    <div class="productivity-title">Operational Shortcuts</div>
-                    <div class="productivity-copy">Merchant-friendly shortcuts for daily product fixes.</div>
+                    <div class="productivity-title">Daily Shortcuts</div>
+                    <div class="productivity-copy">Fast daily product fixes for real merchants.</div>
                 </button>
             </div>
 
@@ -2456,8 +2516,8 @@ function renderDashboard(options = {}) {
                 "<div><strong>Bulk Percent Change</strong><span>Select rows, open Bulk Price Update, then increase or decrease by a percent.</span></div><div><span>Active</span></div>"
             ];
             openFeatureModal(
-                "Smart Pricing Rules",
-                "Smart Pricing is staged as safe merchant guidance. No automatic price overwrite happens without confirmation.",
+                "Price Helper Rules",
+                "Price Helper is staged as safe merchant guidance. No automatic price overwrite happens without confirmation.",
                 rows
             );
             logActivity("Price Rules", "Price rule options reviewed.", "Viewed");
@@ -2583,12 +2643,12 @@ function renderDashboard(options = {}) {
             });
 
             openFeatureModal(
-                "Profit Intelligence",
+                "Profit Guard",
                 "This shows what needs attention before a merchant loses money: below-cost items, weak margins, missing costs, and missing prices.",
                 rows
             );
-            logActivity("Profit Intelligence", "Profit health reviewed.", "Viewed");
-            showToast("Profit Intelligence opened.", "info");
+            logActivity("Profit Guard", "Profit risks reviewed.", "Viewed");
+            showToast("Profit Guard opened.", "info");
         }
 
         function showBulkOperationsHub() {
@@ -2596,11 +2656,11 @@ function renderDashboard(options = {}) {
                 "<div><strong>Bulk Price Update</strong><span>Select products in the table, open Bulk Update, then increase or decrease selected items by a percentage.</span></div><div><span>Active</span></div>",
                 "<div><strong>CSV Export</strong><span>Export the full product list with price, cost, margin, profit, availability, and hidden status.</span></div><div><span>Active</span></div>",
                 "<div><strong>Filtered Views</strong><span>Use Low Stock or Profit Alerts before selecting rows so bulk actions are safer.</span></div><div><span>Active</span></div>",
-                "<div><strong>Selection Count</strong><span>Current selected products: " + escapeHtml(selectedItemIds.size) + ".</span></div><div><span>Ready</span></div>"
+                "<div><strong>Selection Count</strong><span>Selected products: " + escapeHtml(selectedItemIds.size) + ".</span></div><div><span>Ready</span></div>"
             ];
-            openFeatureModal("Bulk Operations", "These are the fast merchant workflows that make this more than Clover's default inventory screen.", rows);
-            logActivity("Bulk Operations", "Bulk workflow guide opened.", "Viewed");
-            showToast("Bulk Operations opened.", "info");
+            openFeatureModal("Bulk Tools", "These are the fast merchant workflows that make this more than Clover's default inventory screen.", rows);
+            logActivity("Bulk Tools", "Bulk workflow guide opened.", "Viewed");
+            showToast("Bulk Tools opened.", "info");
         }
 
         function getSmartPriceSuggestion(item) {
@@ -2633,16 +2693,16 @@ function renderDashboard(options = {}) {
             });
 
             if (!rows.length) {
-                rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Smart Pricing will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
+                rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Price Helper will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
             }
 
             openFeatureModal(
-                "Smart Pricing",
+                "Price Helper",
                 selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions are review-only and do not overwrite Clover automatically." : "Showing pricing ideas for the first products in your Clover list. Suggestions are review-only and do not overwrite Clover automatically.",
                 rows
             );
-            logActivity("Smart Pricing", "Smart pricing suggestions reviewed.", "Viewed");
-            showToast("Smart Pricing opened.", "info");
+            logActivity("Price Helper", "Smart pricing suggestions reviewed.", "Viewed");
+            showToast("Price Helper opened.", "info");
         }
 
         function showCleanupTools() {
@@ -2656,12 +2716,12 @@ function renderDashboard(options = {}) {
             }
 
             openFeatureModal(
-                "Cleanup Tools",
+                "Cleanup Scan",
                 issues.length ? (issues.length + " cleanup issue(s) found. This is the merchant-friendly audit Clover should make easier.") : "No cleanup issues were found in the loaded product list.",
                 rows
             );
             setViewMode("cleanup");
-            logActivity("Cleanup Tools", issues.length + " cleanup issue(s) reviewed.", "Viewed");
+            logActivity("Cleanup Scan", issues.length + " cleanup issue(s) reviewed.", "Viewed");
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
@@ -2669,9 +2729,9 @@ function renderDashboard(options = {}) {
 
         /*
         |------------------------------------------------------------------
-        | REAL INVENTORY INTELLIGENCE ENGINE - V1
+        | MERCHANT INVENTORY HEALTH RULES - V1
         |------------------------------------------------------------------
-        | This intentionally uses transparent rules, not fake AI wording.
+        | This uses transparent merchant rules and plain-language explanations.
         | Every insight should answer: what is wrong, why it matters, and
         | what the merchant can do next.
         |------------------------------------------------------------------
@@ -2828,7 +2888,7 @@ function renderDashboard(options = {}) {
 
                 if (cost <= 0) {
                     penalty += 8;
-                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and profit intelligence cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This unlocks real profit alerts.", 0, "fix_cost"));
+                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and profit checks cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This unlocks real profit alerts.", 0, "fix_cost"));
                 }
 
                 if (price > 0 && cost > 0 && price < cost) {
@@ -3014,9 +3074,9 @@ function renderDashboard(options = {}) {
                 var weakest = intelligence.categoryInsights[0];
                 rows.push("<div><strong>Weakest Category</strong><span>" + escapeHtml(weakest.name + " averages " + weakest.avgMargin.toFixed(1) + "% margin across " + weakest.marginCount + " costed item(s).") + "</span></div><div><span>Category</span></div>");
             }
-            openFeatureModal("Profit Intelligence", "Real intelligence means risk, reason, recommendation, and impact. Nothing here changes Clover until the merchant confirms it.", rows);
-            logActivity("Profit Intelligence", "Health " + summary.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s).", "Viewed");
-            showToast("Profit Intelligence opened.", "info");
+            openFeatureModal("Profit Guard", "Every result shows the risk, the reason, and the next step. Nothing changes in Clover until the merchant confirms it.", rows);
+            logActivity("Profit Guard", "Health " + summary.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s).", "Viewed");
+            showToast("Profit Guard opened.", "info");
         }
 
         function getSmartPriceSuggestion(item) {
@@ -3048,10 +3108,10 @@ function renderDashboard(options = {}) {
                 var button = suggestion.suggestedPrice > 0 ? "<button type='button' class='insight-fix-btn' data-fix-action='fix_price' data-fix-id='" + escapeHtml(item.id || "") + "'>Stage</button>" : "<span>Review</span>";
                 return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + " - Cost " + escapeHtml(formatCurrencyFromCents(getCostCents(item.id || ""))) + " - " + escapeHtml(suggestion.text) + "</span></div><div>" + button + "</div>";
             });
-            if (!rows.length) rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Smart Pricing will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
-            openFeatureModal("Smart Pricing", selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions stage values in the table and still require the checkmark save." : "Showing pricing ideas prioritized by risk. Suggestions stage values in the table and still require the checkmark save.", rows);
-            logActivity("Smart Pricing", "Smart pricing suggestions reviewed.", "Viewed");
-            showToast("Smart Pricing opened.", "info");
+            if (!rows.length) rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Price Helper will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
+            openFeatureModal("Price Helper", selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions stage values in the table and still require the checkmark save." : "Showing pricing ideas prioritized by risk. Suggestions stage values in the table and still require the checkmark save.", rows);
+            logActivity("Price Helper", "Smart pricing suggestions reviewed.", "Viewed");
+            showToast("Price Helper opened.", "info");
         }
 
         function showCleanupTools() {
@@ -3061,9 +3121,9 @@ function renderDashboard(options = {}) {
             rows.push("<div><strong>Inventory Health</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
             issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
             if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
-            openFeatureModal("Cleanup Intelligence", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
+            openFeatureModal("Cleanup Scan", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
             setViewMode("cleanup");
-            logActivity("Cleanup Intelligence", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
+            logActivity("Cleanup Scan", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
@@ -3115,9 +3175,9 @@ function renderDashboard(options = {}) {
                 "<div><strong>Export for Backup</strong><span>Use Export CSV before major edits so the merchant has a safe product snapshot.</span></div><div><span>Active</span></div>",
                 "<div><strong>Safe Launch Rule</strong><span>No smart tool automatically changes Clover pricing without merchant confirmation.</span></div><div><span>Safe</span></div>"
             ];
-            openFeatureModal("Operational Shortcuts", "These are the daily shortcuts that make the app feel faster than Clover's normal product screen.", rows);
-            logActivity("Operational Shortcuts", "Shortcut guide opened.", "Viewed");
-            showToast("Operational Shortcuts opened.", "info");
+            openFeatureModal("Daily Shortcuts", "These are the daily shortcuts that make the app feel faster than Clover's normal product screen.", rows);
+            logActivity("Daily Shortcuts", "Shortcut guide opened.", "Viewed");
+            showToast("Daily Shortcuts opened.", "info");
         }
 
         function importCsvClicked() {
