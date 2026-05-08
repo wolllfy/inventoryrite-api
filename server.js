@@ -1293,11 +1293,7 @@ function renderDashboard(options = {}) {
                 <p>Search products, update names and prices, create new items, and remove products from your Clover inventory.</p>
             </div>
 
-            <div class="hero-actions">
-                <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
-                <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
-            </div>
+            
         </section>
 
         <section class="card inventory-card">
