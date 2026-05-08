@@ -1128,6 +1128,113 @@ function renderDashboard(options = {}) {
             80%, 100% { content: "..."; }
         }
 
+        .search-result-count {
+            margin-top: 5px;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .01em;
+        }
+
+        .empty-state-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
+            color: #15803d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            border: 1px solid #bbf7d0;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 350;
+            background: rgba(248, 250, 252, 0.72);
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            padding: 22px;
+        }
+
+        .loading-overlay.show { display: flex; }
+
+        .loading-card {
+            width: 100%;
+            max-width: 360px;
+            background: #ffffff;
+            border: 1px solid #dbe4ee;
+            border-radius: 20px;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            border: 4px solid #dcfce7;
+            border-top-color: #15803d;
+            margin: 0 auto 14px;
+            animation: spin .8s linear infinite;
+        }
+
+        .loading-title {
+            font-size: 16px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 5px;
+        }
+
+        .loading-subtitle {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.45;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .confirm-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 16px;
+            background: #fee2e2;
+            color: #b91c1c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 23px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            border: 1px solid #fecaca;
+        }
+
+        .footer-links {
+            display: inline-flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-link {
+            color: #475569;
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .footer-link:hover { text-decoration: underline; }
+
 
 
         /* ----------------------------------------------------------------
@@ -1412,6 +1519,7 @@ function renderDashboard(options = {}) {
                     <div class="command-copy">
                         <div class="command-title">Product Command Center</div>
                         <div class="command-subtitle">Search products, sync Clover, update prices, or create a new item.</div>
+                        <div class="search-result-count" id="searchResultCount">Ready to sync Clover products.</div>
                     </div>
 
                     <div class="command-search-actions">
@@ -1593,15 +1701,32 @@ function renderDashboard(options = {}) {
         `}
 
         <div class="footer">
-            InventoryRite for Clover - Process Rite Inc - <a class="dev-link" href="/dev">Developer tools</a>
+            <div class="footer-links">
+                <span>InventoryRite for Clover</span>
+                <span>&bull;</span>
+                <span>Process Rite Inc</span>
+                <span>&bull;</span>
+                <a class="footer-link" href="/support">Support</a>
+                <a class="footer-link" href="/privacy">Privacy</a>
+                <a class="footer-link" href="/terms">Terms</a>
+            </div>
         </div>
 
     </main>
 
     <div class="toast-wrap" id="toastWrap"></div>
 
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-card">
+            <div class="loading-spinner"></div>
+            <div class="loading-title" id="loadingTitle">Working with Clover</div>
+            <div class="loading-subtitle" id="loadingSubtitle">Please keep this window open while InventoryRite finishes the request.</div>
+        </div>
+    </div>
+
     <div class="modal-backdrop" id="confirmModal">
         <div class="modal">
+            <div class="confirm-icon">!</div>
             <h3 id="confirmTitle">Confirm Action</h3>
             <p id="confirmMessage">Are you sure?</p>
             <div class="modal-actions">
@@ -1719,6 +1844,40 @@ function renderDashboard(options = {}) {
             }, 4200);
         }
 
+        function showLoading(title, subtitle) {
+            var overlay = byId("loadingOverlay");
+            var titleEl = byId("loadingTitle");
+            var subtitleEl = byId("loadingSubtitle");
+            if (titleEl) titleEl.textContent = title || "Working with Clover";
+            if (subtitleEl) subtitleEl.textContent = subtitle || "Please keep this window open while InventoryRite finishes the request.";
+            if (overlay) overlay.classList.add("show");
+        }
+
+        function hideLoading() {
+            var overlay = byId("loadingOverlay");
+            if (overlay) overlay.classList.remove("show");
+        }
+
+        function updateSearchResultCount(visible, base, total) {
+            var el = byId("searchResultCount");
+            if (!el) return;
+            total = Number(total || 0);
+            base = Number(base || 0);
+            visible = Number(visible || 0);
+
+            if (!total) {
+                el.textContent = "No Clover products loaded yet.";
+                return;
+            }
+
+            if (visible === total) {
+                el.textContent = "Showing all " + total + " product(s).";
+                return;
+            }
+
+            el.textContent = "Showing " + visible + " of " + total + " product(s).";
+        }
+
         function logActivity(title, message, status) {
             var entry = {
                 title: title || "Activity",
@@ -1780,13 +1939,15 @@ function renderDashboard(options = {}) {
             return;
         }
 
-        function startBusy() {
+        function startBusy(title, subtitle) {
             isBusy = true;
+            showLoading(title || "Working with Clover", subtitle || "Please keep this window open while InventoryRite finishes the request.");
             setButtonsDisabled(true);
         }
 
         function stopBusy() {
             isBusy = false;
+            hideLoading();
             setButtonsDisabled(false);
         }
 
@@ -1995,7 +2156,7 @@ function renderDashboard(options = {}) {
         }
 
         async function executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel) {
-            startBusy();
+            startBusy("Bulk updating prices", "Updating selected Clover products. This can take a moment.");
 
             var progressWrap = byId("bulkProgress");
             var progressBar = byId("bulkProgressBar");
@@ -2335,12 +2496,14 @@ function renderDashboard(options = {}) {
             });
 
             updateStats(items || []);
+            updateSearchResultCount(filtered.length, baseItems.length, (items || []).length);
 
             if (!items || !items.length) {
                 body.innerHTML =
                     '<tr><td colspan="6" class="empty">' +
+                    '<div class="empty-state-icon">+</div>' +
                     '<strong>No Clover products found.</strong>' +
-                    'Click Add Product to create your first item.' +
+                    'Create your first product from the Add Product button above.' +
                     '</td></tr>';
                 syncBulkUI();
                 return;
@@ -2349,6 +2512,7 @@ function renderDashboard(options = {}) {
             if (!filtered.length) {
                 body.innerHTML =
                     '<tr><td colspan="6" class="empty">' +
+                    '<div class="empty-state-icon">?</div>' +
                     '<strong>No matching products found.</strong>' +
                     'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
@@ -2593,7 +2757,7 @@ function renderDashboard(options = {}) {
                 var connection = requireConnection();
                 if (!connection) return;
 
-                startBusy();
+                startBusy("Syncing Clover inventory", "Loading products, prices, and saved cost data from Clover.");
                 setButtonText("btnRefreshInventory", "Refreshing...");
                 setButtonText("btnRefreshInventoryTop", "Refreshing...");
 
@@ -2653,7 +2817,7 @@ function renderDashboard(options = {}) {
                     return;
                 }
 
-                startBusy();
+                startBusy("Creating Clover product", "Saving the new product directly to Clover.");
                 setButtonText("btnRefreshInventory", "Refreshing...");
                 setButtonText("btnRefreshInventoryTop", "Refreshing...");
 
@@ -2705,7 +2869,7 @@ function renderDashboard(options = {}) {
                     return;
                 }
 
-                startBusy();
+                startBusy("Saving product", "Updating the product name and price in Clover.");
 
                 await fetchJson(
                     "/clover-update-item/" + encodeURIComponent(itemId) +
@@ -2737,7 +2901,7 @@ function renderDashboard(options = {}) {
                 var connection = requireConnection();
                 if (!connection) return;
 
-                startBusy();
+                startBusy("Deleting product", "Removing this product from Clover.");
 
                 await fetchJson(
                     "/clover-delete-item/" + encodeURIComponent(itemId) +
@@ -2869,7 +3033,7 @@ function renderDashboard(options = {}) {
                 if (action === "delete") {
                     openConfirm(
                         "Delete Product?",
-                        "This will delete " + itemName + " from Clover. This cannot be undone.",
+                        "This will permanently remove '" + itemName + "' from Clover inventory. This cannot be undone.",
                         function () { deleteItem(itemId); }
                     );
                 }
@@ -2885,6 +3049,63 @@ function renderDashboard(options = {}) {
 </body>
 </html>`;
 }
+
+function renderSimplePage(title, bodyHtml) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${safe(title)} - InventoryRite for Clover</title>
+    <style>
+        body { margin:0; font-family: Arial, Helvetica, sans-serif; background:#f8fafc; color:#111827; }
+        .page { max-width: 860px; margin: 42px auto; padding: 0 18px; }
+        .card { background:white; border:1px solid #e5e7eb; border-radius:20px; padding:28px; box-shadow:0 16px 45px rgba(15,23,42,.08); }
+        h1 { margin:0 0 12px; font-size:30px; letter-spacing:-.03em; }
+        p, li { color:#475569; line-height:1.65; font-size:15px; }
+        a { color:#15803d; font-weight:800; text-decoration:none; }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="card">
+            <h1>${safe(title)}</h1>
+            ${bodyHtml}
+            <p><a href="/">Back to InventoryRite</a></p>
+        </section>
+    </main>
+</body>
+</html>`;
+}
+
+app.get("/privacy", (req, res) => {
+    res.send(renderSimplePage("Privacy Policy", `
+        <p>InventoryRite for Clover helps merchants view, create, update, and remove Clover inventory products after the merchant connects their Clover account.</p>
+        <p>The app may access basic merchant connection information, Clover inventory item data, product names, prices, item IDs, and cost values saved inside InventoryRite for margin tracking.</p>
+        <p>InventoryRite does not sell merchant data. Data is used to provide inventory management, product editing, CSV export, margin review, and related merchant tools.</p>
+        <p>For support or data questions, contact Process Rite Inc.</p>
+    `));
+});
+
+app.get("/terms", (req, res) => {
+    res.send(renderSimplePage("Terms of Service", `
+        <p>InventoryRite for Clover is provided as a merchant inventory management tool. Merchants are responsible for reviewing product changes before saving them to Clover.</p>
+        <p>Bulk updates, product edits, product creation, and deletion actions may affect live Clover inventory. Use these tools carefully and confirm changes before applying them.</p>
+        <p>The app is provided without a guarantee that every Clover account, inventory setup, or third-party configuration will support every feature.</p>
+    `));
+});
+
+app.get("/support", (req, res) => {
+    res.send(renderSimplePage("Support", `
+        <p>Need help with InventoryRite for Clover?</p>
+        <ul>
+            <li>Refresh inventory if products do not appear right away.</li>
+            <li>Confirm your Clover account has inventory permissions enabled.</li>
+            <li>For product edits, verify the name and price before saving.</li>
+        </ul>
+        <p>Support contact details can be added here before public Clover App Market submission.</p>
+    `));
+});
 
 /*
 |--------------------------------------------------------------------------
