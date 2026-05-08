@@ -510,6 +510,91 @@ function isValidMoneyCents(value) {
     return !Number.isNaN(numberValue) && numberValue >= 0 && Number.isFinite(numberValue);
 }
 
+
+
+function getSuggestedPrice(costCents) {
+
+    const targetMargin = 0.35;
+
+    const rawPrice = costCents / (1 - targetMargin);
+
+    const dollars = rawPrice / 100;
+
+    return Math.max(0.99, Math.ceil(dollars) - 0.01);
+}
+
+function calculateMarginHealthScore(items) {
+
+    let lowMarginCount = 0;
+    let missingCostCount = 0;
+    let duplicateCount = 0;
+
+    const seenNames = new Set();
+
+    items.forEach(item => {
+
+        const cost = Number(item.cost || 0);
+        const price = Number(item.price || 0);
+
+        if (cost <= 0) {
+            missingCostCount++;
+        }
+
+        if (price > 0 && cost > 0) {
+
+            const margin = ((price - cost) / price) * 100;
+
+            if (margin < 20) {
+                lowMarginCount++;
+            }
+        }
+
+        const normalizedName = String(item.name || "")
+            .trim()
+            .toLowerCase();
+
+        if (normalizedName) {
+
+            if (seenNames.has(normalizedName)) {
+                duplicateCount++;
+            }
+
+            seenNames.add(normalizedName);
+        }
+    });
+
+    const score =
+        (lowMarginCount * 4) +
+        (missingCostCount * 5) +
+        (duplicateCount * 2);
+
+    if (score <= 10) {
+        return {
+            label: "Excellent",
+            className: "health-good"
+        };
+    }
+
+    if (score <= 25) {
+        return {
+            label: "Good",
+            className: "health-watch"
+        };
+    }
+
+    if (score <= 45) {
+        return {
+            label: "Warning",
+            className: "health-watch"
+        };
+    }
+
+    return {
+        label: "High Risk",
+        className: "health-risk"
+    };
+}
+
 /*
 |--------------------------------------------------------------------------
 | UI
@@ -529,7 +614,7 @@ function renderDashboard(options = {}) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InventoryRite for Clover</title>
+    <title>InventoryRite Profit Tools</title>
     <style>
         :root {
             --bg: #f5f7fb;
@@ -2151,7 +2236,7 @@ function renderDashboard(options = {}) {
         <div class="brand">
             <div class="logo">IR</div>
             <div>
-                <h1>InventoryRite for Clover</h1>
+                <h1>InventoryRite Profit Tools</h1>
                 <p>Inventory tools for pricing, margin checks, cleanup, and faster Clover product updates</p>
             </div>
         </div>
@@ -2173,7 +2258,33 @@ function renderDashboard(options = {}) {
 
         </section>
 
-        <section class="card inventory-card">
+        
+<section class="card inventory-card">
+
+            <div class="operations-summary-strip">
+
+                <div class="operations-summary-main">
+                    <strong>InventoryRite Protected Pricing Active</strong>
+
+                    <span>
+                        Monitoring low margins, missing costs, duplicate items, and risky pricing.
+                    </span>
+                </div>
+
+                <div class="operations-summary-pills">
+
+                    <div class="summary-pill" id="marginHealthStatus">
+                        Margin Health: Good
+                    </div>
+
+                    <div class="summary-pill">
+                        Live Clover Sync
+                    </div>
+
+                </div>
+
+            </div>
+
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
@@ -4827,7 +4938,61 @@ function renderDashboard(options = {}) {
             loadItems();
         }
     })();
-    </script>
+    
+
+document.getElementById("btnFixMargins")?.addEventListener("click", async () => {
+
+    if (!inventoryItems.length) {
+        showToast("No inventory loaded.", "error");
+        return;
+    }
+
+    let updated = 0;
+
+    inventoryItems.forEach(item => {
+
+        const cost = Number(item.cost || 0);
+        const price = Number(item.price || 0);
+
+        if (cost <= 0 || price <= 0) {
+            return;
+        }
+
+        const margin = ((price - cost) / price) * 100;
+
+        if (margin < 20) {
+
+            const suggested = getSuggestedPrice(cost * 100);
+
+            item.price = Number(suggested.toFixed(2));
+
+            updated++;
+        }
+    });
+
+    const health = calculateMarginHealthScore(inventoryItems);
+
+    const healthEl = document.getElementById("marginHealthStatus");
+
+    if (healthEl) {
+
+        healthEl.textContent =
+            "Margin Health: " + health.label;
+
+        healthEl.className =
+            "summary-pill " + health.className;
+    }
+
+    renderInventoryTable(inventoryItems);
+
+    showToast(
+        updated + " low margin products updated with suggested pricing.",
+        "success"
+    );
+});
+
+
+</script>
 
 </body>
 </html>`;
