@@ -1430,6 +1430,19 @@ function renderDashboard(options = {}) {
 
     <script>
     (function () {
+        window.addEventListener("error", function (event) {
+            try {
+                console.error("InventoryRite UI error:", event.message, event.error);
+                var wrap = document.getElementById("toastWrap");
+                if (wrap) {
+                    var toast = document.createElement("div");
+                    toast.className = "toast error";
+                    toast.textContent = "UI error detected. Open DevTools Console for details.";
+                    wrap.appendChild(toast);
+                }
+            } catch (e) {}
+        });
+
         var embeddedConnection = {
             connected: ${connected ? "true" : "false"},
             merchant_id: ${JSON.stringify(merchantId)},
@@ -1510,11 +1523,11 @@ function renderDashboard(options = {}) {
         }
 
         function setButtonsDisabled(disabled) {
-            var buttons = document.querySelectorAll("button");
-            buttons.forEach(function (btn) {
-                if (btn.id === "confirmCancel" || btn.id === "confirmYes") return;
-                btn.disabled = disabled;
-            });
+            // IMPORTANT: Do not globally disable the whole dashboard.
+            // If Clover inventory takes long to load, globally disabling every button
+            // makes the Merchant Control Bar feel broken. We keep the UI clickable
+            // and rely on each action to validate what it needs.
+            return;
         }
 
         function startBusy() {
@@ -2160,7 +2173,32 @@ function renderDashboard(options = {}) {
         }
 
         async function fetchJson(url, options) {
-            var response = await fetch(url, options || {});
+            options = options || {};
+
+            // Browser-side timeout so the dashboard never stays locked forever
+            // if Clover/Render is slow or a request hangs.
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () {
+                try { controller.abort(); } catch (e) {}
+            }, 25000);
+
+            if (!options.signal) {
+                options.signal = controller.signal;
+            }
+
+            var response;
+            try {
+                response = await fetch(url, options);
+            } catch (fetchError) {
+                clearTimeout(timeoutId);
+                if (fetchError && fetchError.name === "AbortError") {
+                    throw new Error("Request timed out. Please refresh inventory again.");
+                }
+                throw fetchError;
+            } finally {
+                clearTimeout(timeoutId);
+            }
+
             var data = null;
 
             try {
