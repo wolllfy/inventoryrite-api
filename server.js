@@ -430,18 +430,42 @@ async function refreshTokenIfNeeded(connection) {
 
 async function getConnectionFromRequest(req) {
     // Security note: tokens are intentionally not accepted from query strings.
-    // The server uses the saved merchant connection instead of exposing bearer tokens in URLs.
-    const merchantFromRequest = req.headers["x-merchant-id"] || req.body?.merchantId || req.query.merchantId || "";
+    // The browser may send X-Merchant-Id, but bearer tokens stay server-side.
+    let merchantFromRequest = req.headers["x-merchant-id"] || req.body?.merchantId || req.query.merchantId || "";
+    merchantFromRequest = String(merchantFromRequest || "").trim();
+
+    // Older frontend attempts used the word "server" as a placeholder. Do not
+    // treat that as a real Clover merchant id.
+    if (merchantFromRequest.toLowerCase() === "server") {
+        merchantFromRequest = "";
+    }
+
     let connection = latestCloverConnection;
 
-    if (USE_DATABASE && dbPool && merchantFromRequest) {
-        const result = await dbPool.query(
-            `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
-             FROM merchant_connections
-             WHERE merchant_id = $1
-             LIMIT 1;`,
-            [merchantFromRequest]
-        );
+    if (USE_DATABASE && dbPool) {
+        let result;
+
+        if (merchantFromRequest) {
+            result = await dbPool.query(
+                `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
+                 FROM merchant_connections
+                 WHERE merchant_id = $1
+                 LIMIT 1;`,
+                [merchantFromRequest]
+            );
+        }
+
+        // If the browser does not know the merchant id yet, fall back to the most
+        // recently connected Clover merchant saved in the database. This keeps
+        // inventory sync working after Render restarts/deploys.
+        if (!result || result.rows.length === 0) {
+            result = await dbPool.query(
+                `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
+                 FROM merchant_connections
+                 ORDER BY updated_at DESC
+                 LIMIT 1;`
+            );
+        }
 
         if (result.rows.length > 0) {
             const row = result.rows[0];
@@ -462,7 +486,7 @@ async function getConnectionFromRequest(req) {
 
     return {
         accessToken: connection.access_token || "",
-        merchantId: connection.merchant_id || merchantFromRequest || "",
+        merchantId: connection.merchant_id || "",
         connection
     };
 }
@@ -2750,15 +2774,14 @@ function renderDashboard(options = {}) {
             var token = getToken();
             var merchantId = getMerchantId();
 
-            // Tokens stay server-side now. Do not block inventory sync only because
-            // the browser does not have a merchant id embedded. The server can use
-            // the saved Clover connection from memory/database.
+            // Tokens stay server-side now. If merchantId is blank, the backend will
+            // use the most recent saved Clover connection from memory/database.
             if (!token) {
                 showToast("Please connect Clover first.", "error");
                 return null;
             }
 
-            return { merchantId: merchantId || "server" };
+            return { merchantId: merchantId || "" };
         }
 
         function escapeHtml(value) {
@@ -4340,6 +4363,7 @@ function renderDashboard(options = {}) {
             }
 
             options.headers = options.headers || {};
+            options.headers["Accept"] = "application/json";
             if (options.method && String(options.method).toUpperCase() !== "GET") {
                 options.headers["X-CSRF-Token"] = embeddedConnection.csrf_token || "";
             }
@@ -4487,12 +4511,19 @@ function renderDashboard(options = {}) {
                 setButtonText("btnRefreshInventory", "Refreshing...");
                 setButtonText("btnRefreshInventoryTop", "Refreshing...");
 
+                var requestHeaders = {};
+                if (connection.merchantId) {
+                    requestHeaders["X-Merchant-Id"] = connection.merchantId;
+                }
+
                 var data = await fetchJson(
-                    "/clover-items"
+                    "/clover-items",
+                    { headers: requestHeaders }
                 );
 
                 var costData = await fetchJson(
-                    "/item-costs"
+                    "/item-costs",
+                    { headers: requestHeaders }
                 );
 
                 loadedItems = data.data && data.data.elements ? data.data.elements : [];
@@ -4792,7 +4823,7 @@ function renderDashboard(options = {}) {
 
         loadStoredHistory();
 
-        if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
+        if (embeddedConnection.connected) {
             loadItems();
         }
     })();
@@ -4860,11 +4891,43 @@ app.get("/", async (req, res) => {
             }
         );
 
-        const tokenData = tokenResponse.data;
+        const tokenData = tokenResponse.data || {};
+
+        let detectedMerchantId =
+            req.query.merchant_id ||
+            req.query.merchantId ||
+            req.query.mId ||
+            tokenData.merchant_id ||
+            tokenData.merchantId ||
+            tokenData.mid ||
+            tokenData.merchant?.id ||
+            "";
+
+        const detectedEmployeeId =
+            req.query.employee_id ||
+            req.query.employeeId ||
+            tokenData.employee_id ||
+            tokenData.employeeId ||
+            tokenData.employee?.id ||
+            "";
+
+        // Clover normally returns/sends the merchant id during OAuth. If it does
+        // not, make one safe attempt to discover it before saving the connection.
+        if (!detectedMerchantId && tokenData.access_token) {
+            try {
+                const merchantsResponse = await cloverApi.get(
+                    `${CLOVER_API_BASE_URL}/v3/merchants?limit=1`,
+                    { headers: cloverHeaders(tokenData.access_token) }
+                );
+                detectedMerchantId = merchantsResponse.data?.elements?.[0]?.id || "";
+            } catch (merchantLookupError) {
+                console.warn("Unable to auto-detect Clover merchant id:", merchantLookupError.response?.data || merchantLookupError.message);
+            }
+        }
 
         await saveCloverConnection({
-            merchant_id: req.query.merchant_id || req.query.merchantId || tokenData.merchant_id || "",
-            employee_id: req.query.employee_id || req.query.employeeId || tokenData.employee_id || "",
+            merchant_id: detectedMerchantId,
+            employee_id: detectedEmployeeId,
             access_token: tokenData.access_token || "",
             refresh_token: tokenData.refresh_token || "",
             token_expires_at: tokenData.expires_in ? new Date(nowMs() + Number(tokenData.expires_in) * 1000).toISOString() : "",
@@ -4962,17 +5025,18 @@ app.get("/connect-clover", (req, res) => {
 |--------------------------------------------------------------------------
 */
 
-app.get("/clover-connection", (req, res) => {
+app.get("/clover-connection", async (req, res) => {
+    const { connection } = await getConnectionFromRequest(req);
     res.json({
         success: true,
         connection: {
-            connected: latestCloverConnection.connected,
-            merchant_id: latestCloverConnection.merchant_id,
-            employee_id: latestCloverConnection.employee_id,
-            connected_at: latestCloverConnection.connected_at,
-            hasAccessToken: !!latestCloverConnection.access_token,
-            hasRefreshToken: !!latestCloverConnection.refresh_token,
-            token_expires_at: latestCloverConnection.token_expires_at
+            connected: !!connection.access_token,
+            merchant_id: connection.merchant_id,
+            employee_id: connection.employee_id,
+            connected_at: connection.connected_at,
+            hasAccessToken: !!connection.access_token,
+            hasRefreshToken: !!connection.refresh_token,
+            token_expires_at: connection.token_expires_at
         }
     });
 });
