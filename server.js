@@ -1329,7 +1329,7 @@ function renderDashboard(options = {}) {
 
 
         /* ----------------------------------------------------------------
-        | PRODUCTIVITY INTELLIGENCE HUB
+        | PRODUCTIVITY TOOLS HUB
         ---------------------------------------------------------------- */
 
         .productivity-hub {
@@ -1431,14 +1431,14 @@ function renderDashboard(options = {}) {
 
 
 
-        .intelligence-strip {
+        .review-strip {
             display: grid;
             grid-template-columns: 1.1fr 1fr 1fr 1.2fr;
             gap: 10px;
             margin: 0 0 14px;
         }
 
-        .intelligence-box {
+        .review-box {
             border: 1px solid #e2e8f0;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 16px;
@@ -1446,9 +1446,9 @@ function renderDashboard(options = {}) {
             box-shadow: 0 7px 18px rgba(15, 23, 42, 0.04);
         }
 
-        .intelligence-label { color: #64748b; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
-        .intelligence-value { color: #0f172a; font-size: 21px; font-weight: 900; line-height: 1.1; }
-        .intelligence-help { color: #64748b; font-size: 11px; font-weight: 800; margin-top: 5px; line-height: 1.35; }
+        .review-label { color: #64748b; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+        .review-value { color: #0f172a; font-size: 21px; font-weight: 900; line-height: 1.1; }
+        .review-help { color: #64748b; font-size: 11px; font-weight: 800; margin-top: 5px; line-height: 1.35; }
         .health-good { color: #166534; }
         .health-watch { color: #b45309; }
         .health-risk { color: #b91c1c; }
@@ -1527,7 +1527,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 980px) {
             .productivity-hub { grid-template-columns: 1fr 1fr; }
-            .intelligence-strip { grid-template-columns: 1fr 1fr; }
+            .review-strip { grid-template-columns: 1fr 1fr; }
             .risk-score-row { grid-template-columns: 1fr; }
             .hero, .stats-row, .add-grid { grid-template-columns: 1fr; }
             .hero { flex-direction: column; }
@@ -1550,7 +1550,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 700px) {
             .productivity-hub { grid-template-columns: 1fr; }
-            .intelligence-strip { grid-template-columns: 1fr; }
+            .review-strip { grid-template-columns: 1fr; }
             .stats-row { grid-template-columns: 1fr; }
             .wrap { padding: 0 10px 40px; }
             .inventory-card { padding: 14px; }
@@ -1592,7 +1592,7 @@ function renderDashboard(options = {}) {
             <div>
                 <div class="eyebrow">Clover Inventory</div>
                 <h2>Clean up Clover products, protect margins, and update pricing faster from one workspace.</h2>
-                <p>Spot below-cost items, weak margins, missing costs, duplicate names, and pricing problems before they cost the merchant money.</p>
+                <p>Review pricing performance, missing costs, duplicate products, and inventory issues from one operational dashboard.</p>
             </div>
 
         </section>
@@ -1601,7 +1601,7 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Loaded Clover products appear below. Search, refresh, bulk update, review intelligence, or add a new Clover item from one clean control area.</p>
+                    <p>Loaded Clover products appear below. Search, refresh, bulk update, review product issues, or add a new Clover item from one clean control area.</p>
                     <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
@@ -1609,7 +1609,7 @@ function renderDashboard(options = {}) {
             <div class="inventory-command-center">
                 <div class="command-center-top">
                     <div class="command-copy">
-                        <div class="command-title">Product Command Center</div>
+                        <div class="command-title">Product Operations</div>
                         <div class="command-subtitle">Search products, sync Clover, update prices, or create a new item.</div>
                     </div>
 
@@ -1697,18 +1697,18 @@ function renderDashboard(options = {}) {
                     <button id="btnReorder" type="button" class="control-btn control-reorder">Reorder</button>
                     <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
                     <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
-                    <button id="btnPriceRules" type="button" class="control-btn control-rules">Price Helper</button>
-                    <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
-                    <button id="btnCleanupScan" type="button" class="control-btn control-rules">Cleanup Scan</button>
+                    <button id="btnPriceRules" type="button" class="control-btn control-rules">Pricing Tools</button>
+                    <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Margin Alerts</button>
+                    <button id="btnCleanupScan" type="button" class="control-btn control-rules">Inventory Cleanup</button>
                     <button id="btnActivityLog" type="button" class="control-btn control-log">Activity Log</button>
                 </div>
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
             <div class="productivity-hub" id="productivityHub">
-                <button id="btnProfitIntelligence" type="button" class="productivity-card">
+                <button id="btnProfitReview" type="button" class="productivity-card">
                     <div class="productivity-kicker">Profit</div>
-                    <div class="productivity-title">Profit Guard</div>
-                    <div class="productivity-copy">Find below-cost, low-margin, and missing-cost items fast.</div>
+                    <div class="productivity-title">Profit Review</div>
+                    <div class="productivity-copy">Review pricing performance, low margins, and missing costs quickly.</div>
                 </button>
                 <button id="btnBulkOperationsHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Bulk</div>
@@ -1717,41 +1717,41 @@ function renderDashboard(options = {}) {
                 </button>
                 <button id="btnSmartPricingHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Pricing</div>
-                    <div class="productivity-title">Price Helper</div>
-                    <div class="productivity-copy">Margin targets, .99 rounding, and price-protection checks.</div>
+                    <div class="productivity-title">Pricing Tools</div>
+                    <div class="productivity-copy">Pricing reviews, margin checks, and faster menu price updates.</div>
                 </button>
                 <button id="btnCleanupToolsHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Cleanup</div>
-                    <div class="productivity-title">Cleanup Scan</div>
-                    <div class="productivity-copy">Detect missing prices, duplicate names, bad costs, and messy records.</div>
+                    <div class="productivity-title">Inventory Cleanup</div>
+                    <div class="productivity-copy">Review missing prices, duplicate products, weak costs, and inventory issues.</div>
                 </button>
                 <button id="btnShortcutHub" type="button" class="productivity-card">
                     <div class="productivity-kicker">Speed</div>
-                    <div class="productivity-title">Daily Shortcuts</div>
-                    <div class="productivity-copy">Fast daily product fixes for real merchants.</div>
+                    <div class="productivity-title">Quick Actions</div>
+                    <div class="productivity-copy">Common product actions merchants use every day.</div>
                 </button>
             </div>
 
-            <div class="intelligence-strip" id="intelligenceStrip">
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Inventory Health</div>
-                    <div class="intelligence-value" id="healthScoreText">--/100</div>
-                    <div class="intelligence-help" id="healthScoreHelp">Refresh Clover inventory to score product health.</div>
+            <div class="review-strip" id="intelligenceStrip">
+                <div class="review-box">
+                    <div class="review-label">Product Review Score</div>
+                    <div class="review-value" id="healthScoreText">--/100</div>
+                    <div class="review-help" id="healthScoreHelp">Refresh Clover inventory to score product health.</div>
                 </div>
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Critical Issues</div>
-                    <div class="intelligence-value health-risk" id="criticalIssueText">0</div>
-                    <div class="intelligence-help">Below-cost, missing price, and suspicious price risks.</div>
+                <div class="review-box">
+                    <div class="review-label">Pricing Risks</div>
+                    <div class="review-value health-risk" id="criticalIssueText">0</div>
+                    <div class="review-help">Below-cost, missing price, and suspicious price risks.</div>
                 </div>
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Warnings</div>
-                    <div class="intelligence-value health-watch" id="warningIssueText">0</div>
-                    <div class="intelligence-help">Weak margins, missing costs, duplicates, and stale items.</div>
+                <div class="review-box">
+                    <div class="review-label">Review Alerts</div>
+                    <div class="review-value health-watch" id="warningIssueText">0</div>
+                    <div class="review-help">Weak margins, missing costs, duplicates, and stale items.</div>
                 </div>
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Profit Opportunity</div>
-                    <div class="intelligence-value health-good" id="profitOpportunityText">$0.00</div>
-                    <div class="intelligence-help" id="profitOpportunityHelp">Estimated using costed products and conservative monthly assumptions.</div>
+                <div class="review-box">
+                    <div class="review-label">Margin Opportunities</div>
+                    <div class="review-value health-good" id="profitOpportunityText">$0.00</div>
+                    <div class="review-help" id="profitOpportunityHelp">Estimated using costed products and conservative monthly assumptions.</div>
                 </div>
             </div>
 
@@ -2371,7 +2371,7 @@ function renderDashboard(options = {}) {
                     note.textContent = "Showing Low Stock view. Products with quantity 5 or less appear here when Clover sends quantity data.";
                     note.classList.add("show");
                 } else if (activeViewMode === "profitAlerts") {
-                    note.textContent = "Showing Profit Alerts view. Low-margin and below-cost items are highlighted here.";
+                    note.textContent = "Showing Margin Alerts view. Low-margin and below-cost items are highlighted here.";
                     note.classList.add("show");
                 } else if (activeViewMode === "cleanup") {
                     note.textContent = "Showing Cleanup view. Products with missing price, missing cost, duplicate names, bad names, missing SKU, or below-cost risk appear here.";
@@ -2485,13 +2485,13 @@ function renderDashboard(options = {}) {
             });
 
             openFeatureModal(
-                "Profit Alerts",
+                "Margin Alerts",
                 alerts.length ? (alerts.length + " product(s) need margin review and are now shown in the table.") : "No profit alerts right now. No below-cost or low-margin products were found.",
                 rows
             );
             setViewMode("profitAlerts");
-            logActivity("Profit Alerts", alerts.length + " product(s) reviewed for margin risk.", "Viewed");
-            showToast("Profit Alerts view enabled.", alerts.length ? "info" : "success");
+            logActivity("Margin Alerts", alerts.length + " product(s) reviewed for margin risk.", "Viewed");
+            showToast("Margin Alerts view enabled.", alerts.length ? "info" : "success");
         }
 
         function showReorderPlanning() {
@@ -2512,12 +2512,12 @@ function renderDashboard(options = {}) {
         function showPriceRules() {
             var rows = [
                 "<div><strong>Round Prices</strong><span>Use Bulk Price Update, then review prices ending in .99 before saving.</span></div><div><span>Manual</span></div>",
-                "<div><strong>Protect Margin</strong><span>Use Profit Alerts to find products below 30% margin or below cost.</span></div><div><span>Active</span></div>",
+                "<div><strong>Protect Margin</strong><span>Use Margin Alerts to find products below 30% margin or below cost.</span></div><div><span>Active</span></div>",
                 "<div><strong>Bulk Percent Change</strong><span>Select rows, open Bulk Price Update, then increase or decrease by a percent.</span></div><div><span>Active</span></div>"
             ];
             openFeatureModal(
-                "Price Helper Rules",
-                "Price Helper is staged as safe merchant guidance. No automatic price overwrite happens without confirmation.",
+                "Pricing Tools Rules",
+                "Pricing Tools is staged as safe merchant guidance. No automatic price overwrite happens without confirmation.",
                 rows
             );
             logActivity("Price Rules", "Price rule options reviewed.", "Viewed");
@@ -2643,19 +2643,19 @@ function renderDashboard(options = {}) {
             });
 
             openFeatureModal(
-                "Profit Guard",
+                "Profit Review",
                 "This shows what needs attention before a merchant loses money: below-cost items, weak margins, missing costs, and missing prices.",
                 rows
             );
-            logActivity("Profit Guard", "Profit risks reviewed.", "Viewed");
-            showToast("Profit Guard opened.", "info");
+            logActivity("Profit Review", "Profit risks reviewed.", "Viewed");
+            showToast("Profit Review opened.", "info");
         }
 
         function showBulkOperationsHub() {
             var rows = [
                 "<div><strong>Bulk Price Update</strong><span>Select products in the table, open Bulk Update, then increase or decrease selected items by a percentage.</span></div><div><span>Active</span></div>",
                 "<div><strong>CSV Export</strong><span>Export the full product list with price, cost, margin, profit, availability, and hidden status.</span></div><div><span>Active</span></div>",
-                "<div><strong>Filtered Views</strong><span>Use Low Stock or Profit Alerts before selecting rows so bulk actions are safer.</span></div><div><span>Active</span></div>",
+                "<div><strong>Filtered Views</strong><span>Use Low Stock or Margin Alerts before selecting rows so bulk actions are safer.</span></div><div><span>Active</span></div>",
                 "<div><strong>Selection Count</strong><span>Selected products: " + escapeHtml(selectedItemIds.size) + ".</span></div><div><span>Ready</span></div>"
             ];
             openFeatureModal("Bulk Tools", "These are the fast merchant workflows that make this more than Clover's default inventory screen.", rows);
@@ -2693,16 +2693,16 @@ function renderDashboard(options = {}) {
             });
 
             if (!rows.length) {
-                rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Price Helper will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
+                rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Pricing Tools will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
             }
 
             openFeatureModal(
-                "Price Helper",
+                "Pricing Tools",
                 selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions are review-only and do not overwrite Clover automatically." : "Showing pricing ideas for the first products in your Clover list. Suggestions are review-only and do not overwrite Clover automatically.",
                 rows
             );
-            logActivity("Price Helper", "Smart pricing suggestions reviewed.", "Viewed");
-            showToast("Price Helper opened.", "info");
+            logActivity("Pricing Tools", "Smart pricing suggestions reviewed.", "Viewed");
+            showToast("Pricing Tools opened.", "info");
         }
 
         function showCleanupTools() {
@@ -2716,12 +2716,12 @@ function renderDashboard(options = {}) {
             }
 
             openFeatureModal(
-                "Cleanup Scan",
+                "Inventory Cleanup",
                 issues.length ? (issues.length + " cleanup issue(s) found. This is the merchant-friendly audit Clover should make easier.") : "No cleanup issues were found in the loaded product list.",
                 rows
             );
             setViewMode("cleanup");
-            logActivity("Cleanup Scan", issues.length + " cleanup issue(s) reviewed.", "Viewed");
+            logActivity("Inventory Cleanup", issues.length + " cleanup issue(s) reviewed.", "Viewed");
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
@@ -2987,7 +2987,7 @@ function renderDashboard(options = {}) {
 
             if (health) {
                 health.textContent = intelligence.healthScore + "/100";
-                health.className = "intelligence-value " + (intelligence.healthScore >= 85 ? "health-good" : (intelligence.healthScore >= 65 ? "health-watch" : "health-risk"));
+                health.className = "review-value " + (intelligence.healthScore >= 85 ? "health-good" : (intelligence.healthScore >= 65 ? "health-watch" : "health-risk"));
             }
             if (healthHelp) healthHelp.textContent = intelligence.healthScore >= 85 ? "Inventory looks healthy. Keep reviewing costs and margins." : (intelligence.healthScore >= 65 ? "Inventory is usable, but cleanup and margin work can improve it." : "Inventory needs attention before it feels merchant-ready.");
             if (critical) critical.textContent = intelligence.criticalIssues.length;
@@ -3065,18 +3065,18 @@ function renderDashboard(options = {}) {
             var intelligence = getInventoryIntelligence();
             var rows = [];
 
-            rows.push("<div><strong>Inventory Health Score</strong><span>" + escapeHtml(summary.healthScore + "/100. This score drops when products are below cost, missing price, missing cost, duplicated, stale, or messy.") + "</span></div><div><span>Score</span></div>");
+            rows.push("<div><strong>Product Review Score Score</strong><span>" + escapeHtml(summary.healthScore + "/100. This score drops when products are below cost, missing price, missing cost, duplicated, stale, or messy.") + "</span></div><div><span>Score</span></div>");
             rows.push("<div><strong>Estimated Monthly Loss</strong><span>" + escapeHtml(formatCurrencyFromCents(summary.estimatedMonthlyLoss) + " from below-cost products, using a conservative " + intelligence.assumedMonthlyUnits + " sales/month assumption until sales history is connected.") + "</span></div><div><span>Risk</span></div>");
-            rows.push("<div><strong>Profit Opportunity</strong><span>" + escapeHtml(formatCurrencyFromCents(summary.estimatedProfitOpportunity) + " potential monthly improvement from pricing affected items toward a 40% margin target.") + "</span></div><div><span>Opportunity</span></div>");
+            rows.push("<div><strong>Margin Opportunities</strong><span>" + escapeHtml(formatCurrencyFromCents(summary.estimatedProfitOpportunity) + " potential monthly improvement from pricing affected items toward a 40% margin target.") + "</span></div><div><span>Opportunity</span></div>");
             rows.push("<div><strong>Average Margin</strong><span>" + escapeHtml(summary.avgMargin === null ? "Add costs to calculate average margin." : summary.avgMargin.toFixed(1) + "% across " + summary.marginCount + " costed item(s).") + "</span></div><div><span>Profit</span></div>");
             intelligence.criticalIssues.concat(intelligence.warnings).slice(0, 14).forEach(function (issue) { rows.push(issueToRow(issue)); });
             if (intelligence.categoryInsights.length) {
                 var weakest = intelligence.categoryInsights[0];
                 rows.push("<div><strong>Weakest Category</strong><span>" + escapeHtml(weakest.name + " averages " + weakest.avgMargin.toFixed(1) + "% margin across " + weakest.marginCount + " costed item(s).") + "</span></div><div><span>Category</span></div>");
             }
-            openFeatureModal("Profit Guard", "Every result shows the risk, the reason, and the next step. Nothing changes in Clover until the merchant confirms it.", rows);
-            logActivity("Profit Guard", "Health " + summary.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s).", "Viewed");
-            showToast("Profit Guard opened.", "info");
+            openFeatureModal("Profit Review", "Every result shows the risk, the reason, and the next step. Nothing changes in Clover until the merchant confirms it.", rows);
+            logActivity("Profit Review", "Health " + summary.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s).", "Viewed");
+            showToast("Profit Review opened.", "info");
         }
 
         function getSmartPriceSuggestion(item) {
@@ -3108,22 +3108,22 @@ function renderDashboard(options = {}) {
                 var button = suggestion.suggestedPrice > 0 ? "<button type='button' class='insight-fix-btn' data-fix-action='fix_price' data-fix-id='" + escapeHtml(item.id || "") + "'>Stage</button>" : "<span>Review</span>";
                 return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + " - Cost " + escapeHtml(formatCurrencyFromCents(getCostCents(item.id || ""))) + " - " + escapeHtml(suggestion.text) + "</span></div><div>" + button + "</div>";
             });
-            if (!rows.length) rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Price Helper will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
-            openFeatureModal("Price Helper", selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions stage values in the table and still require the checkmark save." : "Showing pricing ideas prioritized by risk. Suggestions stage values in the table and still require the checkmark save.", rows);
-            logActivity("Price Helper", "Smart pricing suggestions reviewed.", "Viewed");
-            showToast("Price Helper opened.", "info");
+            if (!rows.length) rows = ["<div><strong>No products loaded</strong><span>Refresh Clover inventory first, then Pricing Tools will suggest safe improvements.</span></div><div><span>Ready</span></div>"];
+            openFeatureModal("Pricing Tools", selectedItemIds.size ? "Showing pricing ideas for selected products only. Suggestions stage values in the table and still require the checkmark save." : "Showing pricing ideas prioritized by risk. Suggestions stage values in the table and still require the checkmark save.", rows);
+            logActivity("Pricing Tools", "Smart pricing suggestions reviewed.", "Viewed");
+            showToast("Pricing Tools opened.", "info");
         }
 
         function showCleanupTools() {
             var intelligence = getInventoryIntelligence();
             var issues = intelligence.allIssues;
             var rows = [];
-            rows.push("<div><strong>Inventory Health</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
+            rows.push("<div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
             issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
             if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
-            openFeatureModal("Cleanup Scan", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
+            openFeatureModal("Inventory Cleanup", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
             setViewMode("cleanup");
-            logActivity("Cleanup Scan", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
+            logActivity("Inventory Cleanup", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
@@ -3170,14 +3170,14 @@ function renderDashboard(options = {}) {
         function showOperationalShortcuts() {
             var rows = [
                 "<div><strong>Fast Cost Entry</strong><span>Click any Cost cell, type the true cost, then press Enter. Margin updates after save.</span></div><div><span>Active</span></div>",
-                "<div><strong>Profit Alert Filter</strong><span>Click Profit Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
-                "<div><strong>Cleanup Scan</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
+                "<div><strong>Profit Alert Filter</strong><span>Click Margin Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
+                "<div><strong>Inventory Cleanup</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
                 "<div><strong>Export for Backup</strong><span>Use Export CSV before major edits so the merchant has a safe product snapshot.</span></div><div><span>Active</span></div>",
                 "<div><strong>Safe Launch Rule</strong><span>No smart tool automatically changes Clover pricing without merchant confirmation.</span></div><div><span>Safe</span></div>"
             ];
-            openFeatureModal("Daily Shortcuts", "These are the daily shortcuts that make the app feel faster than Clover's normal product screen.", rows);
-            logActivity("Daily Shortcuts", "Shortcut guide opened.", "Viewed");
-            showToast("Daily Shortcuts opened.", "info");
+            openFeatureModal("Quick Actions", "These are the daily shortcuts that make the app feel faster than Clover's normal product screen.", rows);
+            logActivity("Quick Actions", "Shortcut guide opened.", "Viewed");
+            showToast("Quick Actions opened.", "info");
         }
 
         function importCsvClicked() {
@@ -3697,7 +3697,7 @@ function renderDashboard(options = {}) {
         bind("btnProfitAlerts", "click", showProfitAlerts);
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
-        bind("btnProfitIntelligence", "click", showProfitIntelligence);
+        bind("btnProfitReview", "click", showProfitIntelligence);
         bind("btnBulkOperationsHub", "click", showBulkOperationsHub);
         bind("btnSmartPricingHub", "click", showSmartPricing);
         bind("btnCleanupToolsHub", "click", showCleanupTools);
