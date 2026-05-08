@@ -1,0 +1,26 @@
+{
+  "appId": "TH4H1P80WN484",
+  "name": "InventoryRite",
+  "description": "Inventory management, pricing tools, margin protection, and cleanup for Clover merchants",
+  "icon": "https://inventoryrite-api.onrender.com/icon.png",
+  "developer": {
+    "name": "Process Rite Inc",
+    "email": "muheisenone@outlook.com"
+  },
+  "permissions": [
+    "merchant_read",
+    "item_read",
+    "item_write",
+    "employee_read",
+    "inventory_read",
+    "inventory_write"
+  ],
+  "webhook": {
+    "url": "https://inventoryrite-api.onrender.com/clover-webhook",
+    "events": [
+      "ITEM_CREATED",
+      "ITEM_UPDATED",
+      "ITEM_DELETED"
+    ]
+  }
+}
