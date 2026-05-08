@@ -1039,25 +1039,26 @@ function renderDashboard(options = {}) {
         ---------------------------------------------------------------- */
 
         .merchant-control-bar {
-background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px;
-            padding: 13px 14px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid #dbe4ee;
+            border-radius: 18px;
+            padding: 14px 16px;
             margin: 0 0 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
         }
 
         .merchant-control-left {
-            color: white;
+            color: #1e293b;
             min-width: 220px;
         }
 
         .merchant-control-title {
+            color: #1e293b;
             font-size: 14px;
             font-weight: 900;
             line-height: 1.1;
@@ -1065,7 +1066,7 @@ background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
 
         .merchant-control-subtitle {
             margin-top: 4px;
-            color: #cbd5e1;
+            color: #64748b;
             font-size: 11px;
             font-weight: 800;
             line-height: 1.3;
@@ -1097,7 +1098,7 @@ background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
         .control-all { background:#475569; }
         .control-low { background:#f97316; }
         .control-reorder { background:#0891b2; }
-        .control-export { background:#020617; border:1px solid rgba(255,255,255,.18); }
+        .control-export { background:#334155; border:1px solid rgba(255,255,255,.18); }
         .control-import { background:#16a34a; }
         .control-rules { background:#7c3aed; }
         .control-profit { background:#dc2626; }
