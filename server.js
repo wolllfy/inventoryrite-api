@@ -4081,7 +4081,7 @@ function renderDashboard(options = {}) {
                 var item = row.item;
                 try {
                     await fetchJson(
-                        "/clover-update-item/" + encodeURIComponent(item.id || "") +,
+                        "/clover-update-item/" + encodeURIComponent(item.id || ""),
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
