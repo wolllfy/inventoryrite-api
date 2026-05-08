@@ -473,13 +473,71 @@ function renderDashboard(options = {}) {
             justify-content: flex-end;
         }
 
+        .inventory-command-center {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 16px;
+            margin: 0 0 16px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+        }
+
+        .command-center-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .command-copy {
+            min-width: 230px;
+        }
+
+        .command-title {
+            margin: 0;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 900;
+            line-height: 1.15;
+        }
+
+        .command-subtitle {
+            margin-top: 4px;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .command-search-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex: 1;
+            min-width: 360px;
+            flex-wrap: wrap;
+        }
+
+        .command-search-actions .search-input {
+            flex: 1 1 360px;
+            min-width: 260px;
+            max-width: none;
+        }
+
+        .command-search-actions .btn {
+            min-width: 126px;
+            white-space: nowrap;
+        }
+
         .product-action-row {
             display: flex;
             justify-content: flex-end;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            margin: -4px 0 16px;
+            margin: 0;
         }
 
         .product-action-row .btn {
@@ -508,18 +566,42 @@ function renderDashboard(options = {}) {
 
         .add-panel {
             display: none;
-            background: #f8fafc;
-            border: 1px solid var(--line);
-            border-radius: 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #dbe4ee;
+            border-radius: 18px;
             padding: 16px;
-            margin: 0 0 16px;
+            margin: -4px 0 16px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
         }
 
         .add-panel.show { display: block; }
 
+        .add-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .add-panel-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 900;
+            color: #0f172a;
+        }
+
+        .add-panel-subtitle {
+            margin-top: 3px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #64748b;
+        }
+
         .add-grid {
             display: grid;
-            grid-template-columns: 1fr 180px auto;
+            grid-template-columns: minmax(260px, 1fr) 170px 140px;
             gap: 12px;
             align-items: end;
         }
@@ -1255,6 +1337,10 @@ function renderDashboard(options = {}) {
             .topbar { align-items: flex-start; gap: 14px; flex-direction: column; }
             .table-top { flex-direction: column; }
             .toolbar { width: 100%; justify-content: flex-start; }
+            .command-center-top { align-items: flex-start; }
+            .command-search-actions { width: 100%; min-width: 100%; justify-content: flex-start; }
+            .command-search-actions .search-input { width: 100%; min-width: 100%; max-width: 100%; flex-basis: 100%; }
+            .command-search-actions .btn { flex: 1 1 130px; }
             .product-action-row { justify-content: flex-start; margin-top: 0; }
             .search-input { width: 100%; min-width: 100%; max-width: 100%; }
             .bulk-controls { flex-direction: column; align-items: flex-start; }
@@ -1277,6 +1363,8 @@ function renderDashboard(options = {}) {
             .money-col { width: 14%; }
             .metric-col { width: 10%; }
             .actions-col { width: 16%; }
+            .add-grid { grid-template-columns: 1fr; }
+            .command-search-actions .btn { flex-basis: 100%; }
             .row-actions .btn-small { flex-basis: 100%; }
         }
     </style>
@@ -1313,22 +1401,35 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Loaded Clover products appear below. Edit a name or price, then click Save.</p>
+                    <p>Loaded Clover products appear below. Search, refresh, bulk update, or add a new Clover item from one clean control area.</p>
                     <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
-                <div class="toolbar">
-                    <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
+            </div>
+
+            <div class="inventory-command-center">
+                <div class="command-center-top">
+                    <div class="command-copy">
+                        <div class="command-title">Product Command Center</div>
+                        <div class="command-subtitle">Search products, sync Clover, update prices, or create a new item.</div>
+                    </div>
+
+                    <div class="command-search-actions">
+                        <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
+                        <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh</button>
+                        <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Update</button>
+                        <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="product-action-row">
-                <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
-                <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
-            </div>
-
-            <!-- ADD PRODUCT PANEL (unchanged) -->
+            <!-- ADD PRODUCT PANEL -->
             <div class="add-panel" id="addPanel">
+                <div class="add-panel-header">
+                    <div>
+                        <div class="add-panel-title">Add New Clover Product</div>
+                        <div class="add-panel-subtitle">Enter the item name and price, then create it directly in Clover.</div>
+                    </div>
+                </div>
                 <div class="add-grid">
                     <div>
                         <label for="itemName">Product Name</label>
@@ -1338,7 +1439,7 @@ function renderDashboard(options = {}) {
                         <label for="itemPrice">Price Cents</label>
                         <input id="itemPrice" type="number" value="199" />
                     </div>
-                    <button id="btnCreateItem" type="button" class="btn btn-primary">Create Product</button>
+                    <button id="btnCreateItem" type="button" class="btn btn-primary">Create</button>
                 </div>
             </div>
 
@@ -2523,7 +2624,7 @@ function renderDashboard(options = {}) {
                 showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
                 setButtonText("btnRefreshInventory", "Refresh");
-                setButtonText("btnRefreshInventoryTop", "Refresh Inventory");
+                setButtonText("btnRefreshInventoryTop", "Refresh");
                 stopBusy();
             }
         }
