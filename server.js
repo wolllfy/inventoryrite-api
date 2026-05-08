@@ -1118,6 +1118,71 @@ function renderDashboard(options = {}) {
 
         .view-filter-note.show { display:block; }
 
+
+        .last-action-strip {
+            margin: 0 0 14px;
+            padding: 10px 13px;
+            border-radius: 14px;
+            border: 1px solid #bbf7d0;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+            color: #14532d;
+            font-size: 13px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .last-action-strip span {
+            color: #475569;
+            font-weight: 800;
+        }
+
+        .stat-value.stat-pop {
+            animation: statPop .38s ease-out;
+        }
+
+        @keyframes statPop {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.08); color: #15803d; }
+            100% { transform: scale(1); }
+        }
+
+        .save-state {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 70px;
+            font-size: 11px;
+            font-weight: 900;
+            border-radius: 999px;
+            padding: 5px 8px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            color: #64748b;
+            margin-left: 4px;
+        }
+
+        .save-state.saved {
+            background: #ecfdf5;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .save-state.saving {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .save-state.unsaved {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+
         .modal-wide { max-width: 680px; }
 
         .insight-list {
@@ -1325,6 +1390,10 @@ function renderDashboard(options = {}) {
                 </div>
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
+            <div class="last-action-strip" id="lastActionStrip">
+                <strong>Last Action</strong>
+                <span id="lastActionText">Ready. No recent actions yet.</span>
+            </div>
             <input id="csvImportInput" type="file" accept=".csv,text/csv" style="display:none;" />
 
             <div class="stats-row">
@@ -1537,16 +1606,45 @@ function renderDashboard(options = {}) {
         }
 
         function logActivity(title, message, status) {
-            activityLog.unshift({
+            var entry = {
                 title: title || "Activity",
                 message: message || "Action completed.",
                 status: status || "Done",
                 time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            });
+            };
+
+            activityLog.unshift(entry);
 
             if (activityLog.length > 50) {
                 activityLog = activityLog.slice(0, 50);
             }
+
+            updateLastAction(entry);
+        }
+
+        function updateLastAction(entry) {
+            var text = byId("lastActionText");
+            if (!text || !entry) return;
+            text.textContent = entry.title + " - " + entry.message + " - " + entry.time;
+        }
+
+        function setStatText(id, value) {
+            var el = byId(id);
+            if (!el) return;
+            value = String(value);
+            if (el.textContent !== value) {
+                el.textContent = value;
+                el.classList.remove("stat-pop");
+                void el.offsetWidth;
+                el.classList.add("stat-pop");
+            }
+        }
+
+        function setRowSaveState(itemId, state, text) {
+            var badge = document.querySelector('[data-save-state="' + itemId + '"]');
+            if (!badge) return;
+            badge.className = "save-state " + (state || "");
+            badge.textContent = text || "Ready";
         }
 
         function setButtonText(id, text) {
@@ -1666,14 +1764,14 @@ function renderDashboard(options = {}) {
             var statLowestMargin = byId("statLowestMargin");
             var statBelowCost = byId("statBelowCost");
 
-            if (statLoaded) statLoaded.textContent = String(loaded);
-            if (statVisible) statVisible.textContent = String(visible);
-            if (statAvailable) statAvailable.textContent = String(available);
-            if (statValue) statValue.textContent = formatCurrencyFromCents(totalCents);
-            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "-" : avgMargin.toFixed(1) + "%";
-            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " - " + best.margin.toFixed(1) + "%" : "-";
-            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " - " + lowest.margin.toFixed(1) + "%" : "-";
-            if (statBelowCost) statBelowCost.textContent = String(belowCost);
+            setStatText("statLoaded", loaded);
+            setStatText("statVisible", visible);
+            setStatText("statAvailable", available);
+            setStatText("statValue", formatCurrencyFromCents(totalCents));
+            setStatText("statAvgMargin", avgMargin === null ? "-" : avgMargin.toFixed(1) + "%");
+            setStatText("statBestMargin", best ? best.name.substring(0, 18) + " - " + best.margin.toFixed(1) + "%" : "-");
+            setStatText("statLowestMargin", lowest ? lowest.name.substring(0, 18) + " - " + lowest.margin.toFixed(1) + "%" : "-");
+            setStatText("statBelowCost", belowCost);
         }
 
         /*
