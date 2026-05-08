@@ -473,6 +473,19 @@ function renderDashboard(options = {}) {
             justify-content: flex-end;
         }
 
+        .product-action-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: -4px 0 16px;
+        }
+
+        .product-action-row .btn {
+            white-space: nowrap;
+        }
+
         input {
             width: 100%;
             border: 1px solid #d1d5db;
@@ -1242,6 +1255,7 @@ function renderDashboard(options = {}) {
             .topbar { align-items: flex-start; gap: 14px; flex-direction: column; }
             .table-top { flex-direction: column; }
             .toolbar { width: 100%; justify-content: flex-start; }
+            .product-action-row { justify-content: flex-start; margin-top: 0; }
             .search-input { width: 100%; min-width: 100%; max-width: 100%; }
             .bulk-controls { flex-direction: column; align-items: flex-start; }
             .stats-row { grid-template-columns: 1fr 1fr; }
@@ -1293,11 +1307,6 @@ function renderDashboard(options = {}) {
                 <p>Search products, update names and prices, create new items, and remove products from your Clover inventory.</p>
             </div>
 
-            <div class="hero-actions">
-                <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
-                <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
-            </div>
         </section>
 
         <section class="card inventory-card">
@@ -1309,9 +1318,13 @@ function renderDashboard(options = {}) {
                 </div>
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
-                    <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh</button>
-
                 </div>
+            </div>
+
+            <div class="product-action-row">
+                <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
+                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
+                <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
             </div>
 
             <!-- ADD PRODUCT PANEL (unchanged) -->
