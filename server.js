@@ -1035,108 +1035,115 @@ function renderDashboard(options = {}) {
 
 
         /* ----------------------------------------------------------------
-        | ALWAYS-VISIBLE MERCHANT CONTROL BAR
-        | These are the money features merchants see immediately.
+        | MERCHANT CONTROL BAR - WORKING BUTTONS
         ---------------------------------------------------------------- */
 
         .merchant-control-bar {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 14px;
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 13px 14px;
+            margin: 0 0 14px;
+            display: flex;
             align-items: center;
-            background: linear-gradient(135deg, #0f172a 0%, #111827 52%, #1f2937 100%);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 18px;
-            padding: 14px;
-            margin: 0 0 16px;
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
         }
 
         .merchant-control-left {
-            min-width: 0;
+            color: white;
+            min-width: 220px;
         }
 
         .merchant-control-title {
-            color: #ffffff;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 900;
-            margin-bottom: 3px;
+            line-height: 1.1;
         }
 
         .merchant-control-subtitle {
+            margin-top: 4px;
             color: #cbd5e1;
-            font-size: 12px;
-            font-weight: 700;
-            line-height: 1.4;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.3;
         }
 
-        .merchant-control-buttons {
+        .merchant-control-actions {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-
-        .money-btn {
-            min-height: 38px;
-            padding: 9px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: none;
-            white-space: nowrap;
-        }
-
-        .btn-orange { background: #f97316; color: white; }
-        .btn-cyan { background: #0891b2; color: white; }
-        .btn-black { background: #020617; color: white; }
-        .btn-purple { background: #7c3aed; color: white; }
-        .btn-red-strong { background: #dc2626; color: white; }
-        .btn-slate { background: #475569; color: white; }
-        .btn-green-strong { background: #16a34a; color: white; }
-
-        .active-money-filter {
-            outline: 3px solid rgba(255,255,255,0.38);
-            transform: translateY(-1px);
-        }
-
-        .feature-panel {
-            display: grid;
-            gap: 10px;
-            margin-top: 14px;
-        }
-
-        .feature-row {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 11px 12px;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 10px;
             align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .control-btn {
+            border: 0;
+            border-radius: 11px;
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+            min-height: 34px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: transform .12s ease, opacity .12s ease, filter .12s ease;
+        }
+
+        .control-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+        .control-btn:disabled { opacity: .58; cursor: not-allowed; transform: none; }
+        .control-all { background:#475569; }
+        .control-low { background:#f97316; }
+        .control-reorder { background:#0891b2; }
+        .control-export { background:#020617; border:1px solid rgba(255,255,255,.18); }
+        .control-import { background:#16a34a; }
+        .control-rules { background:#7c3aed; }
+        .control-profit { background:#dc2626; }
+        .control-log { background:#64748b; }
+
+        .view-filter-note {
+            display:none;
+            margin: 0 0 14px;
+            padding: 10px 12px;
+            border-radius: 13px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e3a8a;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .view-filter-note.show { display:block; }
+
+        .modal-wide { max-width: 680px; }
+
+        .insight-list {
+            margin-top: 14px;
+            display: grid;
+            gap: 9px;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+        .insight-row {
+            border: 1px solid #e5e7eb;
+            background: #f8fafc;
+            border-radius: 13px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
             font-size: 13px;
         }
 
-        .feature-row strong {
-            display: block;
-            color: #0f172a;
-            margin-bottom: 2px;
-        }
+        .insight-row strong { display:block; color:#111827; margin-bottom:3px; }
+        .insight-row span { color:#64748b; font-weight:800; }
 
-        .feature-row span {
-            color: #64748b;
-            line-height: 1.35;
-        }
-
-        .feature-metric {
-            font-weight: 900;
-            color: #111827;
-            white-space: nowrap;
-        }
-
-        .modal-wide {
-            max-width: 720px;
+        @media (max-width: 980px) {
+            .merchant-control-bar { align-items: flex-start; }
+            .merchant-control-actions { justify-content: flex-start; }
         }
 
         @media (max-width: 980px) {
@@ -1148,8 +1155,6 @@ function renderDashboard(options = {}) {
             .toolbar { width: 100%; justify-content: flex-start; }
             .search-input { width: 100%; min-width: 100%; max-width: 100%; }
             .bulk-controls { flex-direction: column; align-items: flex-start; }
-            .merchant-control-bar { grid-template-columns: 1fr; }
-            .merchant-control-buttons { justify-content: flex-start; }
             .stats-row { grid-template-columns: 1fr 1fr; }
             th, td { padding: 10px 6px; font-size: 12px; }
             .btn-small { padding: 7px 7px; font-size: 11px; }
@@ -1279,23 +1284,24 @@ function renderDashboard(options = {}) {
 
 
 
-            <!-- ALWAYS-VISIBLE MERCHANT CONTROL BAR -->
             <div class="merchant-control-bar" id="merchantControlBar">
                 <div class="merchant-control-left">
                     <div class="merchant-control-title">Merchant Control Bar</div>
                     <div class="merchant-control-subtitle">Profit, low stock, CSV tools, reorder planning, and activity tracking in one place.</div>
                 </div>
-                <div class="merchant-control-buttons">
-                    <button id="btnAllProducts" type="button" class="btn money-btn btn-slate">All Products</button>
-                    <button id="btnLowStock" type="button" class="btn money-btn btn-orange">Low Stock</button>
-                    <button id="btnReorder" type="button" class="btn money-btn btn-cyan">Reorder</button>
-                    <button id="btnExportCsv" type="button" class="btn money-btn btn-black">Export CSV</button>
-                    <button id="btnImportCsv" type="button" class="btn money-btn btn-green-strong">Import CSV</button>
-                    <button id="btnPriceRules" type="button" class="btn money-btn btn-purple">Price Rules</button>
-                    <button id="btnProfitAlerts" type="button" class="btn money-btn btn-red-strong">Profit Alerts</button>
-                    <button id="btnActivityLog" type="button" class="btn money-btn btn-slate">Activity Log</button>
+                <div class="merchant-control-actions">
+                    <button id="btnShowAllProducts" type="button" class="control-btn control-all">All Products</button>
+                    <button id="btnLowStock" type="button" class="control-btn control-low">Low Stock</button>
+                    <button id="btnReorder" type="button" class="control-btn control-reorder">Reorder</button>
+                    <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
+                    <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
+                    <button id="btnPriceRules" type="button" class="control-btn control-rules">Price Rules</button>
+                    <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
+                    <button id="btnActivityLog" type="button" class="control-btn control-log">Activity Log</button>
                 </div>
             </div>
+            <div class="view-filter-note" id="viewFilterNote"></div>
+            <input id="csvImportInput" type="file" accept=".csv,text/csv" style="display:none;" />
 
             <div class="stats-row">
                 <div class="stat-box">
@@ -1414,8 +1420,8 @@ function renderDashboard(options = {}) {
     <div class="modal-backdrop" id="featureModal">
         <div class="modal modal-wide">
             <h3 id="featureTitle">Feature</h3>
-            <p id="featureMessage">Feature details.</p>
-            <div class="feature-panel" id="featurePanel"></div>
+            <p id="featureMessage">Details will appear here.</p>
+            <div class="insight-list" id="featureList"></div>
             <div class="modal-actions">
                 <button id="featureClose" type="button" class="btn btn-light">Close</button>
             </div>
@@ -1424,19 +1430,6 @@ function renderDashboard(options = {}) {
 
     <script>
     (function () {
-        window.addEventListener("error", function (event) {
-            try {
-                var wrap = document.getElementById("toastWrap");
-                if (wrap) {
-                    var toast = document.createElement("div");
-                    toast.className = "toast error";
-                    toast.textContent = "Page script error: " + (event && event.message ? event.message : "Unknown error");
-                    wrap.appendChild(toast);
-                }
-            } catch (e) {}
-            console.error("InventoryRite page error", event);
-        });
-
         var embeddedConnection = {
             connected: ${connected ? "true" : "false"},
             merchant_id: ${JSON.stringify(merchantId)},
@@ -1451,8 +1444,7 @@ function renderDashboard(options = {}) {
         var bulkUpdatedItemIds = [];
         var isBusy = false;
         var pendingConfirmAction = null;
-        var activeMoneyFilter = "all";
-        var activityLog = [];
+        var activeViewMode = "all";
 
         // Track selected item IDs for bulk operations
         var selectedItemIds = new Set();
@@ -1520,10 +1512,7 @@ function renderDashboard(options = {}) {
         function setButtonsDisabled(disabled) {
             var buttons = document.querySelectorAll("button");
             buttons.forEach(function (btn) {
-                if (btn.id === "confirmCancel" || btn.id === "confirmYes" || btn.id === "detailsClose" || btn.id === "featureClose") return;
-                if (btn.id === "btnRefreshInventory" || btn.id === "btnRefreshInventoryTop") return;
-                if (btn.id === "btnToggleAdd" || btn.id === "btnToggleAddTop" || btn.id === "btnToggleBulk" || btn.id === "btnToggleBulkTop") return;
-                if (btn.id === "btnAllProducts" || btn.id === "btnLowStock" || btn.id === "btnReorder" || btn.id === "btnExportCsv" || btn.id === "btnImportCsv" || btn.id === "btnPriceRules" || btn.id === "btnProfitAlerts" || btn.id === "btnActivityLog") return;
+                if (btn.id === "confirmCancel" || btn.id === "confirmYes") return;
                 btn.disabled = disabled;
             });
         }
@@ -1583,218 +1572,6 @@ function renderDashboard(options = {}) {
             if (margin < 0) return '<span class="pill bad">' + margin.toFixed(1) + '%</span>';
             if (margin < 30) return '<span class="pill warn">' + margin.toFixed(1) + '%</span>';
             return '<span class="pill good">' + margin.toFixed(1) + '%</span>';
-        }
-
-
-
-        function getQuantityValue(item) {
-            var possible = [item.quantity, item.stockCount, item.stock, item.availableQuantity, item.onHand, item.inventoryCount];
-            for (var i = 0; i < possible.length; i++) {
-                var n = Number(possible[i]);
-                if (!Number.isNaN(n) && Number.isFinite(n)) return n;
-            }
-            return null;
-        }
-
-        function getLowStockThreshold() {
-            return 5;
-        }
-
-        function isLowStockItem(item) {
-            var q = getQuantityValue(item);
-            return q !== null && q <= getLowStockThreshold();
-        }
-
-        function isProfitAlertItem(item) {
-            var price = Number(item.price || 0);
-            var cost = getCostCents(item.id || "");
-            if (price <= 0 || cost <= 0) return false;
-            var margin = calculateMargin(price, cost);
-            return (price - cost) < 0 || (margin !== null && margin < 30);
-        }
-
-        function addActivity(message) {
-            activityLog.unshift({
-                message: message,
-                at: new Date().toLocaleString()
-            });
-            activityLog = activityLog.slice(0, 25);
-        }
-
-        function setActiveMoneyFilter(filterName) {
-            activeMoneyFilter = filterName || "all";
-            var ids = ["btnAllProducts", "btnLowStock", "btnProfitAlerts"];
-            ids.forEach(function (id) {
-                var el = byId(id);
-                if (el) el.classList.remove("active-money-filter");
-            });
-            if (activeMoneyFilter === "all" && byId("btnAllProducts")) byId("btnAllProducts").classList.add("active-money-filter");
-            if (activeMoneyFilter === "lowStock" && byId("btnLowStock")) byId("btnLowStock").classList.add("active-money-filter");
-            if (activeMoneyFilter === "profitAlerts" && byId("btnProfitAlerts")) byId("btnProfitAlerts").classList.add("active-money-filter");
-            renderItems(loadedItems);
-        }
-
-        function openFeatureModal(title, message, rows) {
-            var modal = byId("featureModal");
-            var titleEl = byId("featureTitle");
-            var messageEl = byId("featureMessage");
-            var panel = byId("featurePanel");
-
-            if (titleEl) titleEl.textContent = title || "Feature";
-            if (messageEl) messageEl.textContent = message || "";
-            if (panel) {
-                panel.innerHTML = "";
-                (rows || []).forEach(function (row) {
-                    var div = document.createElement("div");
-                    div.className = "feature-row";
-                    div.innerHTML =
-                        "<div><strong>" + escapeHtml(row.title || "") + "</strong><span>" + escapeHtml(row.text || "") + "</span></div>" +
-                        "<div class='feature-metric'>" + escapeHtml(row.metric || "") + "</div>";
-                    panel.appendChild(div);
-                });
-            }
-            if (modal) modal.classList.add("show");
-        }
-
-        function closeFeatureModal() {
-            var modal = byId("featureModal");
-            if (modal) modal.classList.remove("show");
-        }
-
-        function exportInventoryCsv() {
-            if (!loadedItems.length) {
-                showToast("Load inventory first, then export CSV.", "error");
-                return;
-            }
-
-            var headers = ["Name", "Clover ID", "SKU/Code", "Price", "Cost", "Profit Per Unit", "Margin %", "Available", "Hidden"];
-            var rows = loadedItems.map(function (item) {
-                var price = Number(item.price || 0);
-                var cost = getCostCents(item.id || "");
-                var margin = calculateMargin(price, cost);
-                var sku = item.sku || item.code || item.productCode || "";
-                return [
-                    item.name || "",
-                    item.id || "",
-                    sku,
-                    (price / 100).toFixed(2),
-                    (cost / 100).toFixed(2),
-                    ((price - cost) / 100).toFixed(2),
-                    margin === null ? "" : margin.toFixed(1),
-                    item.available === false ? "No" : "Yes",
-                    item.hidden ? "Yes" : "No"
-                ];
-            });
-
-            function csvEscape(value) {
-                return '"' + String(value || "").replaceAll('"', '""') + '"';
-            }
-
-            var csv = [headers].concat(rows).map(function (row) {
-                return row.map(csvEscape).join(",");
-            }).join("\n");
-
-            var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement("a");
-            a.href = url;
-            a.download = "inventoryrite-clover-products.csv";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            addActivity("Exported product CSV");
-            showToast("CSV exported successfully.", "success");
-        }
-
-        function showLowStockReport() {
-            var qtyKnown = loadedItems.filter(function (item) { return getQuantityValue(item) !== null; });
-            var low = loadedItems.filter(isLowStockItem);
-
-            if (!qtyKnown.length) {
-                openFeatureModal(
-                    "Low Stock",
-                    "Clover did not return quantity fields for these products from the current item response. The button is ready; the next step is adding Clover inventory quantity lookup.",
-                    [
-                        { title: "Current products loaded", text: "Products are loaded, but quantity was not included in this response.", metric: String(loadedItems.length) },
-                        { title: "Recommended next build", text: "Add Clover inventory endpoint lookup so this dashboard can show exact low-stock items.", metric: "Next" }
-                    ]
-                );
-                return;
-            }
-
-            setActiveMoneyFilter("lowStock");
-            openFeatureModal(
-                "Low Stock",
-                "Products at or below " + getLowStockThreshold() + " units are now filtered in the table.",
-                low.slice(0, 10).map(function (item) {
-                    return { title: item.name || "Unnamed Product", text: "This item is at or below your low-stock threshold.", metric: String(getQuantityValue(item)) + " left" };
-                })
-            );
-        }
-
-        function showProfitAlerts() {
-            var alerts = loadedItems.filter(isProfitAlertItem).sort(function (a, b) {
-                return (calculateMargin(Number(a.price || 0), getCostCents(a.id || "")) || 0) - (calculateMargin(Number(b.price || 0), getCostCents(b.id || "")) || 0);
-            });
-
-            setActiveMoneyFilter("profitAlerts");
-            openFeatureModal(
-                "Profit Alerts",
-                alerts.length ? "Low-margin and below-cost products are now filtered in the table." : "No profit alerts found. Add product costs to unlock stronger margin warnings.",
-                alerts.slice(0, 10).map(function (item) {
-                    var price = Number(item.price || 0);
-                    var cost = getCostCents(item.id || "");
-                    var margin = calculateMargin(price, cost);
-                    return {
-                        title: item.name || "Unnamed Product",
-                        text: "Price " + formatCurrencyFromCents(price) + " · Cost " + formatCurrencyFromCents(cost),
-                        metric: margin === null ? "No margin" : margin.toFixed(1) + "%"
-                    };
-                })
-            );
-        }
-
-        function showComingSoonFeature(type) {
-            var data = {
-                reorder: {
-                    title: "Smart Reorder",
-                    message: "This is the subscription feature: it will suggest what to reorder before the merchant runs out.",
-                    rows: [
-                        { title: "Reorder Suggestions", text: "Builds a list of products that need restocking.", metric: "Premium" },
-                        { title: "Supplier Workflow", text: "Future version can create a purchase order from selected items.", metric: "Sticky" }
-                    ]
-                },
-                importCsv: {
-                    title: "Import CSV",
-                    message: "This will let merchants bulk-create or bulk-update products from a spreadsheet.",
-                    rows: [
-                        { title: "Mass Updates", text: "Update hundreds of product names, prices, and costs at once.", metric: "Time Saver" },
-                        { title: "Migration Tool", text: "Useful when moving from another POS or spreadsheet.", metric: "Sales Tool" }
-                    ]
-                },
-                priceRules: {
-                    title: "Price Rules",
-                    message: "This will let merchants create repeatable pricing rules instead of manual edits.",
-                    rows: [
-                        { title: "Category Markups", text: "Example: increase all drinks by 8% or round prices to .99.", metric: "Automation" },
-                        { title: "Margin Protection", text: "Warn before a product is priced under target margin.", metric: "Profit" }
-                    ]
-                },
-                activityLog: {
-                    title: "Activity Log",
-                    message: "This becomes the trust feature: who changed what, when, and what happened.",
-                    rows: activityLog.length ? activityLog.map(function (log) {
-                        return { title: log.message, text: log.at, metric: "Logged" };
-                    }) : [
-                        { title: "No activity yet", text: "Changes like exports, saves, deletes, and bulk updates will appear here.", metric: "Ready" },
-                        { title: "Future upgrade", text: "Store the audit trail in Postgres so merchants never lose history.", metric: "Sticky" }
-                    ]
-                }
-            };
-
-            var selected = data[type];
-            openFeatureModal(selected.title, selected.message, selected.rows);
         }
 
         function updateStats(items) {
@@ -2022,7 +1799,6 @@ function renderDashboard(options = {}) {
 
             if (failCount === 0) {
                 showToast("Bulk update complete: " + successCount + " price(s) " + dirLabel + " by " + pct + "%.", "success");
-                addActivity("Bulk price update: " + successCount + " product(s) " + dirLabel + " by " + pct + "%");
             } else {
                 showToast("Bulk update: " + successCount + " succeeded, " + failCount + " failed.", failCount > 0 && successCount === 0 ? "error" : "info");
             }
@@ -2030,6 +1806,209 @@ function renderDashboard(options = {}) {
             clearSelection();
             stopBusy();
             await loadItems();
+        }
+
+
+
+        /*
+        |------------------------------------------------------------------
+        | MERCHANT CONTROL BAR FEATURES
+        |------------------------------------------------------------------
+        */
+
+        function getItemSku(item) {
+            return item.sku || item.code || item.productCode || "";
+        }
+
+        function getItemQuantity(item) {
+            var candidates = [item.stockCount, item.quantity, item.qty, item.inventoryCount, item.availableQuantity];
+            for (var i = 0; i < candidates.length; i++) {
+                if (candidates[i] !== undefined && candidates[i] !== null && candidates[i] !== "") {
+                    var n = Number(candidates[i]);
+                    if (!Number.isNaN(n) && Number.isFinite(n)) return n;
+                }
+            }
+            return null;
+        }
+
+        function getLowStockItems() {
+            return (loadedItems || []).filter(function (item) {
+                var qty = getItemQuantity(item);
+                return qty !== null && qty <= 5;
+            });
+        }
+
+        function getProfitAlertItems() {
+            return (loadedItems || []).filter(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                var margin = calculateMargin(price, cost);
+                return price > 0 && cost > 0 && (price < cost || (margin !== null && margin < 30));
+            });
+        }
+
+        function setViewMode(mode) {
+            activeViewMode = mode || "all";
+            var note = byId("viewFilterNote");
+            if (note) {
+                if (activeViewMode === "lowStock") {
+                    note.textContent = "Showing Low Stock view. Products with quantity 5 or less appear here when Clover sends quantity data.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "profitAlerts") {
+                    note.textContent = "Showing Profit Alerts view. Low-margin and below-cost items are highlighted here.";
+                    note.classList.add("show");
+                } else {
+                    note.textContent = "";
+                    note.classList.remove("show");
+                }
+            }
+            renderItems(loadedItems);
+        }
+
+        function csvEscape(value) {
+            var text = String(value === undefined || value === null ? "" : value);
+            if (text.indexOf('"') >= 0 || text.indexOf(',') >= 0 || text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0) {
+                return '"' + text.replaceAll('"', '""') + '"';
+            }
+            return text;
+        }
+
+        function exportProductsCsv() {
+            if (!loadedItems || loadedItems.length === 0) {
+                showToast("Load inventory before exporting CSV.", "error");
+                return;
+            }
+
+            var rows = [];
+            rows.push(["Clover ID", "Product Name", "SKU", "Price", "Cost", "Margin %", "Profit Per Unit", "Available", "Hidden"].join(","));
+
+            loadedItems.forEach(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                var margin = calculateMargin(price, cost);
+                var profit = price - cost;
+                rows.push([
+                    csvEscape(item.id || ""),
+                    csvEscape(item.name || ""),
+                    csvEscape(getItemSku(item)),
+                    csvEscape((price / 100).toFixed(2)),
+                    csvEscape((cost / 100).toFixed(2)),
+                    csvEscape(margin === null ? "" : margin.toFixed(1)),
+                    csvEscape((profit / 100).toFixed(2)),
+                    csvEscape(item.available === false ? "No" : "Yes"),
+                    csvEscape(item.hidden ? "Yes" : "No")
+                ].join(","));
+            });
+
+            var blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement("a");
+            link.href = url;
+            link.download = "inventoryrite-clover-products.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast("CSV exported successfully.", "success");
+        }
+
+        function openFeatureModal(title, message, rows) {
+            var modal = byId("featureModal");
+            var titleEl = byId("featureTitle");
+            var messageEl = byId("featureMessage");
+            var listEl = byId("featureList");
+
+            if (titleEl) titleEl.textContent = title || "Feature";
+            if (messageEl) messageEl.textContent = message || "";
+            if (listEl) {
+                listEl.innerHTML = "";
+                (rows || []).forEach(function (row) {
+                    var div = document.createElement("div");
+                    div.className = "insight-row";
+                    div.innerHTML = row;
+                    listEl.appendChild(div);
+                });
+            }
+            if (modal) modal.classList.add("show");
+        }
+
+        function closeFeatureModal() {
+            var modal = byId("featureModal");
+            if (modal) modal.classList.remove("show");
+        }
+
+        function showLowStock() {
+            var lowItems = getLowStockItems();
+            if (lowItems.length === 0) {
+                openFeatureModal(
+                    "Low Stock",
+                    "No low-stock items were found. If your Clover item response does not include quantity data yet, this will activate once inventory counts are available.",
+                    []
+                );
+            }
+            setViewMode("lowStock");
+        }
+
+        function showProfitAlerts() {
+            var alerts = getProfitAlertItems();
+            var rows = alerts.slice(0, 25).map(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                var margin = calculateMargin(price, cost);
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " · Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " · Margin " + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</span></div><div><span>Review</span></div>";
+            });
+
+            openFeatureModal(
+                "Profit Alerts",
+                alerts.length ? (alerts.length + " product(s) need margin review.") : "No profit alerts right now. Good job — no below-cost or low-margin products were found.",
+                rows
+            );
+            setViewMode("profitAlerts");
+        }
+
+        function showReorderPlanning() {
+            var lowItems = getLowStockItems();
+            var rows = lowItems.slice(0, 25).map(function (item) {
+                var qty = getItemQuantity(item);
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " · Suggested reorder: review supplier stock</span></div><div><span>Plan</span></div>";
+            });
+            openFeatureModal(
+                "Smart Reorder Planning",
+                lowItems.length ? "These items may need reorder attention." : "No reorder suggestions yet. This becomes stronger after quantity and sales velocity data are available.",
+                rows
+            );
+        }
+
+        function showPriceRules() {
+            openFeatureModal(
+                "Price Rules",
+                "Coming next: create rules like increase all drinks by 8%, round prices to .99, or protect minimum margins before applying changes.",
+                [
+                    "<div><strong>Example Rule</strong><span>Increase selected category by 8%</span></div><div><span>Coming next</span></div>",
+                    "<div><strong>Margin Protection</strong><span>Prevent products from selling below cost</span></div><div><span>Coming next</span></div>"
+                ]
+            );
+        }
+
+        function showActivityLog() {
+            openFeatureModal(
+                "Activity Log",
+                "Coming next: every price change, cost update, delete, and bulk update will appear here with time and merchant context.",
+                [
+                    "<div><strong>Product Updated</strong><span>Track old price, new price, and time</span></div><div><span>Planned</span></div>",
+                    "<div><strong>Undo Support</strong><span>Use activity history to reverse mistakes safely</span></div><div><span>Planned</span></div>"
+                ]
+            );
+        }
+
+        function importCsvClicked() {
+            openFeatureModal(
+                "Import CSV",
+                "CSV import is staged safely. Next step is mapping columns before making bulk changes to Clover, so merchants do not accidentally overwrite products.",
+                [
+                    "<div><strong>Safe Import Flow</strong><span>Upload CSV → preview changes → confirm update</span></div><div><span>Next build</span></div>"
+                ]
+            );
         }
 
         /*
@@ -2047,15 +2026,25 @@ function renderDashboard(options = {}) {
             var searchBox = byId("inventorySearch");
             var search = searchBox && searchBox.value ? searchBox.value.trim().toLowerCase() : "";
 
-            var filtered = (items || []).filter(function (item) {
+            var baseItems = (items || []).filter(function (item) {
+                if (activeViewMode === "lowStock") {
+                    var qty = getItemQuantity(item);
+                    if (!(qty !== null && qty <= 5)) return false;
+                }
+                if (activeViewMode === "profitAlerts") {
+                    var priceForAlert = Number(item.price || 0);
+                    var costForAlert = getCostCents(item.id || "");
+                    var marginForAlert = calculateMargin(priceForAlert, costForAlert);
+                    if (!(priceForAlert > 0 && costForAlert > 0 && (priceForAlert < costForAlert || (marginForAlert !== null && marginForAlert < 30)))) return false;
+                }
+                return true;
+            });
+
+            var filtered = baseItems.filter(function (item) {
                 if (!search) return true;
-                var sku = item.sku || item.code || item.productCode || "";
+                var sku = getItemSku(item);
                 var haystack = [item.name || "", sku, item.id || ""].join(" ").toLowerCase();
                 return haystack.indexOf(search) >= 0;
-            }).filter(function (item) {
-                if (activeMoneyFilter === "lowStock") return isLowStockItem(item);
-                if (activeMoneyFilter === "profitAlerts") return isProfitAlertItem(item);
-                return true;
             }).sort(function (a, b) {
                 return String(a.name || "").localeCompare(String(b.name || ""));
             });
@@ -2076,7 +2065,7 @@ function renderDashboard(options = {}) {
                 body.innerHTML =
                     '<tr><td colspan="6" class="empty">' +
                     '<strong>No matching products found.</strong>' +
-                    'Try a different search, clear filters, or click All Products.' +
+                    'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
                 syncBulkUI();
                 return;
@@ -2171,22 +2160,7 @@ function renderDashboard(options = {}) {
         }
 
         async function fetchJson(url, options) {
-            options = options || {};
-            var controller = new AbortController();
-            var timer = setTimeout(function () { controller.abort(); }, 30000);
-            options.signal = controller.signal;
-
-            var response;
-            try {
-                response = await fetch(url, options);
-            } catch (networkError) {
-                clearTimeout(timer);
-                if (networkError && networkError.name === "AbortError") {
-                    throw new Error("Request timed out. Refresh and try again.");
-                }
-                throw networkError;
-            }
-            clearTimeout(timer);
+            var response = await fetch(url, options || {});
             var data = null;
 
             try {
@@ -2333,9 +2307,7 @@ function renderDashboard(options = {}) {
                     }
                 });
 
-                activeMoneyFilter = activeMoneyFilter || "all";
                 renderItems(loadedItems);
-                setActiveMoneyFilter(activeMoneyFilter);
                 updateLastSyncNote();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
             } catch (error) {
@@ -2386,7 +2358,6 @@ function renderDashboard(options = {}) {
 
                 lastUpdatedItemId = data && data.data && data.data.id ? data.data.id : "";
                 showToast("Product created successfully.", "success");
-                addActivity("Created product: " + name);
 
                 var addPanel = byId("addPanel");
                 if (addPanel) addPanel.classList.remove("show");
@@ -2437,7 +2408,6 @@ function renderDashboard(options = {}) {
 
                 lastUpdatedItemId = itemId;
                 showToast("Product updated.", "success");
-                addActivity("Updated product: " + name);
 
                 stopBusy();
                 await loadItems();
@@ -2464,7 +2434,6 @@ function renderDashboard(options = {}) {
                 );
 
                 showToast("Product deleted.", "success");
-                addActivity("Deleted product from Clover");
 
                 stopBusy();
                 await loadItems();
@@ -2502,6 +2471,17 @@ function renderDashboard(options = {}) {
         |------------------------------------------------------------------
         */
 
+
+        bind("btnShowAllProducts", "click", function () { setViewMode("all"); showToast("Showing all products.", "info"); });
+        bind("btnLowStock", "click", showLowStock);
+        bind("btnReorder", "click", showReorderPlanning);
+        bind("btnExportCsv", "click", exportProductsCsv);
+        bind("btnImportCsv", "click", importCsvClicked);
+        bind("btnPriceRules", "click", showPriceRules);
+        bind("btnProfitAlerts", "click", showProfitAlerts);
+        bind("btnActivityLog", "click", showActivityLog);
+        bind("featureClose", "click", closeFeatureModal);
+
         bind("btnRefreshInventoryTop", "click", loadItems);
         bind("btnRefreshInventory", "click", loadItems);
         bind("btnToggleAddTop", "click", toggleAddPanel);
@@ -2510,16 +2490,6 @@ function renderDashboard(options = {}) {
         bind("btnToggleBulk", "click", toggleBulkPanel);
         bind("btnCreateItem", "click", createItem);
         bind("inventorySearch", "input", function () { renderItems(loadedItems); });
-        bind("btnAllProducts", "click", function () { setActiveMoneyFilter("all"); showToast("Showing all products.", "info"); });
-        bind("btnLowStock", "click", showLowStockReport);
-        bind("btnReorder", "click", function () { showComingSoonFeature("reorder"); });
-        bind("btnExportCsv", "click", exportInventoryCsv);
-        bind("btnImportCsv", "click", function () { showComingSoonFeature("importCsv"); });
-        bind("btnPriceRules", "click", function () { showComingSoonFeature("priceRules"); });
-        bind("btnProfitAlerts", "click", showProfitAlerts);
-        bind("btnActivityLog", "click", function () { showComingSoonFeature("activityLog"); });
-        bind("featureClose", "click", closeFeatureModal);
-
 
         bind("confirmCancel", "click", closeConfirm);
         bind("confirmYes", "click", function () {
@@ -2555,6 +2525,7 @@ function renderDashboard(options = {}) {
                 if (event.target === detailsModal) closeItemDetails();
             });
         }
+
 
         var featureModal = byId("featureModal");
         if (featureModal) {
