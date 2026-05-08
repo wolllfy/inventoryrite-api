@@ -14,7 +14,11 @@ try {
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf ? buf.toString("utf8") : "";
+    }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
@@ -44,6 +48,17 @@ const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 30
 const CSRF_TOKEN_TTL_MS = Number(process.env.CSRF_TOKEN_TTL_MS || 2 * 60 * 60 * 1000);
 const OAUTH_STATE_TTL_MS = Number(process.env.OAUTH_STATE_TTL_MS || 10 * 60 * 1000);
 const SECURE_COOKIE_FLAG = APP_BASE_URL.startsWith("https://") ? "; Secure" : "";
+const CLOVER_WEBHOOK_SECRET = process.env.CLOVER_WEBHOOK_SECRET?.trim() || "";
+
+const REQUIRED_CLOVER_SCOPES = [
+    "merchant_read",
+    "item_read",
+    "item_write",
+    "employee_read",
+    "inventory_read",
+    "inventory_write"
+];
+
 
 const DATABASE_URL = process.env.DATABASE_URL?.trim() || "";
 const USE_DATABASE = !!DATABASE_URL && !!Pool;
@@ -141,11 +156,19 @@ function rateLimit(req, res, next) {
     const existing = rateLimitStore.get(key);
 
     if (!existing || existing.resetAt <= now) {
-        rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+        const resetAt = now + RATE_LIMIT_WINDOW_MS;
+        rateLimitStore.set(key, { count: 1, resetAt });
+        res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX_REQUESTS));
+        res.setHeader("X-RateLimit-Remaining", String(Math.max(0, RATE_LIMIT_MAX_REQUESTS - 1)));
+        res.setHeader("X-RateLimit-Reset", String(Math.ceil(resetAt / 1000)));
         return next();
     }
 
     existing.count += 1;
+    const remaining = Math.max(0, RATE_LIMIT_MAX_REQUESTS - existing.count);
+    res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX_REQUESTS));
+    res.setHeader("X-RateLimit-Remaining", String(remaining));
+    res.setHeader("X-RateLimit-Reset", String(Math.ceil(existing.resetAt / 1000)));
 
     if (existing.count > RATE_LIMIT_MAX_REQUESTS) {
         return res.status(429).json({
@@ -229,6 +252,10 @@ async function initDatabase() {
             PRIMARY KEY (merchant_id, item_id)
         );
     `);
+
+    await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_merchant_connections_updated_at ON merchant_connections(updated_at);`);
+    await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_costs_merchant_id ON item_costs(merchant_id);`);
+    await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_costs_updated_at ON item_costs(updated_at);`);
 
     const lastConnection = await dbPool.query(`
         SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
@@ -2970,7 +2997,7 @@ function renderDashboard(options = {}) {
 
                 try {
                     await fetchJson(
-                        "/clover-update-item/" + encodeURIComponent(itemId) +,
+                        "/clover-update-item/" + encodeURIComponent(itemId),
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -4427,7 +4454,7 @@ function renderDashboard(options = {}) {
                 }
 
                 var savedCost = await fetchJson(
-                    "/item-cost/" + encodeURIComponent(itemId) +,
+                    "/item-cost/" + encodeURIComponent(itemId),
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -4569,7 +4596,7 @@ function renderDashboard(options = {}) {
                 startBusy();
 
                 await fetchJson(
-                    "/clover-update-item/" + encodeURIComponent(itemId) +,
+                    "/clover-update-item/" + encodeURIComponent(itemId),
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -4600,7 +4627,7 @@ function renderDashboard(options = {}) {
                 startBusy();
 
                 await fetchJson(
-                    "/clover-delete-item/" + encodeURIComponent(itemId) +,
+                    "/clover-delete-item/" + encodeURIComponent(itemId),
                     { method: "POST" }
                 );
 
@@ -4912,7 +4939,7 @@ app.get("/connect-clover", (req, res) => {
         `inventoryrite_oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${SECURE_COOKIE_FLAG}`
     );
 
-    const scope = process.env.CLOVER_SCOPES || "merchant_read item_read item_write";
+    const scope = process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" ");
 
     const cloverAuthUrl =
         `${CLOVER_BASE_URL}/oauth/authorize` +
@@ -5386,9 +5413,47 @@ function renderSimplePage(title, bodyHtml) {
 </html>`;
 }
 
+
+function verifyWebhookSignature(req) {
+    if (!CLOVER_WEBHOOK_SECRET) {
+        // Sandbox/dev mode: allow webhooks when no secret has been configured yet.
+        // Production App Market review should set CLOVER_WEBHOOK_SECRET in Render.
+        return true;
+    }
+
+    const providedSignature =
+        req.headers["x-clover-signature"] ||
+        req.headers["clover-signature"] ||
+        req.headers["x-webhook-signature"] ||
+        "";
+
+    if (!providedSignature || !req.rawBody) return false;
+
+    const expectedSignature = crypto
+        .createHmac("sha256", CLOVER_WEBHOOK_SECRET)
+        .update(req.rawBody)
+        .digest("hex");
+
+    const normalizedProvided = String(providedSignature).replace(/^sha256=/i, "").trim();
+
+    try {
+        return crypto.timingSafeEqual(
+            Buffer.from(normalizedProvided, "hex"),
+            Buffer.from(expectedSignature, "hex")
+        );
+    } catch (error) {
+        return false;
+    }
+}
+
 app.post("/clover-webhook", (req, res) => {
+    if (!verifyWebhookSignature(req)) {
+        console.warn("Rejected Clover webhook with invalid signature", { requestId: req.id });
+        return res.status(401).json({ success: false, message: "Invalid webhook signature." });
+    }
+
     console.log("Clover webhook received", { requestId: req.id, body: req.body });
-    res.json({ success: true, message: "Webhook received." });
+    return res.json({ success: true, message: "Webhook received." });
 });
 
 app.get("/support", (req, res) => {
