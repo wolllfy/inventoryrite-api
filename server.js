@@ -1141,91 +1141,6 @@ function renderDashboard(options = {}) {
         .insight-row strong { display:block; color:#111827; margin-bottom:3px; }
         .insight-row span { color:#64748b; font-weight:800; }
 
-
-
-        /* ----------------------------------------------------------------
-        | FINAL SHIP POLISH
-        ---------------------------------------------------------------- */
-
-        .merchant-control-bar {
-            position: sticky;
-            top: 78px;
-            z-index: 12;
-        }
-
-        .control-btn.active {
-            box-shadow: 0 0 0 2px rgba(255,255,255,0.78), 0 10px 18px rgba(15,23,42,.18);
-            transform: translateY(-1px);
-        }
-
-        .insight-row {
-            align-items: center;
-        }
-
-        .insight-actions {
-            display:flex;
-            gap:8px;
-            flex-wrap:wrap;
-            justify-content:flex-end;
-            align-items:center;
-        }
-
-        .mini-btn {
-            border:1px solid #e5e7eb;
-            background:#ffffff;
-            color:#111827;
-            border-radius:10px;
-            padding:7px 10px;
-            font-size:11px;
-            font-weight:900;
-            cursor:pointer;
-        }
-
-        .mini-btn.primary { background:#15803d; color:white; border-color:#15803d; }
-        .mini-btn.warn { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
-        .mini-btn.danger { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
-
-        .modal-wide .modal-actions {
-            border-top: 1px solid #e5e7eb;
-            padding-top: 16px;
-        }
-
-        .control-count {
-            display:inline-flex;
-            min-width:18px;
-            height:18px;
-            border-radius:999px;
-            background:rgba(255,255,255,.18);
-            color:white;
-            align-items:center;
-            justify-content:center;
-            margin-left:6px;
-            font-size:10px;
-            font-weight:900;
-        }
-
-        .quick-summary {
-            display:grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap:10px;
-            margin-top:14px;
-        }
-
-        .quick-summary-card {
-            background:#f8fafc;
-            border:1px solid #e5e7eb;
-            border-radius:14px;
-            padding:10px 12px;
-        }
-
-        .quick-summary-card span { display:block; color:#64748b; font-size:11px; font-weight:900; margin-bottom:4px; }
-        .quick-summary-card strong { color:#111827; font-size:17px; font-weight:900; }
-
-        @media (max-width: 980px) {
-            .merchant-control-bar { position: static; }
-            .quick-summary { grid-template-columns: 1fr; }
-        }
-
         @media (max-width: 980px) {
             .merchant-control-bar { align-items: flex-start; }
             .merchant-control-actions { justify-content: flex-start; }
@@ -1291,7 +1206,7 @@ function renderDashboard(options = {}) {
 
             <div class="hero-actions">
                 <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
+                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">⚡ Bulk Price Update</button>
                 <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
             </div>
         </section>
@@ -1306,7 +1221,7 @@ function renderDashboard(options = {}) {
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
                     <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh</button>
-                    <button id="btnToggleBulk" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
+                    <button id="btnToggleBulk" type="button" class="btn btn-amber">⚡ Bulk Price Update</button>
                     <button id="btnToggleAdd" type="button" class="btn btn-primary">Add Product</button>
                 </div>
             </div>
@@ -1330,7 +1245,7 @@ function renderDashboard(options = {}) {
             <div class="bulk-panel" id="bulkPanel">
                 <div class="bulk-panel-header">
                     <div class="bulk-panel-title">
-                        &#9889; Bulk Price Update &mdash;
+                        ⚡ Bulk Price Update &mdash;
                         <span id="bulkSelectedCount" class="bulk-count-badge">0</span>
                         item(s) selected
                     </div>
@@ -1350,10 +1265,10 @@ function renderDashboard(options = {}) {
                         </div>
                         <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:0;">
                             <button id="btnBulkIncrease" type="button" class="btn btn-small btn-bulk-increase">
-                                &#9650; Increase by %
+                                ▲ Increase by %
                             </button>
                             <button id="btnBulkDecrease" type="button" class="btn btn-small btn-bulk-decrease">
-                                &#9660; Decrease by %
+                                ▼ Decrease by %
                             </button>
                             <button id="btnBulkClearPanel" type="button" class="btn btn-small btn-light">
                                 Clear Selection
@@ -1471,7 +1386,7 @@ function renderDashboard(options = {}) {
         `}
 
         <div class="footer">
-            InventoryRite for Clover &middot; Process Rite Inc &middot; <a class="dev-link" href="/dev">Developer tools</a>
+            InventoryRite for Clover · Process Rite Inc · <a class="dev-link" href="/dev">Developer tools</a>
         </div>
 
     </main>
@@ -1543,7 +1458,6 @@ function renderDashboard(options = {}) {
         var isBusy = false;
         var pendingConfirmAction = null;
         var activeViewMode = "all";
-        var activityLog = [];
 
         // Track selected item IDs for bulk operations
         var selectedItemIds = new Set();
@@ -1573,11 +1487,11 @@ function renderDashboard(options = {}) {
         }
 
         function formatDateFromClover(value) {
-            if (!value) return "&mdash;";
+            if (!value) return "—";
             try {
                 return new Date(Number(value)).toLocaleString();
             } catch (e) {
-                return "&mdash;";
+                return "—";
             }
         }
 
@@ -1595,61 +1509,6 @@ function renderDashboard(options = {}) {
                     toast.parentNode.removeChild(toast);
                 }
             }, 4200);
-        }
-
-
-        function addActivity(title, detail, type) {
-            activityLog.unshift({
-                title: title || "Activity",
-                detail: detail || "",
-                type: type || "info",
-                time: new Date().toLocaleString()
-            });
-            if (activityLog.length > 60) activityLog = activityLog.slice(0, 60);
-            refreshControlCounts();
-        }
-
-        function setControlActive(activeId) {
-            var ids = ["btnShowAllProducts", "btnLowStock", "btnReorder", "btnProfitAlerts"];
-            ids.forEach(function (id) {
-                var btn = byId(id);
-                if (!btn) return;
-                if (id === activeId) btn.classList.add("active");
-                else btn.classList.remove("active");
-            });
-        }
-
-        function updateControlButtonCount(id, label, count) {
-            var btn = byId(id);
-            if (!btn) return;
-            btn.innerHTML = label + (Number(count || 0) > 0 ? " <span class='control-count'>" + count + "</span>" : "");
-        }
-
-        function refreshControlCounts() {
-            updateControlButtonCount("btnLowStock", "Low Stock", getLowStockItems().length);
-            updateControlButtonCount("btnProfitAlerts", "Profit Alerts", getProfitAlertItems().length);
-            updateControlButtonCount("btnActivityLog", "Activity Log", activityLog.length);
-        }
-
-        function getVisibleItemsForCurrentView() {
-            var searchBox = byId("inventorySearch");
-            var search = searchBox && searchBox.value ? searchBox.value.trim().toLowerCase() : "";
-            return (loadedItems || []).filter(function (item) {
-                if (activeViewMode === "lowStock") {
-                    var qty = getItemQuantity(item);
-                    if (!(qty !== null && qty <= 5)) return false;
-                }
-                if (activeViewMode === "profitAlerts") {
-                    var priceForAlert = Number(item.price || 0);
-                    var costForAlert = getCostCents(item.id || "");
-                    var marginForAlert = calculateMargin(priceForAlert, costForAlert);
-                    if (!(priceForAlert > 0 && costForAlert > 0 && (priceForAlert < costForAlert || (marginForAlert !== null && marginForAlert < 30)))) return false;
-                }
-                if (!search) return true;
-                var sku = getItemSku(item);
-                var haystack = [item.name || "", sku, item.id || ""].join(" ").toLowerCase();
-                return haystack.indexOf(search) >= 0;
-            });
         }
 
         function setButtonText(id, text) {
@@ -1773,9 +1632,9 @@ function renderDashboard(options = {}) {
             if (statVisible) statVisible.textContent = String(visible);
             if (statAvailable) statAvailable.textContent = String(available);
             if (statValue) statValue.textContent = formatCurrencyFromCents(totalCents);
-            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "&mdash;" : avgMargin.toFixed(1) + "%";
-            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " &middot; " + best.margin.toFixed(1) + "%" : "&mdash;";
-            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " &middot; " + lowest.margin.toFixed(1) + "%" : "&mdash;";
+            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "—" : avgMargin.toFixed(1) + "%";
+            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " · " + best.margin.toFixed(1) + "%" : "—";
+            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " · " + lowest.margin.toFixed(1) + "%" : "—";
             if (statBelowCost) statBelowCost.textContent = String(belowCost);
         }
 
@@ -1953,7 +1812,6 @@ function renderDashboard(options = {}) {
 
             if (failCount === 0) {
                 showToast("Bulk update complete: " + successCount + " price(s) " + dirLabel + " by " + pct + "%.", "success");
-                addActivity("Bulk price update", successCount + " product(s) " + dirLabel + " by " + pct + "%.", "bulk");
             } else {
                 showToast("Bulk update: " + successCount + " succeeded, " + failCount + " failed.", failCount > 0 && successCount === 0 ? "error" : "info");
             }
@@ -2009,19 +1867,15 @@ function renderDashboard(options = {}) {
                 if (activeViewMode === "lowStock") {
                     note.textContent = "Showing Low Stock view. Products with quantity 5 or less appear here when Clover sends quantity data.";
                     note.classList.add("show");
-                    setControlActive("btnLowStock");
                 } else if (activeViewMode === "profitAlerts") {
                     note.textContent = "Showing Profit Alerts view. Low-margin and below-cost items are highlighted here.";
                     note.classList.add("show");
-                    setControlActive("btnProfitAlerts");
                 } else {
                     note.textContent = "";
                     note.classList.remove("show");
-                    setControlActive("btnShowAllProducts");
                 }
             }
             renderItems(loadedItems);
-            refreshControlCounts();
         }
 
         function csvEscape(value) {
@@ -2069,7 +1923,6 @@ function renderDashboard(options = {}) {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             showToast("CSV exported successfully.", "success");
-            addActivity("CSV exported", loadedItems.length + " product(s) exported.", "csv");
         }
 
         function openFeatureModal(title, message, rows) {
@@ -2099,156 +1952,76 @@ function renderDashboard(options = {}) {
 
         function showLowStock() {
             var lowItems = getLowStockItems();
-            var rows = lowItems.slice(0, 30).map(function (item) {
-                var qty = getItemQuantity(item);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " &middot; Price " + escapeHtml(formatCurrencyFromCents(Number(item.price || 0))) + "</span></div><div class='insight-actions'><button class='mini-btn primary' data-feature-action='select-item' data-id='" + escapeHtml(item.id || "") + "'>Select</button></div>";
-            });
-
             if (lowItems.length === 0) {
-                rows = ["<div><strong>No quantity alerts found</strong><span>Clover did not send quantity counts for these items yet, or all quantities are above 5.</span></div><div><span>OK</span></div>"];
+                openFeatureModal(
+                    "Low Stock",
+                    "No low-stock items were found. If your Clover item response does not include quantity data yet, this will activate once inventory counts are available.",
+                    []
+                );
             }
-
-            openFeatureModal("Low Stock", lowItems.length ? (lowItems.length + " item(s) may need attention.") : "No low-stock items were found from the current Clover quantity data.", rows);
             setViewMode("lowStock");
-            addActivity("Low Stock opened", lowItems.length + " item(s) matched the low-stock rule.", "filter");
         }
 
         function showProfitAlerts() {
             var alerts = getProfitAlertItems();
-            var rows = alerts.slice(0, 30).map(function (item) {
+            var rows = alerts.slice(0, 25).map(function (item) {
                 var price = Number(item.price || 0);
                 var cost = getCostCents(item.id || "");
                 var margin = calculateMargin(price, cost);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " &middot; Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " &middot; Margin " + escapeHtml(margin === null ? "&mdash;" : margin.toFixed(1) + "%") + "</span></div><div class='insight-actions'><button class='mini-btn warn' data-feature-action='select-item' data-id='" + escapeHtml(item.id || "") + "'>Select</button></div>";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " · Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " · Margin " + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</span></div><div><span>Review</span></div>";
             });
 
-            if (!alerts.length) {
-                rows = ["<div><strong>No profit alerts</strong><span>No below-cost or low-margin items were found right now.</span></div><div><span>Good</span></div>"];
-            }
-
-            openFeatureModal("Profit Alerts", alerts.length ? (alerts.length + " product(s) need margin review.") : "No profit alerts right now. Good job &mdash; no below-cost or low-margin products were found.", rows);
+            openFeatureModal(
+                "Profit Alerts",
+                alerts.length ? (alerts.length + " product(s) need margin review.") : "No profit alerts right now. Good job — no below-cost or low-margin products were found.",
+                rows
+            );
             setViewMode("profitAlerts");
-            addActivity("Profit Alerts opened", alerts.length + " item(s) need margin review.", "filter");
         }
 
         function showReorderPlanning() {
             var lowItems = getLowStockItems();
-            var rows = lowItems.slice(0, 30).map(function (item) {
+            var rows = lowItems.slice(0, 25).map(function (item) {
                 var qty = getItemQuantity(item);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " &middot; Suggested reorder: review supplier stock</span></div><div class='insight-actions'><button class='mini-btn primary' data-feature-action='select-item' data-id='" + escapeHtml(item.id || "") + "'>Select</button></div>";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " · Suggested reorder: review supplier stock</span></div><div><span>Plan</span></div>";
             });
-
-            if (!rows.length) {
-                rows = [
-                    "<div><strong>No urgent reorder list yet</strong><span>This becomes stronger once Clover sends inventory quantities. You can still export CSV and review costs/margins.</span></div><div><span>Ready</span></div>",
-                    "<div><strong>Suggested workflow</strong><span>Use Low Stock + Profit Alerts weekly to catch problems before the merchant loses money.</span></div><div><span>Tip</span></div>"
-                ];
-            }
-
-            openFeatureModal("Smart Reorder Planning", lowItems.length ? "These items may need reorder attention." : "No reorder suggestions yet. This becomes stronger after quantity and sales velocity data are available.", rows);
-            addActivity("Reorder planning opened", lowItems.length + " item(s) reviewed for reorder.", "planning");
-        }
-
-        function selectBelowCostItems() {
-            selectedItemIds.clear();
-            (loadedItems || []).forEach(function (item) {
-                var price = Number(item.price || 0);
-                var cost = getCostCents(item.id || "");
-                if (price > 0 && cost > 0 && price < cost) selectedItemIds.add(item.id || "");
-            });
-            renderItems(loadedItems);
-            showToast(selectedItemIds.size + " below-cost item(s) selected.", selectedItemIds.size ? "success" : "info");
-            addActivity("Below-cost items selected", selectedItemIds.size + " item(s) selected for review.", "rule");
-        }
-
-        async function roundSelectedPricesTo99() {
-            if (isBusy) return;
-            var connection = requireConnection();
-            if (!connection) return;
-            if (selectedItemIds.size === 0) {
-                showToast("Select products first, then apply round to .99.", "error");
-                return;
-            }
-
-            var selectedIds = Array.from(selectedItemIds);
-            openConfirm("Round Prices to .99", "Round " + selectedIds.length + " selected product price(s) to the nearest .99 ending?", async function () {
-                startBusy();
-                var successCount = 0;
-                var failCount = 0;
-                bulkUpdatedItemIds = [];
-
-                for (var i = 0; i < selectedIds.length; i++) {
-                    var itemId = selectedIds[i];
-                    var item = loadedItems.find(function (it) { return it.id === itemId; });
-                    if (!item) { failCount++; continue; }
-                    var dollars = Math.max(0, Math.floor(Number(item.price || 0) / 100));
-                    var newCents = (dollars * 100) + 99;
-                    try {
-                        await fetchJson(
-                            "/clover-update-item/" + encodeURIComponent(itemId) +
-                            "?token=" + encodeURIComponent(connection.token) +
-                            "&merchantId=" + encodeURIComponent(connection.merchantId),
-                            { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: item.name || "", price: newCents }) }
-                        );
-                        successCount++;
-                        bulkUpdatedItemIds.push(itemId);
-                    } catch (err) {
-                        failCount++;
-                    }
-                }
-
-                showToast("Price rule complete: " + successCount + " updated, " + failCount + " failed.", failCount ? "info" : "success");
-                addActivity("Price rule applied", "Rounded " + successCount + " selected product(s) to .99 pricing.", "rule");
-                clearSelection();
-                stopBusy();
-                await loadItems();
-            });
+            openFeatureModal(
+                "Smart Reorder Planning",
+                lowItems.length ? "These items may need reorder attention." : "No reorder suggestions yet. This becomes stronger after quantity and sales velocity data are available.",
+                rows
+            );
         }
 
         function showPriceRules() {
-            var rows = [
-                "<div><strong>Round Selected to .99</strong><span>Select products first, then round selected prices to .99 endings.</span></div><div class='insight-actions'><button class='mini-btn primary' data-feature-action='round-99'>Apply</button></div>",
-                "<div><strong>Select Below-Cost Items</strong><span>Find products where cost is higher than price so you can fix them fast.</span></div><div class='insight-actions'><button class='mini-btn danger' data-feature-action='select-below-cost'>Select</button></div>",
-                "<div><strong>Margin Protection</strong><span>Use Profit Alerts to review low-margin products before changing prices.</span></div><div class='insight-actions'><button class='mini-btn warn' data-feature-action='open-profit-alerts'>Open</button></div>"
-            ];
-            openFeatureModal("Price Rules", "Apply safe pricing helpers without hiding what is being changed. This is built for merchant trust.", rows);
-            addActivity("Price Rules opened", "Merchant reviewed pricing rule tools.", "rule");
+            openFeatureModal(
+                "Price Rules",
+                "Coming next: create rules like increase all drinks by 8%, round prices to .99, or protect minimum margins before applying changes.",
+                [
+                    "<div><strong>Example Rule</strong><span>Increase selected category by 8%</span></div><div><span>Coming next</span></div>",
+                    "<div><strong>Margin Protection</strong><span>Prevent products from selling below cost</span></div><div><span>Coming next</span></div>"
+                ]
+            );
         }
 
         function showActivityLog() {
-            var rows = activityLog.length ? activityLog.slice(0, 40).map(function (entry) {
-                return "<div><strong>" + escapeHtml(entry.title) + "</strong><span>" + escapeHtml(entry.detail || "") + "</span></div><div><span>" + escapeHtml(entry.time) + "</span></div>";
-            }) : ["<div><strong>No activity yet</strong><span>Updates, exports, filters, and bulk changes will appear here during this session.</span></div><div><span>Ready</span></div>"];
-            openFeatureModal("Activity Log", "Session activity appears here so merchants can see what changed and when.", rows);
+            openFeatureModal(
+                "Activity Log",
+                "Coming next: every price change, cost update, delete, and bulk update will appear here with time and merchant context.",
+                [
+                    "<div><strong>Product Updated</strong><span>Track old price, new price, and time</span></div><div><span>Planned</span></div>",
+                    "<div><strong>Undo Support</strong><span>Use activity history to reverse mistakes safely</span></div><div><span>Planned</span></div>"
+                ]
+            );
         }
 
         function importCsvClicked() {
-            var input = byId("csvImportInput");
-            if (input) {
-                input.value = "";
-                input.click();
-            }
-            openFeatureModal("Import CSV", "Upload a CSV to preview it safely. This build does not overwrite Clover until a confirmed mapping step is added.", [
-                "<div><strong>Safe Import Flow</strong><span>Upload CSV &rarr; preview changes &rarr; confirm update</span></div><div><span>Preview ready</span></div>"
-            ]);
-            addActivity("CSV import opened", "Merchant opened safe CSV import preview.", "csv");
-        }
-
-        function previewCsvFile(file) {
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function (event) {
-                var text = String(event.target.result || "");
-                var lines = text.split(/\r?\n/).filter(function (line) { return line.trim().length > 0; });
-                var headers = lines.length ? lines[0].split(",").map(function (h) { return h.trim(); }) : [];
-                var rows = [];
-                rows.push("<div><strong>File</strong><span>" + escapeHtml(file.name) + " &middot; " + Math.max(0, lines.length - 1) + " data row(s)</span></div><div><span>Loaded</span></div>");
-                rows.push("<div><strong>Detected Columns</strong><span>" + escapeHtml(headers.join(", ") || "No columns detected") + "</span></div><div><span>Preview</span></div>");
-                if (lines[1]) rows.push("<div><strong>First Row</strong><span>" + escapeHtml(lines[1].substring(0, 160)) + "</span></div><div><span>Sample</span></div>");
-                openFeatureModal("Import CSV Preview", "CSV was read successfully. Next build can add column mapping and confirmed Clover updates.", rows);
-                addActivity("CSV previewed", file.name + " with " + Math.max(0, lines.length - 1) + " row(s).", "csv");
-            };
-            reader.readAsText(file);
+            openFeatureModal(
+                "Import CSV",
+                "CSV import is staged safely. Next step is mapping columns before making bulk changes to Clover, so merchants do not accidentally overwrite products.",
+                [
+                    "<div><strong>Safe Import Flow</strong><span>Upload CSV → preview changes → confirm update</span></div><div><span>Next build</span></div>"
+                ]
+            );
         }
 
         /*
@@ -2313,7 +2086,7 @@ function renderDashboard(options = {}) {
 
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
-                var sku = item.sku || item.code || item.productCode || "&mdash;";
+                var sku = item.sku || item.code || item.productCode || "—";
                 var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
@@ -2351,9 +2124,9 @@ function renderDashboard(options = {}) {
                     "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. Saves to InventoryRite and attempts to sync to Clover.' /></td>" +
                     "<td>" + getMarginPill(priceCents, costCents) + "</td>" +
                     "<td><div class='row-actions'>" +
-                        "<button type='button' class='btn btn-secondary btn-small icon-action' title='Save product' aria-label='Save product' data-action='save' data-id='" + escapeHtml(itemId) + "'>&#10003;</button>" +
+                        "<button type='button' class='btn btn-secondary btn-small icon-action' title='Save product' aria-label='Save product' data-action='save' data-id='" + escapeHtml(itemId) + "'>✓</button>" +
                         "<button type='button' class='btn btn-light btn-small icon-action' title='View details' aria-label='View details' data-action='details' data-id='" + escapeHtml(itemId) + "'>i</button>" +
-                        "<button type='button' class='btn btn-danger btn-small icon-action' title='Delete product' aria-label='Delete product' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>&times;</button>" +
+                        "<button type='button' class='btn btn-danger btn-small icon-action' title='Delete product' aria-label='Delete product' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>×</button>" +
                     "</div></td>";
 
                 body.appendChild(row);
@@ -2474,7 +2247,7 @@ function renderDashboard(options = {}) {
             var item = loadedItems.find(function (it) { return it.id === itemId; });
             if (!item) return;
 
-            var sku = item.sku || item.code || item.productCode || "&mdash;";
+            var sku = item.sku || item.code || item.productCode || "—";
             var available = item.available === false ? "No" : "Yes";
             var hidden = item.hidden ? "Hidden" : "Visible";
             var revenue = item.isRevenue === false ? "No" : "Yes";
@@ -2491,7 +2264,7 @@ function renderDashboard(options = {}) {
             if (grid) {
                 grid.innerHTML =
                     "<div class='detail-label'>SKU / Code</div><div class='detail-value'>" + escapeHtml(sku) + "</div>" +
-                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "&mdash;") + "</div>" +
+                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "—") + "</div>" +
                     "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
                     "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
                     "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
@@ -2499,7 +2272,7 @@ function renderDashboard(options = {}) {
                     "<div class='detail-label'>Price</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</div>" +
                     "<div class='detail-label'>Cost</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</div>" +
                     "<div class='detail-label'>Profit / Unit</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</div>" +
-                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "&mdash;" : margin.toFixed(1) + "%") + "</div>";
+                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</div>";
             }
 
             if (modal) modal.classList.add("show");
@@ -2575,8 +2348,6 @@ function renderDashboard(options = {}) {
                 renderItems(loadedItems);
                 updateLastSyncNote();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
-                addActivity("Inventory refreshed", loadedItems.length + " Clover product(s) loaded.", "sync");
-                refreshControlCounts();
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
@@ -2625,7 +2396,6 @@ function renderDashboard(options = {}) {
 
                 lastUpdatedItemId = data && data.data && data.data.id ? data.data.id : "";
                 showToast("Product created successfully.", "success");
-                addActivity("Product created", name + " was created in Clover.", "create");
 
                 var addPanel = byId("addPanel");
                 if (addPanel) addPanel.classList.remove("show");
@@ -2676,7 +2446,6 @@ function renderDashboard(options = {}) {
 
                 lastUpdatedItemId = itemId;
                 showToast("Product updated.", "success");
-                addActivity("Product updated", name + " price/name was saved.", "update");
 
                 stopBusy();
                 await loadItems();
@@ -2703,7 +2472,6 @@ function renderDashboard(options = {}) {
                 );
 
                 showToast("Product deleted.", "success");
-                addActivity("Product deleted", itemId + " was deleted from Clover.", "delete");
 
                 stopBusy();
                 await loadItems();
@@ -2831,32 +2599,6 @@ function renderDashboard(options = {}) {
                 }
             });
         }
-
-
-        var featureList = byId("featureList");
-        if (featureList) {
-            featureList.addEventListener("click", function (event) {
-                var target = event.target;
-                if (!target || !target.getAttribute) return;
-                var action = target.getAttribute("data-feature-action");
-                var itemId = target.getAttribute("data-id") || "";
-                if (action === "select-item" && itemId) {
-                    selectedItemIds.add(itemId);
-                    renderItems(loadedItems);
-                    showToast("Product selected.", "success");
-                }
-                if (action === "round-99") roundSelectedPricesTo99();
-                if (action === "select-below-cost") selectBelowCostItems();
-                if (action === "open-profit-alerts") showProfitAlerts();
-            });
-        }
-
-        bind("csvImportInput", "change", function (event) {
-            var file = event.target && event.target.files && event.target.files[0] ? event.target.files[0] : null;
-            previewCsvFile(file);
-        });
-
-        refreshControlCounts();
 
         if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
             loadItems();
@@ -3439,7 +3181,7 @@ app.get("/dev", (req, res) => {
 </head>
 <body>
     <div class="wrap">
-        <p><a href="/">&larr; Back to Inventory</a></p>
+        <p><a href="/">← Back to Inventory</a></p>
         <div class="card">
             <h1>Developer Tools</h1>
             <p>This page is for setup/support only. Merchants should use the main inventory page.</p>
