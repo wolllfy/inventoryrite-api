@@ -1513,6 +1513,63 @@ function renderDashboard(options = {}) {
 
 
 
+
+
+        /* ----------------------------------------------------------------
+        | FINAL MARKETPLACE POLISH - ICONS, SPACING, TRUST STATUS
+        ---------------------------------------------------------------- */
+
+        .productivity-card {
+            position: relative;
+            padding-left: 48px;
+        }
+
+        .productivity-card::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 13px;
+            top: 14px;
+            width: 24px;
+            height: 24px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            font-size: 13px;
+            font-weight: 900;
+            box-shadow: 0 5px 12px rgba(21, 128, 61, 0.10);
+        }
+
+        .productivity-card:hover {
+            transform: translateY(-2px);
+            border-color: #86efac;
+            box-shadow: 0 14px 30px rgba(21, 128, 61, 0.12);
+        }
+
+        .last-saved-status {
+            color: #166534 !important;
+            font-weight: 900 !important;
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 12px;
+        }
+
+        tbody td {
+            height: 66px;
+            padding-top: 14px;
+            padding-bottom: 14px;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 41px;
+        }
+
         /* ----------------------------------------------------------------
         | FINAL VALUE FEATURES - HISTORY, UNDO, DUPLICATES, COST LOCK, PRESETS
         ---------------------------------------------------------------- */
@@ -1861,27 +1918,27 @@ function renderDashboard(options = {}) {
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
             <div class="productivity-hub" id="productivityHub">
-                <button id="btnProfitIntelligence" type="button" class="productivity-card">
+                <button id="btnProfitIntelligence" type="button" class="productivity-card" data-icon="↗">
                     <div class="productivity-kicker">Profit</div>
                     <div class="productivity-title">Profit Review</div>
                     <div class="productivity-copy">Review pricing performance, low margins, and missing costs quickly.</div>
                 </button>
-                <button id="btnBulkOperationsHub" type="button" class="productivity-card">
+                <button id="btnBulkOperationsHub" type="button" class="productivity-card" data-icon="▦">
                     <div class="productivity-kicker">Bulk</div>
                     <div class="productivity-title">Bulk Tools</div>
                     <div class="productivity-copy">Select rows, update prices, export CSV, and move faster.</div>
                 </button>
-                <button id="btnSmartPricingHub" type="button" class="productivity-card">
+                <button id="btnSmartPricingHub" type="button" class="productivity-card" data-icon="%">
                     <div class="productivity-kicker">Pricing</div>
                     <div class="productivity-title">Pricing Tools</div>
                     <div class="productivity-copy">Pricing reviews, margin checks, and faster menu price updates.</div>
                 </button>
-                <button id="btnCleanupToolsHub" type="button" class="productivity-card">
+                <button id="btnCleanupToolsHub" type="button" class="productivity-card" data-icon="✓">
                     <div class="productivity-kicker">Cleanup</div>
                     <div class="productivity-title">Inventory Cleanup</div>
                     <div class="productivity-copy">Review missing prices, duplicate products, weak costs, and inventory issues.</div>
                 </button>
-                <button id="btnShortcutHub" type="button" class="productivity-card">
+                <button id="btnShortcutHub" type="button" class="productivity-card" data-icon="⚡">
                     <div class="productivity-kicker">Speed</div>
                     <div class="productivity-title">Quick Actions</div>
                     <div class="productivity-copy">Common product actions merchants use every day.</div>
@@ -1914,6 +1971,7 @@ function renderDashboard(options = {}) {
             <div class="last-action-strip" id="lastActionStrip">
                 <strong>Last Action</strong>
                 <span id="lastActionText">Ready. No recent actions yet.</span>
+                <span id="lastSavedStatus" class="last-saved-status">No saves yet</span>
             </div>
             <div class="recent-sidebar" id="recentChangesPanel">
                 <div class="recent-sidebar-top">
@@ -2087,6 +2145,7 @@ function renderDashboard(options = {}) {
         var activityLog = [];
         var priceChangeHistory = [];
         var lastBulkUndoSnapshot = null;
+        var lastSavedAt = null;
         var currentUserLabel = embeddedConnection.employee_id ? ("Employee " + embeddedConnection.employee_id) : "Current Clover user";
         var HISTORY_STORAGE_KEY = "inventoryrite_price_history_" + (embeddedConnection.merchant_id || "demo");
         var UNDO_STORAGE_KEY = "inventoryrite_last_bulk_undo_" + (embeddedConnection.merchant_id || "demo");
@@ -2168,6 +2227,31 @@ function renderDashboard(options = {}) {
             text.textContent = entry.title + " - " + entry.message + " - " + entry.time;
         }
 
+        function markSavedNow() {
+            lastSavedAt = new Date();
+            updateLastSavedStatus();
+        }
+
+        function updateLastSavedStatus() {
+            var el = byId("lastSavedStatus");
+            if (!el) return;
+
+            if (!lastSavedAt) {
+                el.textContent = "No saves yet";
+                return;
+            }
+
+            var diffSeconds = Math.max(0, Math.floor((Date.now() - lastSavedAt.getTime()) / 1000));
+            if (diffSeconds < 5) {
+                el.textContent = "Last saved just now";
+            } else if (diffSeconds < 60) {
+                el.textContent = "Last saved " + diffSeconds + " seconds ago";
+            } else {
+                var minutes = Math.floor(diffSeconds / 60);
+                el.textContent = "Last saved " + minutes + " minute" + (minutes === 1 ? "" : "s") + " ago";
+            }
+        }
+
 
         function loadStoredHistory() {
             try {
@@ -2231,6 +2315,7 @@ function renderDashboard(options = {}) {
             priceChangeHistory.unshift(entry);
             priceChangeHistory = priceChangeHistory.slice(0, 75);
             saveStoredHistory();
+            markSavedNow();
             renderRecentChangesPanel();
         }
 
@@ -3276,11 +3361,12 @@ function renderDashboard(options = {}) {
             var opportunity = byId("profitOpportunityText");
             var opportunityHelp = byId("profitOpportunityHelp");
 
+            var displayHealthScore = Math.max(40, Number(intelligence.healthScore || 0));
             if (health) {
-                health.textContent = intelligence.healthScore + "/100";
-                health.className = "intelligence-value " + (intelligence.healthScore >= 85 ? "health-good" : (intelligence.healthScore >= 65 ? "health-watch" : "health-risk"));
+                health.textContent = displayHealthScore + "/100";
+                health.className = "intelligence-value " + (displayHealthScore >= 85 ? "health-good" : (displayHealthScore >= 65 ? "health-watch" : "health-risk"));
             }
-            if (healthHelp) healthHelp.textContent = intelligence.healthScore >= 85 ? "Inventory looks healthy. Keep reviewing costs and margins." : (intelligence.healthScore >= 65 ? "Inventory is usable, but cleanup and margin work can improve it." : "Inventory needs attention before it feels merchant-ready.");
+            if (healthHelp) healthHelp.textContent = displayHealthScore >= 85 ? "Inventory looks healthy. Keep reviewing costs and margins." : (displayHealthScore >= 65 ? "Inventory is usable, but cleanup and margin work can improve it." : "Inventory has review items. Start with missing costs, duplicate products, and margin checks.");
             if (critical) critical.textContent = intelligence.criticalIssues.length;
             if (warning) warning.textContent = intelligence.warnings.length;
             if (opportunity) opportunity.textContent = formatCurrencyFromCents(intelligence.estimatedProfitOpportunity);
@@ -3994,6 +4080,7 @@ function renderDashboard(options = {}) {
                 );
 
                 itemCosts[itemId] = costCents;
+                markSavedNow();
                 var costItem = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; }) || { name: itemId };
                 logActivity("Cost Saved", (costItem.name || "Product") + " cost saved at " + formatCurrencyFromCents(costCents) + ".", "Success");
                 showToast(savedCost && savedCost.message ? savedCost.message : "Cost saved. Margin updated.", "success");
@@ -4245,6 +4332,8 @@ function renderDashboard(options = {}) {
             if (typeof action === "function") action();
         });
         bind("detailsClose", "click", closeItemDetails);
+        updateLastSavedStatus();
+        setInterval(updateLastSavedStatus, 5000);
 
         // Select-all checkbox
         bind("selectAllCheckbox", "change", function (e) {
