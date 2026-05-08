@@ -583,8 +583,15 @@ async function getConnectionFromRequest(req) {
                 connected: true,
                 merchant_id: row.merchant_id || "",
                 employee_id: row.employee_id || "",
-                access_token: row.access_token || "",
-                refresh_token: row.refresh_token || "",
+
+                // IMPORTANT FIX:
+                // Tokens are stored encrypted in PostgreSQL by saveCloverConnection().
+                // They must be decrypted before sending them to Clover.
+                // Without this, Clover receives "enc:v1:..." instead of the real token
+                // and returns 401 Unauthorized when loading inventory.
+                access_token: decryptToken(row.access_token || ""),
+                refresh_token: decryptToken(row.refresh_token || ""),
+
                 token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
                 scopes: row.scopes || "",
                 connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
