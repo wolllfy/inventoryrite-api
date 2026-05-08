@@ -27,7 +27,7 @@ const CLOVER_CLIENT_ID = process.env.CLOVER_CLIENT_ID?.trim();
 const CLOVER_CLIENT_SECRET = process.env.CLOVER_CLIENT_SECRET?.trim();
 
 const APP_BASE_URL = (process.env.APP_BASE_URL || "https://inventoryrite-api.onrender.com").replace(/\/$/, "");
-const REDIRECT_URI = (process.env.REDIRECT_URI || `${APP_BASE_URL}/`).trim();
+const REDIRECT_URI = (process.env.REDIRECT_URI || `${APP_BASE_URL}/oauth-callback`).trim();
 
 const CLOVER_ENV = (process.env.CLOVER_ENV || "sandbox").toLowerCase();
 const IS_PRODUCTION_CLOVER = CLOVER_ENV === "production" || CLOVER_ENV === "prod" || CLOVER_ENV === "live";
@@ -49,6 +49,10 @@ const CSRF_TOKEN_TTL_MS = Number(process.env.CSRF_TOKEN_TTL_MS || 2 * 60 * 60 * 
 const OAUTH_STATE_TTL_MS = Number(process.env.OAUTH_STATE_TTL_MS || 10 * 60 * 1000);
 const SECURE_COOKIE_FLAG = APP_BASE_URL.startsWith("https://") ? "; Secure" : "";
 const CLOVER_WEBHOOK_SECRET = process.env.CLOVER_WEBHOOK_SECRET?.trim() || "";
+const CLOVER_APP_ID = process.env.CLOVER_APP_ID?.trim() || "";
+const CLOVER_APP_NAME = process.env.CLOVER_APP_NAME?.trim() || "InventoryRite";
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY?.trim() || "";
+const APP_VERSION = process.env.APP_VERSION || "1.0.0";
 
 const REQUIRED_CLOVER_SCOPES = [
     "merchant_read",
@@ -66,7 +70,10 @@ const USE_DATABASE = !!DATABASE_URL && !!Pool;
 const dbPool = USE_DATABASE
     ? new Pool({
         connectionString: DATABASE_URL,
-        ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false }
+        ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
+        max: Number(process.env.PG_POOL_MAX || 20),
+        idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
+        connectionTimeoutMillis: Number(process.env.PG_CONNECTION_TIMEOUT_MS || 5000)
     })
     : null;
 
@@ -129,6 +136,12 @@ function issueCsrfToken() {
 }
 
 function verifyCsrfToken(req, res, next) {
+    const csrfExemptPaths = new Set(["/clover-webhook", "/clover-uninstall"]);
+
+    if (csrfExemptPaths.has(req.path)) {
+        return next();
+    }
+
     if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
         return next();
     }
@@ -184,7 +197,14 @@ app.use((req, res, next) => {
     req.id = crypto.randomUUID ? crypto.randomUUID() : createToken(16);
     res.setHeader("X-Request-Id", req.id);
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("Referrer-Policy", "same-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.clover.com https://apisandbox.dev.clover.com; frame-ancestors 'self' https://www.clover.com https://sandbox.dev.clover.com"
+    );
     next();
 });
 
@@ -270,8 +290,8 @@ async function initDatabase() {
             connected: true,
             merchant_id: row.merchant_id || "",
             employee_id: row.employee_id || "",
-            access_token: row.access_token || "",
-            refresh_token: row.refresh_token || "",
+            access_token: decryptToken(row.access_token || ""),
+            refresh_token: decryptToken(row.refresh_token || ""),
             token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
             scopes: row.scopes || "",
             connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
@@ -312,8 +332,8 @@ async function saveCloverConnection(connection) {
         [
             latestCloverConnection.merchant_id,
             latestCloverConnection.employee_id,
-            latestCloverConnection.access_token,
-            latestCloverConnection.refresh_token || null,
+            encryptToken(latestCloverConnection.access_token),
+            latestCloverConnection.refresh_token ? encryptToken(latestCloverConnection.refresh_token) : null,
             latestCloverConnection.token_expires_at || null,
             latestCloverConnection.scopes || null,
             latestCloverConnection.connected_at
@@ -386,6 +406,59 @@ function formatTokenForDisplay(token) {
     if (!token) return "";
     if (token.length <= 10) return "Token saved";
     return token.substring(0, 6) + "..." + token.substring(token.length - 4);
+}
+
+function hasValidEncryptionKey() {
+    return /^[a-f0-9]{64}$/i.test(ENCRYPTION_KEY);
+}
+
+function encryptToken(token) {
+    if (!token) return "";
+    if (!hasValidEncryptionKey()) return token;
+
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), iv);
+    let encrypted = cipher.update(String(token), "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag();
+    return `enc:v1:${iv.toString("hex")}:${encrypted}:${authTag.toString("hex")}`;
+}
+
+function decryptToken(value) {
+    if (!value) return "";
+    const token = String(value);
+
+    // Backward compatible: existing saved plaintext tokens still work.
+    if (!token.startsWith("enc:v1:")) return token;
+
+    if (!hasValidEncryptionKey()) {
+        console.warn("Encrypted Clover token found, but ENCRYPTION_KEY is missing or invalid.");
+        return "";
+    }
+
+    try {
+        const [, , ivHex, encrypted, authTagHex] = token.split(":");
+        const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), Buffer.from(ivHex, "hex"));
+        decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
+        let decrypted = decipher.update(encrypted, "hex", "utf8");
+        decrypted += decipher.final("utf8");
+        return decrypted;
+    } catch (error) {
+        console.error("Unable to decrypt Clover token:", error.message);
+        return "";
+    }
+}
+
+function logApiCall(endpoint, merchantId, method, status) {
+    console.log(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        endpoint,
+        merchantId: merchantId || "",
+        method,
+        status,
+        appVersion: APP_VERSION,
+        cloverEnvironment: IS_PRODUCTION_CLOVER ? "production" : "sandbox"
+    }));
 }
 
 async function refreshTokenIfNeeded(connection) {
@@ -614,6 +687,9 @@ function renderDashboard(options = {}) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="clover-app-id" content="${safe(CLOVER_APP_ID)}" />
+    <meta name="clover-app-name" content="${safe(CLOVER_APP_NAME)}" />
+    <link rel="clover-webhook-config" href="/.well-known/clover.json" />
     <title>InventoryRite Profit Tools</title>
     <style>
         :root {
@@ -5000,11 +5076,18 @@ document.getElementById("btnFixMargins")?.addEventListener("click", async () => 
 
 /*
 |--------------------------------------------------------------------------
-| ROOT + CLOVER CALLBACK HANDLER
+| ROOT + CLOVER OAUTH CALLBACK HANDLER
 |--------------------------------------------------------------------------
 */
 
-app.get("/", async (req, res) => {
+app.get("/", (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    return res.send(renderDashboard());
+});
+
+async function handleOAuthCallback(req, res) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -5013,7 +5096,7 @@ app.get("/", async (req, res) => {
         const code = req.query.code;
 
         if (!code) {
-            return res.send(renderDashboard());
+            return res.redirect("/");
         }
 
         if (!CLOVER_CLIENT_ID || !CLOVER_CLIENT_SECRET) {
@@ -5047,13 +5130,10 @@ app.get("/", async (req, res) => {
             new URLSearchParams({
                 client_id: CLOVER_CLIENT_ID,
                 client_secret: CLOVER_CLIENT_SECRET,
-                code: code
+                code: code,
+                redirect_uri: REDIRECT_URI
             }).toString(),
-            {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
-            }
+            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
         );
 
         const tokenData = tokenResponse.data || {};
@@ -5076,8 +5156,6 @@ app.get("/", async (req, res) => {
             tokenData.employee?.id ||
             "";
 
-        // Clover normally returns/sends the merchant id during OAuth. If it does
-        // not, make one safe attempt to discover it before saving the connection.
         if (!detectedMerchantId && tokenData.access_token) {
             try {
                 const merchantsResponse = await cloverApi.get(
@@ -5100,8 +5178,8 @@ app.get("/", async (req, res) => {
             connected_at: new Date().toISOString()
         });
 
-        console.log("Clover connected successfully.");
-        console.log({
+        logApiCall("/oauth-callback", latestCloverConnection.merchant_id, "GET", 200);
+        console.log("Clover connected successfully.", {
             merchant_id: latestCloverConnection.merchant_id,
             employee_id: latestCloverConnection.employee_id,
             hasAccessToken: !!latestCloverConnection.access_token,
@@ -5111,7 +5189,8 @@ app.get("/", async (req, res) => {
 
         return res.send(renderDashboard(latestCloverConnection));
     } catch (error) {
-        console.error("Clover Root OAuth Error:", error.response?.data || error.message);
+        console.error("Clover OAuth Callback Error:", error.response?.data || error.message);
+        logApiCall("/oauth-callback", "", "GET", error.response?.status || 500);
 
         return res.status(500).send(`
             <h1>Clover OAuth failed</h1>
@@ -5119,6 +5198,27 @@ app.get("/", async (req, res) => {
             <a href="/">Back to InventoryRite</a>
         `);
     }
+}
+
+app.get("/oauth-callback", handleOAuthCallback);
+
+// Backward-compatible callback support in case the Clover dashboard still has the old root redirect during testing.
+app.get("/callback", handleOAuthCallback);
+
+app.get("/.well-known/clover.json", (req, res) => {
+    res.json({
+        app_id: CLOVER_APP_ID || null,
+        app_name: CLOVER_APP_NAME,
+        webhook_url: `${APP_BASE_URL}/clover-webhook`,
+        uninstall_url: `${APP_BASE_URL}/clover-uninstall`,
+        version: APP_VERSION,
+        events: [
+            "ITEM_CREATED",
+            "ITEM_UPDATED",
+            "ITEM_DELETED",
+            "INVENTORY_CHANGED"
+        ]
+    });
 });
 
 /*
@@ -5136,6 +5236,9 @@ app.get("/health", (req, res) => {
         cloverEnvironment: IS_PRODUCTION_CLOVER ? "production" : "sandbox",
         cloverClientIdLoaded: !!CLOVER_CLIENT_ID,
         cloverSecretLoaded: !!CLOVER_CLIENT_SECRET,
+        cloverAppIdLoaded: !!CLOVER_APP_ID,
+        encryptionReady: hasValidEncryptionKey(),
+        webhookSecretLoaded: !!CLOVER_WEBHOOK_SECRET,
         databaseEnabled: USE_DATABASE,
         latestConnection: {
             connected: latestCloverConnection.connected,
@@ -5712,8 +5815,54 @@ app.post("/clover-webhook", (req, res) => {
         return res.status(401).json({ success: false, message: "Invalid webhook signature." });
     }
 
-    console.log("Clover webhook received", { requestId: req.id, body: req.body });
-    return res.json({ success: true, message: "Webhook received." });
+    res.status(200).json({ success: true, message: "Webhook received." });
+
+    setImmediate(async () => {
+        try {
+            const eventType = req.body?.event || req.body?.type || req.body?.eventType || "UNKNOWN";
+            const merchantId = req.body?.merchantId || req.body?.merchant_id || req.body?.merchant?.id || "";
+
+            logApiCall("/clover-webhook", merchantId, "POST", 200);
+            console.log("Clover webhook processed", { requestId: req.id, eventType, merchantId, body: req.body });
+
+            // InventoryRite currently refreshes live data from Clover when the merchant opens the dashboard.
+            // This hook is intentionally safe: it acknowledges Clover immediately and logs the event for review.
+            // Add cache invalidation or background sync here later if you add a queue/worker.
+        } catch (error) {
+            console.error("Clover webhook async processing error:", error.message);
+        }
+    });
+});
+
+app.post("/clover-uninstall", async (req, res) => {
+    const merchantId = String(req.body?.merchantId || req.body?.merchant_id || req.body?.merchant?.id || "").trim();
+
+    try {
+        if (merchantId && USE_DATABASE && dbPool) {
+            await dbPool.query("DELETE FROM item_costs WHERE merchant_id = $1", [merchantId]);
+            await dbPool.query("DELETE FROM merchant_connections WHERE merchant_id = $1", [merchantId]);
+        }
+
+        if (merchantId && latestCloverConnection.merchant_id === merchantId) {
+            latestCloverConnection = {
+                connected: false,
+                merchant_id: "",
+                employee_id: "",
+                access_token: "",
+                refresh_token: "",
+                token_expires_at: "",
+                scopes: "",
+                connected_at: ""
+            };
+        }
+
+        logApiCall("/clover-uninstall", merchantId, "POST", 200);
+        return res.json({ success: true, message: "Merchant data cleanup complete." });
+    } catch (error) {
+        console.error("Clover uninstall cleanup error:", error.message);
+        logApiCall("/clover-uninstall", merchantId, "POST", 500);
+        return res.status(500).json({ success: false, message: "Uninstall cleanup failed.", error: error.message });
+    }
 });
 
 app.get("/support", (req, res) => {
@@ -5872,6 +6021,18 @@ app.use((req, res) => {
         message: "Route not found.",
         path: req.originalUrl
     });
+});
+
+process.on("SIGTERM", async () => {
+    console.log("SIGTERM received. Closing server resources...");
+    if (dbPool) await dbPool.end();
+    process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+    console.log("SIGINT received. Closing server resources...");
+    if (dbPool) await dbPool.end();
+    process.exit(0);
 });
 
 initDatabase()
