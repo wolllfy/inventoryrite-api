@@ -712,6 +712,18 @@ function renderDashboard(options = {}) {
 
         .bulk-progress-label.show { display: block; }
 
+        .protected-pricing-note {
+            margin-top: 12px;
+            padding: 9px 11px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
         /* ----------------------------------------------------------------
         | BULK TOOLBAR (floats above table when items are selected)
         ---------------------------------------------------------------- */
@@ -1574,6 +1586,15 @@ function renderDashboard(options = {}) {
             font-size: 12px;
         }
 
+        .last-saved-status.synced {
+            animation: savedPulse 1.4s ease-out;
+        }
+
+        @keyframes savedPulse {
+            0% { box-shadow: 0 0 0 0 rgba(22, 101, 52, 0.28); }
+            100% { box-shadow: 0 0 0 10px rgba(22, 101, 52, 0); }
+        }
+
         tbody td {
             height: 66px;
             padding-top: 14px;
@@ -1981,6 +2002,7 @@ function renderDashboard(options = {}) {
                         <button type="button" class="preset-btn" data-margin-preset="50">50%</button>
                     </div>
                 </div>
+                <div class="protected-pricing-note">Protected Pricing: InventoryRite never changes Clover prices without confirmation. You can review the selected count before every bulk update.</div>
                 <div class="bulk-progress" id="bulkProgress">
                     <div class="bulk-progress-bar" id="bulkProgressBar"></div>
                 </div>
@@ -1992,13 +2014,13 @@ function renderDashboard(options = {}) {
             <div class="merchant-control-bar" id="merchantControlBar">
                 <div class="merchant-control-left">
                     <div class="merchant-control-title">Merchant Tools</div>
-                    <div class="merchant-control-subtitle">Filters, reorder planning, CSV tools, price checks, cleanup, and action history in one place.</div>
+                    <div class="merchant-control-subtitle">Filters, reorder planning, safety backup export, price checks, cleanup, and action history in one place.</div>
                 </div>
                 <div class="merchant-control-actions">
                     <button id="btnShowAllProducts" type="button" class="control-btn control-neutral">All Products</button>
                     <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
                     <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
-                    <button id="btnExportCsv" type="button" class="control-btn control-neutral">Export CSV</button>
+                    <button id="btnExportCsv" type="button" class="control-btn control-neutral">Export Safety Backup</button>
                     <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
                     <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
                     <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
@@ -2061,12 +2083,12 @@ function renderDashboard(options = {}) {
                 <div class="recent-sidebar-top">
                     <div>
                         <div class="recent-sidebar-title">Recent Changes</div>
-                        <div class="recent-sidebar-subtitle">Price edits, bulk updates, CSV actions, and margin tools from this browser.</div>
+                        <div class="recent-sidebar-subtitle">Price edits, bulk updates, CSV imports, backup exports, and margin tools from this browser.</div>
                     </div>
                     <button id="btnOpenPriceHistory" type="button" class="btn btn-small btn-light">View History</button>
                 </div>
                 <div class="recent-list" id="recentChangesList">
-                    <div class="recent-empty">No recent changes yet. Updates will appear here after the first save or bulk action.</div>
+                    <div class="recent-empty">No changes yet. Product edits, bulk updates, and CSV imports will appear here automatically.</div>
                 </div>
             </div>
             <input id="csvImportInput" type="file" accept=".csv,text/csv" style="display:none;" />
@@ -2154,7 +2176,8 @@ function renderDashboard(options = {}) {
         `}
 
         <div class="footer">
-            InventoryRite for Clover - Process Rite Inc - <a class="dev-link" href="/support">Support</a> - <a class="dev-link" href="/privacy">Privacy</a> - <a class="dev-link" href="/terms">Terms</a>
+            InventoryRite for Clover - Process Rite Inc - <a class="dev-link" href="/support">Support</a> - <a class="dev-link" href="/privacy">Privacy</a> - <a class="dev-link" href="/terms">Terms</a><br />
+            Built for Clover merchants using InventoryRite&trade; - Version 1.0
         </div>
 
     </main>
@@ -2322,12 +2345,15 @@ function renderDashboard(options = {}) {
 
             if (!lastSavedAt) {
                 el.textContent = "No saves yet";
+                el.classList.remove("synced");
                 return;
             }
 
+            el.classList.add("synced");
+
             var diffSeconds = Math.max(0, Math.floor((Date.now() - lastSavedAt.getTime()) / 1000));
             if (diffSeconds < 5) {
-                el.textContent = "Last saved just now";
+                el.textContent = "All changes synced";
             } else if (diffSeconds < 60) {
                 el.textContent = "Last saved " + diffSeconds + " seconds ago";
             } else {
@@ -2423,7 +2449,7 @@ function renderDashboard(options = {}) {
             }
 
             if (!recent.length) {
-                list.innerHTML = '<div class="recent-empty">No recent changes yet. Updates will appear here after the first save or bulk action.</div>';
+                list.innerHTML = '<div class="recent-empty">No changes yet. Product edits, bulk updates, and CSV imports will appear here automatically.</div>';
                 return;
             }
 
@@ -2460,7 +2486,7 @@ function renderDashboard(options = {}) {
         function updateLastSyncNote() {
             var note = byId("lastSyncNote");
             if (!note) return;
-            note.textContent = "Last synced: " + new Date().toLocaleString();
+            note.textContent = "Sync successful: " + new Date().toLocaleString();
         }
 
         function setButtonsDisabled(disabled) {
@@ -2679,7 +2705,7 @@ function renderDashboard(options = {}) {
 
             openConfirm(
                 "Bulk Price " + (direction === "increase" ? "Increase" : "Decrease"),
-                dirWord + " prices by " + pct + "% for " + selectedIds.length + " product(s). You can use Undo Bulk immediately after this if needed.",
+                "You are about to update " + selectedIds.length + " live Clover product price(s) by " + (direction === "increase" ? "+" : "-") + pct + "%. Please confirm before InventoryRite saves these changes. You can use Undo Bulk immediately after this if needed.",
                 async function () {
                     await executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel);
                 }
