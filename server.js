@@ -1570,7 +1570,77 @@ function renderDashboard(options = {}) {
             min-height: 41px;
         }
 
+
+
         /* ----------------------------------------------------------------
+        | CLEAN OPERATIONS SUMMARY - REPLACES CLUTTER DASHBOARD BOXES
+        ---------------------------------------------------------------- */
+
+        .operations-summary-strip {
+            margin: 0 0 12px;
+            border: 1px solid #bbf7d0;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.035);
+        }
+
+        .operations-summary-main {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 260px;
+            flex: 1;
+            color: #14532d;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .operations-summary-main strong {
+            color: #14532d;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .operations-summary-main span {
+            color: #475569;
+            font-weight: 800;
+        }
+
+        .operations-summary-pills {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .summary-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 5px 9px;
+            background: #ffffff;
+            border: 1px solid #dbeafe;
+            color: #1e293b;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 760px) {
+            .operations-summary-main { align-items: flex-start; flex-direction: column; gap: 3px; }
+            .operations-summary-pills { justify-content: flex-start; }
+        }
+
+                /* ----------------------------------------------------------------
         | FINAL VALUE FEATURES - HISTORY, UNDO, DUPLICATES, COST LOCK, PRESETS
         ---------------------------------------------------------------- */
 
@@ -1945,26 +2015,16 @@ function renderDashboard(options = {}) {
                 </button>
             </div>
 
-            <div class="intelligence-strip" id="intelligenceStrip">
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Product Review Score</div>
-                    <div class="intelligence-value" id="healthScoreText">--/100</div>
-                    <div class="intelligence-help" id="healthScoreHelp">Refresh Clover inventory to score product health.</div>
+            <div class="operations-summary-strip" id="operationsSummaryStrip">
+                <div class="operations-summary-main">
+                    <strong>Inventory Snapshot</strong>
+                    <span id="operationsSummaryText">Refresh Clover inventory to review pricing, costs, margins, and cleanup items.</span>
                 </div>
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Pricing Risks</div>
-                    <div class="intelligence-value health-risk" id="criticalIssueText">0</div>
-                    <div class="intelligence-help">Below-cost, missing price, and suspicious price risks.</div>
-                </div>
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Review Alerts</div>
-                    <div class="intelligence-value health-watch" id="warningIssueText">0</div>
-                    <div class="intelligence-help">Weak margins, missing costs, duplicates, and stale items.</div>
-                </div>
-                <div class="intelligence-box">
-                    <div class="intelligence-label">Margin Opportunities</div>
-                    <div class="intelligence-value health-good" id="profitOpportunityText">$0.00</div>
-                    <div class="intelligence-help" id="profitOpportunityHelp">Estimated using costed products and conservative monthly assumptions.</div>
+                <div class="operations-summary-pills">
+                    <span class="summary-pill" id="summaryAlertPill">0 alerts</span>
+                    <span class="summary-pill" id="summaryBelowCostPill">0 below cost</span>
+                    <span class="summary-pill" id="summaryAvgMarginPill">Avg margin --</span>
+                    <span class="summary-pill" id="summaryOpportunityPill">$0 opportunity</span>
                 </div>
             </div>
 
@@ -3354,6 +3414,38 @@ function renderDashboard(options = {}) {
 
         function renderIntelligencePanel() {
             var intelligence = getInventoryIntelligence();
+            var summaryText = byId("operationsSummaryText");
+            var alertPill = byId("summaryAlertPill");
+            var belowCostPill = byId("summaryBelowCostPill");
+            var avgMarginPill = byId("summaryAvgMarginPill");
+            var opportunityPill = byId("summaryOpportunityPill");
+
+            var criticalCount = intelligence.criticalIssues.length;
+            var warningCount = intelligence.warnings.length;
+            var totalAlerts = criticalCount + warningCount;
+            var belowCostCount = intelligence.criticalIssues.filter(function (issue) { return issue.type === "below_cost"; }).length;
+
+            var marginItems = (loadedItems || [])
+                .filter(function (item) { return Number(item.price || 0) > 0 && getCostCents(item.id || "") > 0; })
+                .map(function (item) {
+                    return calculateMargin(Number(item.price || 0), getCostCents(item.id || ""));
+                })
+                .filter(function (margin) { return margin !== null && Number.isFinite(margin); });
+
+            var avgMargin = marginItems.length
+                ? marginItems.reduce(function (sum, margin) { return sum + margin; }, 0) / marginItems.length
+                : null;
+
+            if (summaryText) {
+                summaryText.textContent = (loadedItems || []).length
+                    ? "Pricing, cost, margin, and cleanup summary for the currently loaded Clover products."
+                    : "Refresh Clover inventory to review pricing, costs, margins, and cleanup items.";
+            }
+            if (alertPill) alertPill.textContent = totalAlerts + " alert" + (totalAlerts === 1 ? "" : "s");
+            if (belowCostPill) belowCostPill.textContent = belowCostCount + " below cost";
+            if (avgMarginPill) avgMarginPill.textContent = "Avg margin " + (avgMargin === null ? "--" : avgMargin.toFixed(1) + "%");
+            if (opportunityPill) opportunityPill.textContent = formatCurrencyFromCents(intelligence.estimatedProfitOpportunity) + " opportunity";
+
             var health = byId("healthScoreText");
             var healthHelp = byId("healthScoreHelp");
             var critical = byId("criticalIssueText");
@@ -3367,8 +3459,8 @@ function renderDashboard(options = {}) {
                 health.className = "intelligence-value " + (displayHealthScore >= 85 ? "health-good" : (displayHealthScore >= 65 ? "health-watch" : "health-risk"));
             }
             if (healthHelp) healthHelp.textContent = displayHealthScore >= 85 ? "Inventory looks healthy. Keep reviewing costs and margins." : (displayHealthScore >= 65 ? "Inventory is usable, but cleanup and margin work can improve it." : "Inventory has review items. Start with missing costs, duplicate products, and margin checks.");
-            if (critical) critical.textContent = intelligence.criticalIssues.length;
-            if (warning) warning.textContent = intelligence.warnings.length;
+            if (critical) critical.textContent = criticalCount;
+            if (warning) warning.textContent = warningCount;
             if (opportunity) opportunity.textContent = formatCurrencyFromCents(intelligence.estimatedProfitOpportunity);
             if (opportunityHelp) opportunityHelp.textContent = "Estimate assumes about " + intelligence.assumedMonthlyUnits + " sales/month on affected products until sales history is connected.";
         }
