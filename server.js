@@ -1141,6 +1141,29 @@ function renderDashboard(options = {}) {
         .insight-row strong { display:block; color:#111827; margin-bottom:3px; }
         .insight-row span { color:#64748b; font-weight:800; }
 
+
+
+        .modal { animation: modalPop .16s ease-out; }
+        @keyframes modalPop {
+            from { opacity: 0; transform: translateY(8px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .insight-row {
+            align-items: center;
+        }
+
+        .insight-row div:last-child span {
+            display: inline-flex;
+            border-radius: 999px;
+            padding: 5px 9px;
+            background: #eef2ff;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
         @media (max-width: 980px) {
             .merchant-control-bar { align-items: flex-start; }
             .merchant-control-actions { justify-content: flex-start; }
@@ -1206,7 +1229,7 @@ function renderDashboard(options = {}) {
 
             <div class="hero-actions">
                 <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh Inventory</button>
-                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">⚡ Bulk Price Update</button>
+                <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
                 <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
             </div>
         </section>
@@ -1221,7 +1244,7 @@ function renderDashboard(options = {}) {
                 <div class="toolbar">
                     <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
                     <button id="btnRefreshInventory" type="button" class="btn btn-secondary">Refresh</button>
-                    <button id="btnToggleBulk" type="button" class="btn btn-amber">⚡ Bulk Price Update</button>
+                    <button id="btnToggleBulk" type="button" class="btn btn-amber">&#9889; Bulk Price Update</button>
                     <button id="btnToggleAdd" type="button" class="btn btn-primary">Add Product</button>
                 </div>
             </div>
@@ -1245,7 +1268,7 @@ function renderDashboard(options = {}) {
             <div class="bulk-panel" id="bulkPanel">
                 <div class="bulk-panel-header">
                     <div class="bulk-panel-title">
-                        ⚡ Bulk Price Update &mdash;
+                        &#9889; Bulk Price Update &mdash;
                         <span id="bulkSelectedCount" class="bulk-count-badge">0</span>
                         item(s) selected
                     </div>
@@ -1265,10 +1288,10 @@ function renderDashboard(options = {}) {
                         </div>
                         <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:0;">
                             <button id="btnBulkIncrease" type="button" class="btn btn-small btn-bulk-increase">
-                                ▲ Increase by %
+                                &#9650; Increase by %
                             </button>
                             <button id="btnBulkDecrease" type="button" class="btn btn-small btn-bulk-decrease">
-                                ▼ Decrease by %
+                                &#9660; Decrease by %
                             </button>
                             <button id="btnBulkClearPanel" type="button" class="btn btn-small btn-light">
                                 Clear Selection
@@ -1386,7 +1409,7 @@ function renderDashboard(options = {}) {
         `}
 
         <div class="footer">
-            InventoryRite for Clover · Process Rite Inc · <a class="dev-link" href="/dev">Developer tools</a>
+            InventoryRite for Clover - Process Rite Inc - <a class="dev-link" href="/dev">Developer tools</a>
         </div>
 
     </main>
@@ -1458,6 +1481,7 @@ function renderDashboard(options = {}) {
         var isBusy = false;
         var pendingConfirmAction = null;
         var activeViewMode = "all";
+        var activityLog = [];
 
         // Track selected item IDs for bulk operations
         var selectedItemIds = new Set();
@@ -1487,11 +1511,11 @@ function renderDashboard(options = {}) {
         }
 
         function formatDateFromClover(value) {
-            if (!value) return "—";
+            if (!value) return "-";
             try {
                 return new Date(Number(value)).toLocaleString();
             } catch (e) {
-                return "—";
+                return "-";
             }
         }
 
@@ -1509,6 +1533,19 @@ function renderDashboard(options = {}) {
                     toast.parentNode.removeChild(toast);
                 }
             }, 4200);
+        }
+
+        function logActivity(title, message, status) {
+            activityLog.unshift({
+                title: title || "Activity",
+                message: message || "Action completed.",
+                status: status || "Done",
+                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            });
+
+            if (activityLog.length > 50) {
+                activityLog = activityLog.slice(0, 50);
+            }
         }
 
         function setButtonText(id, text) {
@@ -1632,9 +1669,9 @@ function renderDashboard(options = {}) {
             if (statVisible) statVisible.textContent = String(visible);
             if (statAvailable) statAvailable.textContent = String(available);
             if (statValue) statValue.textContent = formatCurrencyFromCents(totalCents);
-            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "—" : avgMargin.toFixed(1) + "%";
-            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " · " + best.margin.toFixed(1) + "%" : "—";
-            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " · " + lowest.margin.toFixed(1) + "%" : "—";
+            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "-" : avgMargin.toFixed(1) + "%";
+            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " - " + best.margin.toFixed(1) + "%" : "-";
+            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " - " + lowest.margin.toFixed(1) + "%" : "-";
             if (statBelowCost) statBelowCost.textContent = String(belowCost);
         }
 
@@ -1812,6 +1849,7 @@ function renderDashboard(options = {}) {
 
             if (failCount === 0) {
                 showToast("Bulk update complete: " + successCount + " price(s) " + dirLabel + " by " + pct + "%.", "success");
+                logActivity("Bulk Price Update", successCount + " price(s) " + dirLabel + " by " + pct + "%.", "Success");
             } else {
                 showToast("Bulk update: " + successCount + " succeeded, " + failCount + " failed.", failCount > 0 && successCount === 0 ? "error" : "info");
             }
@@ -1923,6 +1961,7 @@ function renderDashboard(options = {}) {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             showToast("CSV exported successfully.", "success");
+            logActivity("CSV Exported", loadedItems.length + " product(s) exported.", "Success");
         }
 
         function openFeatureModal(title, message, rows) {
@@ -1952,14 +1991,19 @@ function renderDashboard(options = {}) {
 
         function showLowStock() {
             var lowItems = getLowStockItems();
-            if (lowItems.length === 0) {
-                openFeatureModal(
-                    "Low Stock",
-                    "No low-stock items were found. If your Clover item response does not include quantity data yet, this will activate once inventory counts are available.",
-                    []
-                );
-            }
+            var rows = lowItems.slice(0, 25).map(function (item) {
+                var qty = getItemQuantity(item);
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + "</span></div><div><span>Low Stock</span></div>";
+            });
+
+            openFeatureModal(
+                "Low Stock",
+                lowItems.length ? (lowItems.length + " low-stock item(s) found and shown in the table.") : "No low-stock items were found. Clover may not be sending quantity data for these products yet.",
+                rows
+            );
             setViewMode("lowStock");
+            logActivity("Low Stock View", lowItems.length + " low-stock item(s) reviewed.", "Viewed");
+            showToast("Low Stock view enabled.", "info");
         }
 
         function showProfitAlerts() {
@@ -1968,60 +2012,75 @@ function renderDashboard(options = {}) {
                 var price = Number(item.price || 0);
                 var cost = getCostCents(item.id || "");
                 var margin = calculateMargin(price, cost);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " · Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " · Margin " + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</span></div><div><span>Review</span></div>";
+                var label = price < cost ? "Below Cost" : "Low Margin";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " - Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " - Margin " + escapeHtml(margin === null ? "-" : margin.toFixed(1) + "%") + "</span></div><div><span>" + escapeHtml(label) + "</span></div>";
             });
 
             openFeatureModal(
                 "Profit Alerts",
-                alerts.length ? (alerts.length + " product(s) need margin review.") : "No profit alerts right now. Good job — no below-cost or low-margin products were found.",
+                alerts.length ? (alerts.length + " product(s) need margin review and are now shown in the table.") : "No profit alerts right now. No below-cost or low-margin products were found.",
                 rows
             );
             setViewMode("profitAlerts");
+            logActivity("Profit Alerts", alerts.length + " product(s) reviewed for margin risk.", "Viewed");
+            showToast("Profit Alerts view enabled.", alerts.length ? "info" : "success");
         }
 
         function showReorderPlanning() {
             var lowItems = getLowStockItems();
             var rows = lowItems.slice(0, 25).map(function (item) {
                 var qty = getItemQuantity(item);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " · Suggested reorder: review supplier stock</span></div><div><span>Plan</span></div>";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested action: reorder or confirm stock count</span></div><div><span>Plan</span></div>";
             });
             openFeatureModal(
                 "Smart Reorder Planning",
-                lowItems.length ? "These items may need reorder attention." : "No reorder suggestions yet. This becomes stronger after quantity and sales velocity data are available.",
+                lowItems.length ? "Reorder planning is based on products with quantity 5 or less." : "No reorder suggestions yet. This becomes stronger when Clover sends quantity data.",
                 rows
             );
+            logActivity("Reorder Planning", lowItems.length + " item(s) checked for reorder planning.", "Viewed");
+            showToast("Reorder planning opened.", "info");
         }
 
         function showPriceRules() {
+            var rows = [
+                "<div><strong>Round Prices</strong><span>Use Bulk Price Update, then review prices ending in .99 before saving.</span></div><div><span>Manual</span></div>",
+                "<div><strong>Protect Margin</strong><span>Use Profit Alerts to find products below 30% margin or below cost.</span></div><div><span>Active</span></div>",
+                "<div><strong>Bulk Percent Change</strong><span>Select rows, open Bulk Price Update, then increase or decrease by a percent.</span></div><div><span>Active</span></div>"
+            ];
             openFeatureModal(
                 "Price Rules",
-                "Coming next: create rules like increase all drinks by 8%, round prices to .99, or protect minimum margins before applying changes.",
-                [
-                    "<div><strong>Example Rule</strong><span>Increase selected category by 8%</span></div><div><span>Coming next</span></div>",
-                    "<div><strong>Margin Protection</strong><span>Prevent products from selling below cost</span></div><div><span>Coming next</span></div>"
-                ]
+                "Price Rules are staged as safe merchant workflows. No automatic price overwrite happens without confirmation.",
+                rows
             );
+            logActivity("Price Rules", "Price rule options reviewed.", "Viewed");
+            showToast("Price Rules opened.", "info");
         }
 
         function showActivityLog() {
+            var rows = activityLog.length ? activityLog.map(function (entry) {
+                return "<div><strong>" + escapeHtml(entry.time + " - " + entry.title) + "</strong><span>" + escapeHtml(entry.message) + "</span></div><div><span>" + escapeHtml(entry.status) + "</span></div>";
+            }) : [
+                "<div><strong>No activity yet</strong><span>Updates, exports, filters, and bulk actions will appear here during this session.</span></div><div><span>Ready</span></div>"
+            ];
+
             openFeatureModal(
                 "Activity Log",
-                "Coming next: every price change, cost update, delete, and bulk update will appear here with time and merchant context.",
-                [
-                    "<div><strong>Product Updated</strong><span>Track old price, new price, and time</span></div><div><span>Planned</span></div>",
-                    "<div><strong>Undo Support</strong><span>Use activity history to reverse mistakes safely</span></div><div><span>Planned</span></div>"
-                ]
+                "Recent actions from this browser session appear here. Server-side history can be added after launch.",
+                rows
             );
         }
 
         function importCsvClicked() {
             openFeatureModal(
                 "Import CSV",
-                "CSV import is staged safely. Next step is mapping columns before making bulk changes to Clover, so merchants do not accidentally overwrite products.",
+                "Safe CSV import is prepared as a preview-first workflow. For launch, Export CSV is active and Import CSV is locked to prevent accidental Clover overwrites.",
                 [
-                    "<div><strong>Safe Import Flow</strong><span>Upload CSV → preview changes → confirm update</span></div><div><span>Next build</span></div>"
+                    "<div><strong>Step 1</strong><span>Export products to CSV and edit safely.</span></div><div><span>Active</span></div>",
+                    "<div><strong>Step 2</strong><span>Upload CSV, preview changes, then confirm updates.</span></div><div><span>Next</span></div>"
                 ]
             );
+            logActivity("Import CSV", "Import CSV workflow opened.", "Viewed");
+            showToast("Import CSV preview workflow opened.", "info");
         }
 
         /*
@@ -2086,7 +2145,7 @@ function renderDashboard(options = {}) {
 
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
-                var sku = item.sku || item.code || item.productCode || "—";
+                var sku = item.sku || item.code || item.productCode || "-";
                 var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
@@ -2124,9 +2183,9 @@ function renderDashboard(options = {}) {
                     "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. Saves to InventoryRite and attempts to sync to Clover.' /></td>" +
                     "<td>" + getMarginPill(priceCents, costCents) + "</td>" +
                     "<td><div class='row-actions'>" +
-                        "<button type='button' class='btn btn-secondary btn-small icon-action' title='Save product' aria-label='Save product' data-action='save' data-id='" + escapeHtml(itemId) + "'>✓</button>" +
+                        "<button type='button' class='btn btn-secondary btn-small icon-action' title='Save product' aria-label='Save product' data-action='save' data-id='" + escapeHtml(itemId) + "'>&#10003;</button>" +
                         "<button type='button' class='btn btn-light btn-small icon-action' title='View details' aria-label='View details' data-action='details' data-id='" + escapeHtml(itemId) + "'>i</button>" +
-                        "<button type='button' class='btn btn-danger btn-small icon-action' title='Delete product' aria-label='Delete product' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>×</button>" +
+                        "<button type='button' class='btn btn-danger btn-small icon-action' title='Delete product' aria-label='Delete product' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>&times;</button>" +
                     "</div></td>";
 
                 body.appendChild(row);
@@ -2247,7 +2306,7 @@ function renderDashboard(options = {}) {
             var item = loadedItems.find(function (it) { return it.id === itemId; });
             if (!item) return;
 
-            var sku = item.sku || item.code || item.productCode || "—";
+            var sku = item.sku || item.code || item.productCode || "-";
             var available = item.available === false ? "No" : "Yes";
             var hidden = item.hidden ? "Hidden" : "Visible";
             var revenue = item.isRevenue === false ? "No" : "Yes";
@@ -2264,7 +2323,7 @@ function renderDashboard(options = {}) {
             if (grid) {
                 grid.innerHTML =
                     "<div class='detail-label'>SKU / Code</div><div class='detail-value'>" + escapeHtml(sku) + "</div>" +
-                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "—") + "</div>" +
+                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "-") + "</div>" +
                     "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
                     "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
                     "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
@@ -2272,7 +2331,7 @@ function renderDashboard(options = {}) {
                     "<div class='detail-label'>Price</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</div>" +
                     "<div class='detail-label'>Cost</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</div>" +
                     "<div class='detail-label'>Profit / Unit</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</div>" +
-                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</div>";
+                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "-" : margin.toFixed(1) + "%") + "</div>";
             }
 
             if (modal) modal.classList.add("show");
@@ -2348,6 +2407,7 @@ function renderDashboard(options = {}) {
                 renderItems(loadedItems);
                 updateLastSyncNote();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
+                logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover.", "Success");
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
@@ -2396,6 +2456,7 @@ function renderDashboard(options = {}) {
 
                 lastUpdatedItemId = data && data.data && data.data.id ? data.data.id : "";
                 showToast("Product created successfully.", "success");
+                logActivity("Product Created", name + " was created in Clover.", "Success");
 
                 var addPanel = byId("addPanel");
                 if (addPanel) addPanel.classList.remove("show");
@@ -2446,6 +2507,7 @@ function renderDashboard(options = {}) {
 
                 lastUpdatedItemId = itemId;
                 showToast("Product updated.", "success");
+                logActivity("Product Updated", name + " was updated.", "Success");
 
                 stopBusy();
                 await loadItems();
@@ -2472,6 +2534,7 @@ function renderDashboard(options = {}) {
                 );
 
                 showToast("Product deleted.", "success");
+                logActivity("Product Deleted", "A product was deleted from Clover.", "Success");
 
                 stopBusy();
                 await loadItems();
@@ -2510,7 +2573,7 @@ function renderDashboard(options = {}) {
         */
 
 
-        bind("btnShowAllProducts", "click", function () { setViewMode("all"); showToast("Showing all products.", "info"); });
+        bind("btnShowAllProducts", "click", function () { setViewMode("all"); logActivity("All Products", "All products view restored.", "Viewed"); showToast("Showing all products.", "info"); });
         bind("btnLowStock", "click", showLowStock);
         bind("btnReorder", "click", showReorderPlanning);
         bind("btnExportCsv", "click", exportProductsCsv);
@@ -3181,7 +3244,7 @@ app.get("/dev", (req, res) => {
 </head>
 <body>
     <div class="wrap">
-        <p><a href="/">← Back to Inventory</a></p>
+        <p><a href="/">&larr; Back to Inventory</a></p>
         <div class="card">
             <h1>Developer Tools</h1>
             <p>This page is for setup/support only. Merchants should use the main inventory page.</p>
