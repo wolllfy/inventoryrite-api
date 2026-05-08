@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const crypto = require("crypto");
+const path = require("path");
 require("dotenv").config();
 
 let Pool = null;
@@ -193,6 +194,34 @@ function rateLimit(req, res, next) {
     return next();
 }
 
+function cloverApiRateLimit(req, res, next) {
+    cleanupSecurityStores();
+
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+    const merchantKey = String(req.headers["x-merchant-id"] || req.body?.merchantId || req.query?.merchantId || ip).trim() || ip;
+    const key = `clover-api:${merchantKey}`;
+    const windowMs = 60 * 1000;
+    const maxRequests = Number(process.env.CLOVER_API_RATE_LIMIT_MAX || 100);
+    const now = nowMs();
+    const existing = rateLimitStore.get(key);
+
+    if (!existing || existing.resetAt <= now) {
+        rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+        return next();
+    }
+
+    existing.count += 1;
+
+    if (existing.count > maxRequests) {
+        return res.status(429).json({
+            success: false,
+            message: "Clover API rate limit exceeded. Please wait a moment and try again."
+        });
+    }
+
+    return next();
+}
+
 app.use((req, res, next) => {
     req.id = crypto.randomUUID ? crypto.randomUUID() : createToken(16);
     res.setHeader("X-Request-Id", req.id);
@@ -209,6 +238,9 @@ app.use((req, res, next) => {
 });
 
 app.use(rateLimit);
+app.use(/^\/clover-(?!webhook|uninstall).*/, cloverApiRateLimit);
+app.use("/item-costs", cloverApiRateLimit);
+app.use("/item-cost", cloverApiRateLimit);
 app.use(verifyCsrfToken);
 
 /*
@@ -437,7 +469,12 @@ function decryptToken(value) {
     }
 
     try {
-        const [, , ivHex, encrypted, authTagHex] = token.split(":");
+        const parts = token.split(":");
+        if (parts.length !== 5) {
+            console.error("Invalid encrypted token format.");
+            return "";
+        }
+        const [, , ivHex, encrypted, authTagHex] = parts;
         const decipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(ENCRYPTION_KEY, "hex"), Buffer.from(ivHex, "hex"));
         decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
         let decrypted = decipher.update(encrypted, "hex", "utf8");
@@ -5016,56 +5053,8 @@ function renderDashboard(options = {}) {
     })();
     
 
-document.getElementById("btnFixMargins")?.addEventListener("click", async () => {
+// btnFixMargins handler removed: no matching button exists in this UI.
 
-    if (!inventoryItems.length) {
-        showToast("No inventory loaded.", "error");
-        return;
-    }
-
-    let updated = 0;
-
-    inventoryItems.forEach(item => {
-
-        const cost = Number(item.cost || 0);
-        const price = Number(item.price || 0);
-
-        if (cost <= 0 || price <= 0) {
-            return;
-        }
-
-        const margin = ((price - cost) / price) * 100;
-
-        if (margin < 20) {
-
-            const suggested = getSuggestedPrice(cost * 100);
-
-            item.price = Number(suggested.toFixed(2));
-
-            updated++;
-        }
-    });
-
-    const health = calculateMarginHealthScore(inventoryItems);
-
-    const healthEl = document.getElementById("marginHealthStatus");
-
-    if (healthEl) {
-
-        healthEl.textContent =
-            "Margin Health: " + health.label;
-
-        healthEl.className =
-            "summary-pill " + health.className;
-    }
-
-    renderInventoryTable(inventoryItems);
-
-    showToast(
-        updated + " low margin products updated with suggested pricing.",
-        "success"
-    );
-});
 
 
 </script>
@@ -5204,6 +5193,10 @@ app.get("/oauth-callback", handleOAuthCallback);
 
 // Backward-compatible callback support in case the Clover dashboard still has the old root redirect during testing.
 app.get("/callback", handleOAuthCallback);
+
+app.get("/icon.png", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "icon.png"));
+});
 
 app.get("/.well-known/clover.json", (req, res) => {
     res.json({
@@ -5682,7 +5675,7 @@ app.get("/item-costs", async (req, res) => {
 
 app.post("/item-cost/:itemId", async (req, res) => {
     try {
-        const { accessToken, merchantId } = await getConnectionFromRequest(req);
+        const { merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
         const costCents = Number(req.body.costCents || 0);
 
@@ -5700,35 +5693,22 @@ app.post("/item-cost/:itemId", async (req, res) => {
             });
         }
 
+        // Clover's Items API does not provide a writable cost-of-goods field.
+        // InventoryRite stores item costs in its own database and uses those costs
+        // for margin, profit, cleanup, and pricing intelligence.
         const savedCostCents = await saveItemCostForMerchant(merchantId, itemId, costCents);
-        let cloverCostSynced = false;
-        let cloverCostSyncError = null;
 
-        if (accessToken) {
-            try {
-                await cloverApi.post(
-                    `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
-                    { cost: savedCostCents },
-                    { headers: cloverHeaders(accessToken) }
-                );
-                cloverCostSynced = true;
-            } catch (cloverError) {
-                cloverCostSynced = false;
-                cloverCostSyncError = cloverError.response?.data || cloverError.message || "Clover cost sync failed.";
-                console.warn("Clover cost sync warning:", cloverCostSyncError);
-            }
-        }
+        logApiCall("/item-cost/:itemId", merchantId, "POST", 200);
 
         res.json({
             success: true,
-            message: cloverCostSynced
-                ? "Item cost saved and synced to Clover."
-                : "Item cost saved in InventoryRite. Clover cost sync was not confirmed.",
+            message: "Item cost saved successfully in InventoryRite.",
             databaseEnabled: USE_DATABASE,
             itemId,
             costCents: savedCostCents,
-            cloverCostSynced,
-            cloverCostSyncError
+            cloverCostSynced: false,
+            cloverCostSyncError: null,
+            note: "Clover does not support writing a custom cost field through the Items API."
         });
     } catch (error) {
         console.error("Save Item Cost Error:", error.message);
