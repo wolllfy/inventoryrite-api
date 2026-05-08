@@ -355,18 +355,19 @@ function renderDashboard(options = {}) {
         .badge.connected { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
         .badge.disconnected { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
 
-        .wrap { width: 100%; max-width: 1460px; margin: 26px auto; padding: 0 18px 50px; }
+        .wrap { width: 100%; max-width: 1460px; margin: 18px auto; padding: 0 18px 42px; }
 
         .hero {
             background: rgba(255,255,255,0.96);
             border: 1px solid var(--line);
             border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 28px;
+            box-shadow: 0 12px 34px rgba(15, 23, 42, 0.065);
+            padding: 18px 24px;
             margin-bottom: 18px;
+            min-height: 118px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             gap: 18px;
             overflow: hidden;
             position: relative;
@@ -375,12 +376,12 @@ function renderDashboard(options = {}) {
         .hero:after {
             content: "";
             position: absolute;
-            width: 260px;
-            height: 260px;
+            width: 190px;
+            height: 190px;
             border-radius: 50%;
-            right: -120px;
-            top: -120px;
-            background: rgba(34, 197, 94, 0.13);
+            right: -88px;
+            top: -88px;
+            background: rgba(34, 197, 94, 0.12);
             pointer-events: none;
         }
 
@@ -389,24 +390,24 @@ function renderDashboard(options = {}) {
             font-weight: 900;
             letter-spacing: .08em;
             text-transform: uppercase;
-            font-size: 12px;
-            margin-bottom: 9px;
+            font-size: 11px;
+            margin-bottom: 6px;
         }
 
         .hero h2 {
             margin: 0;
-            font-size: 34px;
+            font-size: 28px;
             line-height: 1.08;
             letter-spacing: -0.035em;
             max-width: 760px;
         }
 
         .hero p {
-            margin: 12px 0 0;
+            margin: 8px 0 0;
             color: var(--muted);
-            line-height: 1.55;
+            line-height: 1.45;
             max-width: 720px;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .hero-actions {
@@ -1333,7 +1334,7 @@ function renderDashboard(options = {}) {
         @media (max-width: 980px) {
             .hero, .stats-row, .add-grid { grid-template-columns: 1fr; }
             .hero { flex-direction: column; }
-            .hero h2 { font-size: 28px; }
+            .hero h2 { font-size: 22px; }
             .topbar { align-items: flex-start; gap: 14px; flex-direction: column; }
             .table-top { flex-direction: column; }
             .toolbar { width: 100%; justify-content: flex-start; }
@@ -1354,8 +1355,8 @@ function renderDashboard(options = {}) {
             .stats-row { grid-template-columns: 1fr; }
             .wrap { padding: 0 10px 40px; }
             .inventory-card { padding: 14px; }
-            .hero { padding: 20px; }
-            .hero h2 { font-size: 24px; }
+            .hero { padding: 16px; min-height: auto; }
+            .hero h2 { font-size: 22px; }
             .table-wrap { border-radius: 12px; }
             th, td { padding: 9px 5px; font-size: 11px; }
             .check-col { width: 6%; }
