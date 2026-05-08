@@ -1325,15 +1325,15 @@ function renderDashboard(options = {}) {
             <div class="stats-row" id="marginStatsRow">
                 <div class="stat-box">
                     <div class="stat-label">Average Margin</div>
-                    <div class="stat-value" id="statAvgMargin">-</div>
+                    <div class="stat-value" id="statAvgMargin">—</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Best Margin Item</div>
-                    <div class="stat-value" id="statBestMargin">-</div>
+                    <div class="stat-value" id="statBestMargin">—</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Lowest Margin Item</div>
-                    <div class="stat-value" id="statLowestMargin">-</div>
+                    <div class="stat-value" id="statLowestMargin">—</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Below Cost</div>
@@ -1468,10 +1468,9 @@ function renderDashboard(options = {}) {
 
         function bind(id, eventName, handler) {
             var el = byId(id);
-            if (!el) {
-                return;
+            if (el) {
+                el.addEventListener(eventName, handler);
             }
-            el.addEventListener(eventName, handler);
         }
 
         function getToken() {
@@ -1488,11 +1487,11 @@ function renderDashboard(options = {}) {
         }
 
         function formatDateFromClover(value) {
-            if (!value) return "-";
+            if (!value) return "—";
             try {
                 return new Date(Number(value)).toLocaleString();
             } catch (e) {
-                return "-";
+                return "—";
             }
         }
 
@@ -1633,9 +1632,9 @@ function renderDashboard(options = {}) {
             if (statVisible) statVisible.textContent = String(visible);
             if (statAvailable) statAvailable.textContent = String(available);
             if (statValue) statValue.textContent = formatCurrencyFromCents(totalCents);
-            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "-" : avgMargin.toFixed(1) + "%";
-            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " · " + best.margin.toFixed(1) + "%" : "-";
-            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " · " + lowest.margin.toFixed(1) + "%" : "-";
+            if (statAvgMargin) statAvgMargin.textContent = avgMargin === null ? "—" : avgMargin.toFixed(1) + "%";
+            if (statBestMargin) statBestMargin.textContent = best ? best.name.substring(0, 18) + " · " + best.margin.toFixed(1) + "%" : "—";
+            if (statLowestMargin) statLowestMargin.textContent = lowest ? lowest.name.substring(0, 18) + " · " + lowest.margin.toFixed(1) + "%" : "—";
             if (statBelowCost) statBelowCost.textContent = String(belowCost);
         }
 
@@ -1881,7 +1880,7 @@ function renderDashboard(options = {}) {
 
         function csvEscape(value) {
             var text = String(value === undefined || value === null ? "" : value);
-            if (text.indexOf('"') >= 0 || text.indexOf(',') >= 0 || text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0) {
+            if (text.indexOf('"') >= 0 || text.indexOf(',') >= 0 || text.indexOf('\\n') >= 0 || text.indexOf('\\r') >= 0) {
                 return '"' + text.replaceAll('"', '""') + '"';
             }
             return text;
@@ -1914,7 +1913,7 @@ function renderDashboard(options = {}) {
                 ].join(","));
             });
 
-            var blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+            var blob = new Blob([rows.join("\\n")], { type: "text/csv;charset=utf-8;" });
             var url = URL.createObjectURL(blob);
             var link = document.createElement("a");
             link.href = url;
@@ -1969,12 +1968,12 @@ function renderDashboard(options = {}) {
                 var price = Number(item.price || 0);
                 var cost = getCostCents(item.id || "");
                 var margin = calculateMargin(price, cost);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " · Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " · Margin " + escapeHtml(margin === null ? "-" : margin.toFixed(1) + "%") + "</span></div><div><span>Review</span></div>";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " · Cost " + escapeHtml(formatCurrencyFromCents(cost)) + " · Margin " + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</span></div><div><span>Review</span></div>";
             });
 
             openFeatureModal(
                 "Profit Alerts",
-                alerts.length ? (alerts.length + " product(s) need margin review.") : "No profit alerts right now. Good job - no below-cost or low-margin products were found.",
+                alerts.length ? (alerts.length + " product(s) need margin review.") : "No profit alerts right now. Good job — no below-cost or low-margin products were found.",
                 rows
             );
             setViewMode("profitAlerts");
@@ -2087,7 +2086,7 @@ function renderDashboard(options = {}) {
 
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
-                var sku = item.sku || item.code || item.productCode || "-";
+                var sku = item.sku || item.code || item.productCode || "—";
                 var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
@@ -2248,7 +2247,7 @@ function renderDashboard(options = {}) {
             var item = loadedItems.find(function (it) { return it.id === itemId; });
             if (!item) return;
 
-            var sku = item.sku || item.code || item.productCode || "-";
+            var sku = item.sku || item.code || item.productCode || "—";
             var available = item.available === false ? "No" : "Yes";
             var hidden = item.hidden ? "Hidden" : "Visible";
             var revenue = item.isRevenue === false ? "No" : "Yes";
@@ -2265,7 +2264,7 @@ function renderDashboard(options = {}) {
             if (grid) {
                 grid.innerHTML =
                     "<div class='detail-label'>SKU / Code</div><div class='detail-value'>" + escapeHtml(sku) + "</div>" +
-                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "-") + "</div>" +
+                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "—") + "</div>" +
                     "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
                     "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
                     "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
@@ -2273,7 +2272,7 @@ function renderDashboard(options = {}) {
                     "<div class='detail-label'>Price</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</div>" +
                     "<div class='detail-label'>Cost</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</div>" +
                     "<div class='detail-label'>Profit / Unit</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</div>" +
-                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "-" : margin.toFixed(1) + "%") + "</div>";
+                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "—" : margin.toFixed(1) + "%") + "</div>";
             }
 
             if (modal) modal.classList.add("show");
@@ -2506,107 +2505,103 @@ function renderDashboard(options = {}) {
 
         /*
         |------------------------------------------------------------------
-        | EVENT BINDINGS - SAFE INIT
+        | EVENT BINDINGS
         |------------------------------------------------------------------
-        | All buttons are wired after the page is ready. This prevents silent
-        | failures if a button does not exist on the disconnected screen and
-        | keeps the connected dashboard buttons working reliably.
         */
 
-        function initializeUiBindings() {
-            bind("btnShowAllProducts", "click", function () {
-                setViewMode("all");
-                showToast("Showing all products.", "info");
+
+        bind("btnShowAllProducts", "click", function () { setViewMode("all"); showToast("Showing all products.", "info"); });
+        bind("btnLowStock", "click", showLowStock);
+        bind("btnReorder", "click", showReorderPlanning);
+        bind("btnExportCsv", "click", exportProductsCsv);
+        bind("btnImportCsv", "click", importCsvClicked);
+        bind("btnPriceRules", "click", showPriceRules);
+        bind("btnProfitAlerts", "click", showProfitAlerts);
+        bind("btnActivityLog", "click", showActivityLog);
+        bind("featureClose", "click", closeFeatureModal);
+
+        bind("btnRefreshInventoryTop", "click", loadItems);
+        bind("btnRefreshInventory", "click", loadItems);
+        bind("btnToggleAddTop", "click", toggleAddPanel);
+        bind("btnToggleAdd", "click", toggleAddPanel);
+        bind("btnToggleBulkTop", "click", toggleBulkPanel);
+        bind("btnToggleBulk", "click", toggleBulkPanel);
+        bind("btnCreateItem", "click", createItem);
+        bind("inventorySearch", "input", function () { renderItems(loadedItems); });
+
+        bind("confirmCancel", "click", closeConfirm);
+        bind("confirmYes", "click", function () {
+            var action = pendingConfirmAction;
+            closeConfirm();
+            if (typeof action === "function") action();
+        });
+        bind("detailsClose", "click", closeItemDetails);
+
+        // Select-all checkbox
+        bind("selectAllCheckbox", "change", function (e) {
+            selectAllVisible(e.target.checked);
+        });
+
+        // Bulk action buttons
+        bind("btnBulkIncrease", "click", function () { runBulkPriceUpdate("increase"); });
+        bind("btnBulkDecrease", "click", function () { runBulkPriceUpdate("decrease"); });
+        bind("btnBulkClearPanel", "click", function () {
+            clearSelection();
+            renderItems(loadedItems);
+        });
+
+        var modal = byId("confirmModal");
+        if (modal) {
+            modal.addEventListener("click", function (event) {
+                if (event.target === modal) closeConfirm();
             });
-            bind("btnLowStock", "click", showLowStock);
-            bind("btnReorder", "click", showReorderPlanning);
-            bind("btnExportCsv", "click", exportProductsCsv);
-            bind("btnImportCsv", "click", importCsvClicked);
-            bind("btnPriceRules", "click", showPriceRules);
-            bind("btnProfitAlerts", "click", showProfitAlerts);
-            bind("btnActivityLog", "click", showActivityLog);
-            bind("featureClose", "click", closeFeatureModal);
-
-            bind("btnRefreshInventoryTop", "click", loadItems);
-            bind("btnRefreshInventory", "click", loadItems);
-            bind("btnToggleAddTop", "click", toggleAddPanel);
-            bind("btnToggleAdd", "click", toggleAddPanel);
-            bind("btnToggleBulkTop", "click", toggleBulkPanel);
-            bind("btnToggleBulk", "click", toggleBulkPanel);
-            bind("btnCreateItem", "click", createItem);
-            bind("inventorySearch", "input", function () { renderItems(loadedItems); });
-
-            bind("confirmCancel", "click", closeConfirm);
-            bind("confirmYes", "click", function () {
-                var action = pendingConfirmAction;
-                closeConfirm();
-                if (typeof action === "function") action();
-            });
-            bind("detailsClose", "click", closeItemDetails);
-
-            bind("selectAllCheckbox", "change", function (e) {
-                selectAllVisible(e.target.checked);
-            });
-
-            bind("btnBulkIncrease", "click", function () { runBulkPriceUpdate("increase"); });
-            bind("btnBulkDecrease", "click", function () { runBulkPriceUpdate("decrease"); });
-            bind("btnBulkClearPanel", "click", function () {
-                clearSelection();
-                renderItems(loadedItems);
-            });
-
-            var modal = byId("confirmModal");
-            if (modal) {
-                modal.addEventListener("click", function (event) {
-                    if (event.target === modal) closeConfirm();
-                });
-            }
-
-            var detailsModal = byId("detailsModal");
-            if (detailsModal) {
-                detailsModal.addEventListener("click", function (event) {
-                    if (event.target === detailsModal) closeItemDetails();
-                });
-            }
-
-            var featureModal = byId("featureModal");
-            if (featureModal) {
-                featureModal.addEventListener("click", function (event) {
-                    if (event.target === featureModal) closeFeatureModal();
-                });
-            }
-
-            var itemsBody = byId("itemsBody");
-            if (itemsBody) {
-                itemsBody.addEventListener("click", function (event) {
-                    var target = event.target;
-                    if (!target || !target.getAttribute) return;
-
-                    var action = target.getAttribute("data-action");
-                    var itemId = target.getAttribute("data-id");
-                    var itemName = target.getAttribute("data-name") || "this product";
-
-                    if (action === "save") updateItem(itemId);
-                    if (action === "details") openItemDetails(itemId);
-                    if (action === "delete") {
-                        openConfirm(
-                            "Delete Product?",
-                            "This will delete " + itemName + " from Clover. This cannot be undone.",
-                            function () { deleteItem(itemId); }
-                        );
-                    }
-                });
-            }
-
-            if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
-                loadItems();
-            }
         }
 
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", initializeUiBindings);
-        } else {
-            initializeUiBindings();
+        var detailsModal = byId("detailsModal");
+        if (detailsModal) {
+            detailsModal.addEventListener("click", function (event) {
+                if (event.target === detailsModal) closeItemDetails();
+            });
+        }
+
+
+        var featureModal = byId("featureModal");
+        if (featureModal) {
+            featureModal.addEventListener("click", function (event) {
+                if (event.target === featureModal) closeFeatureModal();
+            });
+        }
+
+        var itemsBody = byId("itemsBody");
+        if (itemsBody) {
+            itemsBody.addEventListener("click", function (event) {
+                var target = event.target;
+                if (!target || !target.getAttribute) return;
+
+                var action = target.getAttribute("data-action");
+                var itemId = target.getAttribute("data-id");
+                var itemName = target.getAttribute("data-name") || "this product";
+
+                if (action === "save") {
+                    updateItem(itemId);
+                }
+
+                if (action === "details") {
+                    openItemDetails(itemId);
+                }
+
+                if (action === "delete") {
+                    openConfirm(
+                        "Delete Product?",
+                        "This will delete " + itemName + " from Clover. This cannot be undone.",
+                        function () { deleteItem(itemId); }
+                    );
+                }
+            });
+        }
+
+        if (embeddedConnection.connected && embeddedConnection.access_token && embeddedConnection.merchant_id) {
+            loadItems();
         }
     })();
     </script>
