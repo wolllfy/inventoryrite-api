@@ -54,24 +54,10 @@ const CLOVER_APP_ID = process.env.CLOVER_APP_ID?.trim() || "";
 const CLOVER_APP_NAME = process.env.CLOVER_APP_NAME?.trim() || "InventoryRite";
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY?.trim() || "";
 const APP_VERSION = process.env.APP_VERSION || "1.0.0";
-
-/*
-|--------------------------------------------------------------------------
-| TRIAL / SUBSCRIPTION SETTINGS
-|--------------------------------------------------------------------------
-| These keep the Clover App Market version honest and merchant-friendly.
-| Default behavior: every connected merchant gets a 14-day trial unless
-| APP_BILLING_STATUS / CLOVER_SUBSCRIPTION_STATUS is set to active/paid.
-|
-| Render env options you can use later:
-| APP_TRIAL_DAYS=14
-| APP_BILLING_STATUS=trial   // trial, active, paid, expired, canceled
-| APP_PRICE_TEXT=$19.99/month after trial
-|--------------------------------------------------------------------------
-*/
-const APP_TRIAL_DAYS = Math.max(1, Number(process.env.APP_TRIAL_DAYS || 14));
-const APP_PRICE_TEXT = process.env.APP_PRICE_TEXT || "$19.99/month after trial";
-const APP_BILLING_STATUS = (process.env.APP_BILLING_STATUS || process.env.CLOVER_SUBSCRIPTION_STATUS || "trial").toLowerCase().trim();
+const INVENTORYRITE_PLAN_NAME = process.env.INVENTORYRITE_PLAN_NAME || "InventoryRite Pro";
+const INVENTORYRITE_PLAN_PRICE_CENTS = Number(process.env.INVENTORYRITE_PLAN_PRICE_CENTS || 1999);
+const INVENTORYRITE_TRIAL_DAYS = Number(process.env.INVENTORYRITE_TRIAL_DAYS || 14);
+const INVENTORYRITE_MANAGE_SUBSCRIPTION_URL = (process.env.INVENTORYRITE_MANAGE_SUBSCRIPTION_URL || "https://www.clover.com/appmarket").trim();
 
 const REQUIRED_CLOVER_SCOPES = [
     "merchant_read",
@@ -155,7 +141,7 @@ function issueCsrfToken() {
 }
 
 function verifyCsrfToken(req, res, next) {
-    const csrfExemptPaths = new Set(["/clover-webhook", "/clover-uninstall", "/debug-test-clover-cost"]);
+    const csrfExemptPaths = new Set(["/clover-webhook", "/clover-subscription-webhook", "/clover-uninstall", "/debug-test-clover-cost"]);
 
     if (csrfExemptPaths.has(req.path)) {
         return next();
@@ -312,6 +298,11 @@ async function initDatabase() {
     await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS refresh_token TEXT;`);
     await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMPTZ;`);
     await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS scopes TEXT;`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'trial';`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ;`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS subscription_id TEXT;`);
+    await dbPool.query(`ALTER TABLE merchant_connections ADD COLUMN IF NOT EXISTS subscription_updated_at TIMESTAMPTZ;`);
 
     await dbPool.query(`
         CREATE TABLE IF NOT EXISTS item_costs (
@@ -435,6 +426,188 @@ async function saveItemCostForMerchant(merchantId, itemId, costCents) {
     );
 
     return normalizedCost;
+}
+
+function formatPriceFromCents(cents) {
+    return "$" + (Number(cents || 0) / 100).toFixed(2);
+}
+
+function calculateTrialEndsAt(startDate) {
+    const base = startDate ? new Date(startDate) : new Date();
+    if (!Number.isFinite(base.getTime())) {
+        return new Date(nowMs() + INVENTORYRITE_TRIAL_DAYS * 86400000);
+    }
+    return new Date(base.getTime() + INVENTORYRITE_TRIAL_DAYS * 86400000);
+}
+
+function normalizeSubscriptionStatus(status) {
+    const value = String(status || "trial").trim().toLowerCase();
+    if (["active", "paid", "subscribed", "pro"].includes(value)) return "active";
+    if (["canceled", "cancelled"].includes(value)) return "canceled";
+    if (["expired", "trial_expired"].includes(value)) return "expired";
+    if (["payment_failed", "past_due", "failed"].includes(value)) return "payment_failed";
+    return "trial";
+}
+
+async function ensureMerchantTrial(merchantId) {
+    if (!merchantId || !USE_DATABASE || !dbPool) {
+        return null;
+    }
+
+    const existing = await dbPool.query(
+        `SELECT subscription_status, trial_started_at, trial_ends_at
+         FROM merchant_connections
+         WHERE merchant_id = $1
+         LIMIT 1;`,
+        [merchantId]
+    );
+
+    const row = existing.rows[0] || {};
+    const hasStatus = !!row.subscription_status;
+    const hasTrialStart = !!row.trial_started_at;
+    const hasTrialEnd = !!row.trial_ends_at;
+
+    if (hasStatus && hasTrialStart && hasTrialEnd) {
+        return row;
+    }
+
+    const startedAt = row.trial_started_at ? new Date(row.trial_started_at) : new Date();
+    const endsAt = row.trial_ends_at ? new Date(row.trial_ends_at) : calculateTrialEndsAt(startedAt);
+
+    await dbPool.query(
+        `UPDATE merchant_connections
+         SET subscription_status = COALESCE(subscription_status, 'trial'),
+             trial_started_at = COALESCE(trial_started_at, $1),
+             trial_ends_at = COALESCE(trial_ends_at, $2),
+             subscription_updated_at = NOW()
+         WHERE merchant_id = $3;`,
+        [startedAt.toISOString(), endsAt.toISOString(), merchantId]
+    );
+
+    return {
+        subscription_status: row.subscription_status || "trial",
+        trial_started_at: startedAt,
+        trial_ends_at: endsAt
+    };
+}
+
+async function setMerchantSubscriptionStatus(merchantId, status, subscriptionId) {
+    if (!merchantId || !USE_DATABASE || !dbPool) {
+        return;
+    }
+
+    await dbPool.query(
+        `UPDATE merchant_connections
+         SET subscription_status = $1,
+             subscription_id = COALESCE($2, subscription_id),
+             subscription_updated_at = NOW()
+         WHERE merchant_id = $3;`,
+        [normalizeSubscriptionStatus(status), subscriptionId || null, merchantId]
+    );
+}
+
+async function getSubscriptionStatusForMerchant(merchantId) {
+    const fallbackTrialEnds = calculateTrialEndsAt(new Date());
+    const fallbackDaysLeft = Math.max(0, Math.ceil((fallbackTrialEnds.getTime() - nowMs()) / 86400000));
+
+    if (!merchantId) {
+        return {
+            status: "unknown",
+            canUse: false,
+            locked: true,
+            daysLeft: 0,
+            trialEndsAt: "",
+            planName: INVENTORYRITE_PLAN_NAME,
+            planPriceCents: INVENTORYRITE_PLAN_PRICE_CENTS,
+            planPriceText: formatPriceFromCents(INVENTORYRITE_PLAN_PRICE_CENTS) + "/month",
+            trialDays: INVENTORYRITE_TRIAL_DAYS,
+            manageUrl: INVENTORYRITE_MANAGE_SUBSCRIPTION_URL,
+            message: "Clover merchant connection is missing."
+        };
+    }
+
+    if (!USE_DATABASE || !dbPool) {
+        return {
+            status: "trial",
+            canUse: true,
+            locked: false,
+            daysLeft: fallbackDaysLeft,
+            trialEndsAt: fallbackTrialEnds.toISOString(),
+            planName: INVENTORYRITE_PLAN_NAME,
+            planPriceCents: INVENTORYRITE_PLAN_PRICE_CENTS,
+            planPriceText: formatPriceFromCents(INVENTORYRITE_PLAN_PRICE_CENTS) + "/month",
+            trialDays: INVENTORYRITE_TRIAL_DAYS,
+            manageUrl: INVENTORYRITE_MANAGE_SUBSCRIPTION_URL,
+            message: `${INVENTORYRITE_PLAN_NAME} trial active.`
+        };
+    }
+
+    await ensureMerchantTrial(merchantId);
+
+    const result = await dbPool.query(
+        `SELECT subscription_status, trial_started_at, trial_ends_at, subscription_id
+         FROM merchant_connections
+         WHERE merchant_id = $1
+         LIMIT 1;`,
+        [merchantId]
+    );
+
+    const row = result.rows[0] || {};
+    let status = normalizeSubscriptionStatus(row.subscription_status || "trial");
+    const trialEndsAt = row.trial_ends_at ? new Date(row.trial_ends_at) : calculateTrialEndsAt(row.trial_started_at || new Date());
+    const msLeft = trialEndsAt.getTime() - nowMs();
+    const daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
+
+    if (status === "trial" && msLeft <= 0) {
+        status = "expired";
+        await setMerchantSubscriptionStatus(merchantId, "expired", row.subscription_id || "");
+    }
+
+    const canUse = status === "active" || (status === "trial" && msLeft > 0);
+    const locked = !canUse;
+
+    return {
+        status,
+        canUse,
+        locked,
+        daysLeft,
+        trialEndsAt: trialEndsAt.toISOString(),
+        subscriptionId: row.subscription_id || "",
+        planName: INVENTORYRITE_PLAN_NAME,
+        planPriceCents: INVENTORYRITE_PLAN_PRICE_CENTS,
+        planPriceText: formatPriceFromCents(INVENTORYRITE_PLAN_PRICE_CENTS) + "/month",
+        trialDays: INVENTORYRITE_TRIAL_DAYS,
+        manageUrl: INVENTORYRITE_MANAGE_SUBSCRIPTION_URL,
+        message: status === "active"
+            ? `${INVENTORYRITE_PLAN_NAME} active.`
+            : (status === "trial"
+                ? `${INVENTORYRITE_PLAN_NAME} trial active.`
+                : `${INVENTORYRITE_PLAN_NAME} trial expired. Reactivate to continue editing products.`)
+    };
+}
+
+async function requireActiveSubscriptionForWrites(req, res, next) {
+    try {
+        const { merchantId } = await getConnectionFromRequest(req);
+        const subscription = await getSubscriptionStatusForMerchant(merchantId);
+
+        if (!subscription.canUse) {
+            return res.status(402).json({
+                success: false,
+                message: "Your InventoryRite Pro trial has expired. Reactivate your $19.99/month subscription to continue editing products.",
+                subscription
+            });
+        }
+
+        req.subscription = subscription;
+        return next();
+    } catch (error) {
+        console.error("Subscription check failed:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to verify subscription status."
+        });
+    }
 }
 
 /*
@@ -835,52 +1008,6 @@ function calculateMarginHealthScore(items) {
 |--------------------------------------------------------------------------
 */
 
-function getBillingView(connectedAtValue) {
-    const normalizedStatus = String(APP_BILLING_STATUS || "trial").toLowerCase().trim();
-    const paidStatuses = new Set(["active", "paid", "subscribed", "subscription_active", "approved"]);
-    const expiredStatuses = new Set(["expired", "canceled", "cancelled", "inactive", "past_due", "locked"]);
-
-    const trialStartDate = connectedAtValue ? new Date(connectedAtValue) : new Date();
-    const trialStartMs = Number.isFinite(trialStartDate.getTime()) ? trialStartDate.getTime() : nowMs();
-    const trialEndsMs = trialStartMs + (APP_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const remainingMs = trialEndsMs - nowMs();
-    const remainingDays = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
-
-    if (paidStatuses.has(normalizedStatus)) {
-        return {
-            status: "active",
-            label: "Subscription Active",
-            message: `InventoryRite is active. Plan: ${APP_PRICE_TEXT}.`,
-            remainingDays,
-            trialEndsAt: new Date(trialEndsMs).toISOString(),
-            isLocked: false,
-            cssClass: "subscription-active"
-        };
-    }
-
-    if (expiredStatuses.has(normalizedStatus) || remainingMs <= 0) {
-        return {
-            status: "expired",
-            label: "Trial Expired",
-            message: `Your InventoryRite trial has ended. Subscribe for ${APP_PRICE_TEXT} to continue editing Clover inventory.`,
-            remainingDays: 0,
-            trialEndsAt: new Date(trialEndsMs).toISOString(),
-            isLocked: true,
-            cssClass: "subscription-expired"
-        };
-    }
-
-    return {
-        status: "trial",
-        label: `${remainingDays} day${remainingDays === 1 ? "" : "s"} left in trial`,
-        message: `Free trial active. ${APP_PRICE_TEXT}.`,
-        remainingDays,
-        trialEndsAt: new Date(trialEndsMs).toISOString(),
-        isLocked: false,
-        cssClass: remainingDays <= 3 ? "subscription-warning" : "subscription-trial"
-    };
-}
-
 function renderDashboard(options = {}) {
     const merchantId = options.merchant_id || latestCloverConnection.merchant_id || "";
     const employeeId = options.employee_id || latestCloverConnection.employee_id || "";
@@ -888,7 +1015,6 @@ function renderDashboard(options = {}) {
     const csrfToken = issueCsrfToken();
     const connected = !!accessToken || latestCloverConnection.connected;
     const connectedAt = options.connected_at || latestCloverConnection.connected_at || "";
-    const billingView = getBillingView(connectedAt);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -5320,411 +5446,107 @@ function renderDashboard(options = {}) {
             }
         }
 
-
-
         /* ----------------------------------------------------------------
-        | MOBILE + TRIAL/SUBSCRIPTION LAUNCH POLISH
-        | Final Clover App Market cleanup: clear trial state, mobile-safe UI,
-        | no horizontal scroll, and expired-trial lock messaging.
+        | INVENTORYRITE PRO TRIAL / SUBSCRIPTION STATUS
         ---------------------------------------------------------------- */
 
         .subscription-banner {
+            display: none;
+            margin: -6px 0 16px;
+            border-radius: 16px;
             border: 1px solid #bfdbfe;
             background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-            color: #1e3a8a;
-            border-radius: 16px;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
             padding: 12px 14px;
-            margin: 0 0 12px;
-            display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045);
+            flex-wrap: wrap;
         }
 
-        .subscription-banner.subscription-active {
-            border-color: #bbf7d0;
-            background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
-            color: #14532d;
+        .subscription-banner.show {
+            display: flex;
         }
 
-        .subscription-banner.subscription-warning {
-            border-color: #fde68a;
-            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
-            color: #92400e;
-        }
-
-        .subscription-banner.subscription-expired {
+        .subscription-banner.locked {
             border-color: #fecaca;
-            background: linear-gradient(135deg, #fee2e2 0%, #ffffff 100%);
-            color: #991b1b;
+            background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%);
         }
 
-        .subscription-copy {
-            min-width: 0;
+        .subscription-banner.active {
+            border-color: #bbf7d0;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
         }
 
-        .subscription-title {
+        .subscription-banner-main {
+            display: grid;
+            gap: 3px;
+            min-width: 240px;
+            flex: 1;
+        }
+
+        .subscription-banner-title {
+            color: #0f172a;
             font-size: 13px;
             font-weight: 900;
             line-height: 1.25;
         }
 
-        .subscription-message {
-            margin-top: 3px;
+        .subscription-banner-copy {
+            color: #475569;
             font-size: 12px;
             font-weight: 800;
             line-height: 1.35;
-            color: inherit;
-            opacity: .88;
+        }
+
+        .subscription-banner-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .subscription-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 999px;
-            padding: 7px 10px;
-            background: rgba(255,255,255,.78);
-            border: 1px solid currentColor;
+            border: 1px solid #bfdbfe;
+            background: #ffffff;
+            color: #1d4ed8;
+            padding: 6px 10px;
             font-size: 11px;
             font-weight: 900;
             white-space: nowrap;
         }
 
-        .expired-lock-card {
-            border: 1px solid #fecaca;
-            background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%);
-            color: #7f1d1d;
-            border-radius: 18px;
-            padding: 18px;
+        .subscription-banner.locked .subscription-pill {
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .subscription-lock-notice {
+            display: none;
             margin: 0 0 14px;
-            box-shadow: 0 10px 28px rgba(127, 29, 29, 0.08);
-        }
-
-        .expired-lock-card h3 {
-            margin: 0 0 6px;
-            font-size: 18px;
-            letter-spacing: -.015em;
-        }
-
-        .expired-lock-card p {
-            margin: 0;
-            color: #7f1d1d;
+            border: 1px solid #fecaca;
+            background: #fff1f2;
+            color: #991b1b;
+            border-radius: 14px;
+            padding: 11px 13px;
             font-size: 13px;
-            font-weight: 800;
-            line-height: 1.5;
+            font-weight: 900;
+            line-height: 1.4;
         }
 
-        body.subscription-locked .inventory-command-center,
-        body.subscription-locked .bulk-panel,
-        body.subscription-locked .merchant-control-bar,
-        body.subscription-locked .productivity-hub,
-        body.subscription-locked .table-wrap,
-        body.subscription-locked .stats-row,
-        body.subscription-locked .merchant-hint {
-            opacity: .45;
+        .subscription-lock-notice.show {
+            display: block;
+        }
+
+        body.subscription-locked .requires-subscription {
+            opacity: 0.58;
             pointer-events: none;
-            filter: grayscale(.2);
         }
 
-        @media (max-width: 900px) {
-            body {
-                background: #f8fafc !important;
-            }
-
-            .topbar {
-                position: static !important;
-                padding: 10px 12px !important;
-            }
-
-            .topbar-inner {
-                align-items: flex-start !important;
-                gap: 10px !important;
-            }
-
-            .brand {
-                min-width: 0 !important;
-            }
-
-            .brand h1 {
-                font-size: 17px !important;
-            }
-
-            .brand p {
-                font-size: 11px !important;
-                line-height: 1.25 !important;
-            }
-
-            .badge {
-                padding: 6px 9px !important;
-                font-size: 11px !important;
-                white-space: nowrap !important;
-            }
-
-            .wrap {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 10px auto !important;
-                padding: 0 10px 28px !important;
-            }
-
-            .simple-hero,
-            .hero {
-                padding: 14px !important;
-                border-radius: 16px !important;
-                gap: 10px !important;
-                margin-bottom: 10px !important;
-            }
-
-            .simple-hero h2,
-            .hero h2 {
-                font-size: 21px !important;
-                line-height: 1.12 !important;
-            }
-
-            .simple-hero p,
-            .hero p {
-                font-size: 12px !important;
-                line-height: 1.35 !important;
-            }
-
-            .hero-product-summary {
-                width: 100% !important;
-                min-width: 0 !important;
-            }
-
-            .subscription-banner {
-                align-items: flex-start !important;
-                flex-direction: column !important;
-                padding: 11px 12px !important;
-                border-radius: 14px !important;
-            }
-
-            .subscription-pill {
-                width: 100% !important;
-                text-align: center !important;
-            }
-
-            .inventory-card {
-                padding: 12px !important;
-                border-radius: 16px !important;
-            }
-
-            .command-center-top,
-            .table-top,
-            .bulk-panel-header,
-            .bulk-controls,
-            .last-action-strip,
-            .operations-summary-strip {
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: stretch !important;
-            }
-
-            .command-copy,
-            .command-search-actions,
-            .merchant-control-left,
-            .operations-summary-main {
-                width: 100% !important;
-                min-width: 0 !important;
-                flex: 1 1 auto !important;
-            }
-
-            .command-search-actions {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 8px !important;
-            }
-
-            .command-search-actions .search-input {
-                grid-column: 1 / -1 !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: none !important;
-                flex: none !important;
-            }
-
-            .command-search-actions .btn,
-            .product-action-row .btn,
-            .simple-hero-actions .btn,
-            .hero-actions .btn,
-            .bulk-controls .btn {
-                width: 100% !important;
-                min-width: 0 !important;
-                white-space: normal !important;
-            }
-
-            .stats-row,
-            .intelligence-strip,
-            .risk-score-row,
-            .productivity-hub,
-            .recent-list,
-            .value-tools-row {
-                grid-template-columns: 1fr !important;
-                gap: 8px !important;
-            }
-
-            .merchant-control-actions,
-            .operations-tools-grid,
-            .tool-button-grid,
-            .tool-grid-primary,
-            .tool-grid-health,
-            .tool-grid-secondary {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                width: 100% !important;
-                gap: 8px !important;
-            }
-
-            .tool-section,
-            .tool-section-primary,
-            .tool-section-health,
-            .tool-section-secondary {
-                grid-column: 1 / -1 !important;
-                width: 100% !important;
-            }
-
-            .control-btn,
-            .btn {
-                min-height: 42px !important;
-                touch-action: manipulation !important;
-            }
-
-            .add-grid {
-                grid-template-columns: 1fr !important;
-            }
-
-            .bulk-panel {
-                padding: 12px !important;
-                border-radius: 14px !important;
-            }
-
-            .bulk-controls > div,
-            .bulk-controls > div[style] {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 1fr !important;
-                gap: 8px !important;
-                padding-bottom: 0 !important;
-            }
-
-            .bulk-pct-input {
-                width: 100% !important;
-                min-width: 0 !important;
-            }
-
-            .table-wrap {
-                overflow-x: hidden !important;
-                border-radius: 13px !important;
-            }
-
-            table {
-                table-layout: fixed !important;
-                min-width: 0 !important;
-            }
-
-            th, td {
-                font-size: 11px !important;
-                padding: 8px 4px !important;
-                line-height: 1.25 !important;
-            }
-
-            tbody td {
-                height: auto !important;
-                min-height: 54px !important;
-            }
-
-            .check-col { width: 8% !important; }
-            .name-col { width: 38% !important; }
-            .money-col { width: 15% !important; }
-            .metric-col { width: 14% !important; }
-            .actions-col { width: 10% !important; }
-
-            .row-actions {
-                display: grid !important;
-                grid-template-columns: 1fr !important;
-                gap: 5px !important;
-            }
-
-            .row-actions .btn-small {
-                width: 100% !important;
-                min-height: 32px !important;
-                font-size: 10px !important;
-                padding: 6px 4px !important;
-                white-space: normal !important;
-            }
-
-            .name-input,
-            .small-input {
-                min-height: 36px !important;
-                padding: 7px 6px !important;
-                font-size: 11px !important;
-            }
-
-            .toast-wrap {
-                left: 10px !important;
-                right: 10px !important;
-                bottom: 10px !important;
-            }
-
-            .toast {
-                max-width: none !important;
-                width: 100% !important;
-            }
-
-            .modal-backdrop {
-                padding: 10px !important;
-                align-items: flex-end !important;
-            }
-
-            .modal {
-                max-width: 100% !important;
-                max-height: 88vh !important;
-                overflow-y: auto !important;
-                border-radius: 18px 18px 12px 12px !important;
-                padding: 18px !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .command-search-actions,
-            .merchant-control-actions,
-            .operations-tools-grid,
-            .tool-button-grid,
-            .tool-grid-primary,
-            .tool-grid-health,
-            .tool-grid-secondary {
-                grid-template-columns: 1fr !important;
-            }
-
-            .topbar-inner {
-                flex-direction: column !important;
-                align-items: stretch !important;
-            }
-
-            .badge {
-                text-align: center !important;
-                width: 100% !important;
-            }
-
-            .simple-hero h2,
-            .hero h2 {
-                font-size: 19px !important;
-            }
-
-            .table-top h3 {
-                font-size: 18px !important;
-            }
-
-            .check-col { width: 9% !important; }
-            .name-col { width: 39% !important; }
-            .money-col { width: 16% !important; }
-            .metric-col { width: 15% !important; }
-            .actions-col { width: 5% !important; }
-
-            th:nth-child(6),
-            td:nth-child(6) {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -5761,21 +5583,6 @@ function renderDashboard(options = {}) {
             </div>
         </section>
 
-        <section class="subscription-banner ${billingView.cssClass}" id="subscriptionBanner">
-            <div class="subscription-copy">
-                <div class="subscription-title">${safe(billingView.label)}</div>
-                <div class="subscription-message">${safe(billingView.message)}</div>
-            </div>
-            <div class="subscription-pill">${billingView.status === "active" ? "Active" : billingView.status === "expired" ? "Locked" : "Trial"}</div>
-        </section>
-
-        ${billingView.isLocked ? `
-        <section class="expired-lock-card" id="expiredLockCard">
-            <h3>Trial expired — inventory editing is locked.</h3>
-            <p>Your products are still safe in Clover. Subscribe through Clover App Market billing to unlock product edits, bulk price updates, CSV tools, and inventory cleanup features.</p>
-        </section>
-        ` : ``}
-
         
 <section class="card inventory-card">
 <div class="inventory-command-center">
@@ -5788,8 +5595,8 @@ function renderDashboard(options = {}) {
                     <div class="command-search-actions">
                         <input id="inventorySearch" class="search-input" type="text" placeholder="Search products..." />
                         <button id="btnRefreshInventoryTop" type="button" class="btn btn-light">Refresh</button>
-                        <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
-                        <button id="btnToggleBulkTop" type="button" class="btn btn-light">Bulk Update</button>
+                        <button id="btnToggleAddTop" type="button" class="btn btn-primary requires-subscription">Add Product</button>
+                        <button id="btnToggleBulkTop" type="button" class="btn btn-light requires-subscription">Bulk Update</button>
                         <button id="btnToggleAdvancedTop" type="button" class="btn btn-light">Tools</button>
                     </div>
                 </div>
@@ -5812,7 +5619,7 @@ function renderDashboard(options = {}) {
                         <label for="itemPrice">Price Cents</label>
                         <input id="itemPrice" type="number" value="199" />
                     </div>
-                    <button id="btnCreateItem" type="button" class="btn btn-primary">Create</button>
+                    <button id="btnCreateItem" type="button" class="btn btn-primary requires-subscription">Create</button>
                 </div>
             </div>
 
@@ -5879,7 +5686,7 @@ function renderDashboard(options = {}) {
                         <div class="tool-section-title">Primary Actions</div>
                         <div class="tool-button-grid tool-grid-primary">
                             <button id="btnShowAllProducts" type="button" class="control-btn control-neutral">All Products</button>
-                            <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
+                            <button id="btnImportCsv" type="button" class="control-btn control-import requires-subscription">Import CSV</button>
                             <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
                             <button id="btnPriceRules" type="button" class="control-btn control-dark">Pricing Tools</button>
                         </div>
@@ -5900,8 +5707,8 @@ function renderDashboard(options = {}) {
                         <div class="tool-section-title">Advanced Tools</div>
                         <div class="tool-button-grid tool-grid-secondary">
                             <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
-                            <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
-                            <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
+                            <button id="btnSmart99" type="button" class="control-btn control-neutral requires-subscription">Round Prices</button>
+                            <button id="btnUndoBulk" type="button" class="control-btn control-neutral requires-subscription">Undo Bulk</button>
                             <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
                         </div>
                     </div>
@@ -6118,20 +5925,6 @@ function renderDashboard(options = {}) {
             connected_at: ${JSON.stringify(connectedAt)}
         };
 
-        var embeddedBilling = {
-            status: ${JSON.stringify(billingView.status)},
-            label: ${JSON.stringify(billingView.label)},
-            message: ${JSON.stringify(billingView.message)},
-            remaining_days: ${JSON.stringify(billingView.remainingDays)},
-            trial_ends_at: ${JSON.stringify(billingView.trialEndsAt)},
-            is_locked: ${billingView.isLocked ? "true" : "false"},
-            price_text: ${JSON.stringify(APP_PRICE_TEXT)}
-        };
-
-        if (embeddedBilling.is_locked) {
-            document.body.classList.add("subscription-locked");
-        }
-
         var loadedItems = [];
         var itemCosts = {};
         var lastUpdatedItemId = "";
@@ -6149,6 +5942,17 @@ function renderDashboard(options = {}) {
 
         // Track selected item IDs for bulk operations
         var selectedItemIds = new Set();
+        var subscriptionState = {
+            status: "loading",
+            canUse: true,
+            locked: false,
+            daysLeft: 0,
+            planName: "InventoryRite Pro",
+            planPriceText: "$19.99/month",
+            trialDays: 14,
+            manageUrl: "https://www.clover.com/appmarket"
+        };
+        var subscriptionLocked = false;
 
         function byId(id) {
             return document.getElementById(id);
@@ -6159,6 +5963,126 @@ function renderDashboard(options = {}) {
             if (el) {
                 el.addEventListener(eventName, handler);
             }
+        }
+
+        function setWriteControlsLocked(locked) {
+            var ids = [
+                "btnToggleAddTop",
+                "btnToggleAdd",
+                "btnToggleBulkTop",
+                "btnToggleBulk",
+                "btnIncreaseBulk",
+                "btnDecreaseBulk",
+                "btnIncreaseToolbar",
+                "btnDecreaseToolbar",
+                "btnImportCsv",
+                "btnSmart99",
+                "btnUndoBulk",
+                "btnCreateItem"
+            ];
+
+            ids.forEach(function (id) {
+                var el = byId(id);
+                if (el) {
+                    el.disabled = !!locked;
+                    if (locked) el.setAttribute("title", "InventoryRite Pro trial expired. Reactivate to continue editing.");
+                    else el.removeAttribute("title");
+                }
+            });
+
+            var rowButtons = document.querySelectorAll("[data-action='save'], [data-action='delete']");
+            rowButtons.forEach(function (btn) {
+                btn.disabled = !!locked;
+                if (locked) btn.setAttribute("title", "InventoryRite Pro trial expired. Reactivate to continue editing.");
+                else btn.removeAttribute("title");
+            });
+        }
+
+        function renderSubscriptionBanner() {
+            var banner = byId("subscriptionBanner");
+            var title = byId("subscriptionBannerTitle");
+            var copy = byId("subscriptionBannerCopy");
+            var pill = byId("subscriptionBannerPill");
+            var manage = byId("manageSubscriptionLink");
+            var lockNotice = byId("subscriptionLockNotice");
+
+            if (!banner) return;
+
+            var status = String(subscriptionState.status || "trial").toLowerCase();
+            var planName = subscriptionState.planName || "InventoryRite Pro";
+            var price = subscriptionState.planPriceText || "$19.99/month";
+            var daysLeft = Number(subscriptionState.daysLeft || 0);
+
+            banner.classList.add("show");
+            banner.classList.remove("locked", "active");
+
+            if (manage && subscriptionState.manageUrl) {
+                manage.href = subscriptionState.manageUrl;
+            }
+
+            if (status === "active") {
+                banner.classList.add("active");
+                if (title) title.textContent = planName + " Active";
+                if (copy) copy.textContent = "Your subscription is active. Unlimited products, bulk pricing, profit tools, CSV import/export, and cleanup tools are available.";
+                if (pill) pill.textContent = price;
+                if (lockNotice) lockNotice.classList.remove("show");
+            } else if (subscriptionState.locked || status === "expired" || status === "canceled" || status === "payment_failed") {
+                banner.classList.add("locked");
+                if (title) title.textContent = planName + " Trial Expired";
+                if (copy) copy.textContent = "Reactivate your " + price + " subscription to continue saving, syncing, importing, and using bulk tools.";
+                if (pill) pill.textContent = "Reactivate Required";
+                if (lockNotice) lockNotice.classList.add("show");
+            } else {
+                if (title) title.textContent = planName + " Trial";
+                if (copy) copy.textContent = daysLeft + " day" + (daysLeft === 1 ? "" : "s") + " remaining. Then " + price + ". Cancel anytime from Clover.";
+                if (pill) pill.textContent = price + " after trial";
+                if (lockNotice) lockNotice.classList.remove("show");
+            }
+        }
+
+        function applySubscriptionState() {
+            subscriptionLocked = !!(subscriptionState && subscriptionState.locked);
+            if (subscriptionLocked) {
+                document.body.classList.add("subscription-locked");
+            } else {
+                document.body.classList.remove("subscription-locked");
+            }
+
+            setWriteControlsLocked(subscriptionLocked);
+            renderSubscriptionBanner();
+        }
+
+        async function loadSubscriptionStatus() {
+            try {
+                var data = await fetchJson("/api/subscription-status");
+                if (data && data.subscription) {
+                    subscriptionState = data.subscription;
+                }
+            } catch (error) {
+                // Fail open so a temporary status-check issue does not lock a real merchant out.
+                subscriptionState = {
+                    status: "trial",
+                    canUse: true,
+                    locked: false,
+                    daysLeft: 14,
+                    planName: "InventoryRite Pro",
+                    planPriceText: "$19.99/month",
+                    trialDays: 14,
+                    manageUrl: "https://www.clover.com/appmarket"
+                };
+                showToast("Subscription status could not be checked. App remains available.", "info");
+            }
+
+            applySubscriptionState();
+            return subscriptionState;
+        }
+
+        function ensureSubscriptionAllowed(actionName) {
+            if (!subscriptionLocked) return true;
+
+            renderSubscriptionBanner();
+            showToast((actionName || "This action") + " requires an active InventoryRite Pro subscription.", "error");
+            return false;
         }
 
         function getToken() {
@@ -6198,39 +6122,6 @@ function renderDashboard(options = {}) {
                     toast.parentNode.removeChild(toast);
                 }
             }, 4200);
-        }
-
-        function isSubscriptionLocked() {
-            return !!(embeddedBilling && embeddedBilling.is_locked);
-        }
-
-        function blockIfSubscriptionLocked() {
-            if (!isSubscriptionLocked()) return false;
-            showToast("Trial expired. Subscribe through Clover App Market billing to unlock InventoryRite editing tools.", "error");
-            return true;
-        }
-
-        function applySubscriptionLock() {
-            if (!isSubscriptionLocked()) return;
-
-            var lockedSelectors = [
-                "#btnCreateItem",
-                "#btnBulkIncrease",
-                "#btnBulkDecrease",
-                "#btnImportCsv",
-                "#btnSmart99",
-                "#btnUndoBulk",
-                ".preset-btn",
-                ".save-item-btn",
-                ".delete-item-btn"
-            ];
-
-            lockedSelectors.forEach(function (selector) {
-                document.querySelectorAll(selector).forEach(function (el) {
-                    el.disabled = true;
-                    el.title = "Trial expired - subscribe to unlock editing.";
-                });
-            });
         }
 
         function logActivity(title, message, status) {
@@ -6660,6 +6551,7 @@ function renderDashboard(options = {}) {
         }
 
         async function executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel) {
+            if (!ensureSubscriptionAllowed("Bulk Price Update")) return;
             startBusy();
 
             var progressWrap = byId("bulkProgress");
@@ -7801,6 +7693,7 @@ function renderDashboard(options = {}) {
         }
 
         async function executeDirectPriceUpdates(connection, updateList, sourceLabel) {
+            if (!ensureSubscriptionAllowed(sourceLabel || "Price update")) return;
             startBusy();
             var successCount = 0;
             var failCount = 0;
@@ -7846,6 +7739,7 @@ function renderDashboard(options = {}) {
 
         async function undoLastBulkUpdate() {
             if (isBusy) return;
+            if (!ensureSubscriptionAllowed("Undo Bulk")) return;
             var connection = requireConnection();
             if (!connection) return;
 
@@ -7892,6 +7786,7 @@ function renderDashboard(options = {}) {
 
         async function importCsvFile(file) {
             if (!file) return;
+            if (!ensureSubscriptionAllowed("CSV import")) return;
 
             var connection = requireConnection();
             if (!connection) return;
@@ -8049,6 +7944,7 @@ function renderDashboard(options = {}) {
 
         async function applyCsvImport(rows) {
             if (isBusy) return;
+            if (!ensureSubscriptionAllowed("CSV import")) return;
 
             var connection = requireConnection();
             if (!connection) return;
@@ -8237,7 +8133,6 @@ function renderDashboard(options = {}) {
                     'Click Add Product to create your first item.' +
                     '</td></tr>';
                 syncBulkUI();
-                applySubscriptionLock();
                 return;
             }
 
@@ -8248,7 +8143,6 @@ function renderDashboard(options = {}) {
                     'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
                 syncBulkUI();
-                applySubscriptionLock();
                 return;
             }
 
@@ -8318,6 +8212,8 @@ function renderDashboard(options = {}) {
                 }, 1800);
             }
 
+            applySubscriptionState();
+
             // Wire up row checkboxes after render
             var checkboxes = body.querySelectorAll("input[type='checkbox'][data-item-id]");
             checkboxes.forEach(function (cb) {
@@ -8346,7 +8242,6 @@ function renderDashboard(options = {}) {
             });
 
             syncBulkUI();
-            applySubscriptionLock();
         }
 
         async function fetchJson(url, options) {
@@ -8473,10 +8368,6 @@ function renderDashboard(options = {}) {
         }
 
         async function saveItemCost(itemId, value) {
-            if (blockIfSubscriptionLocked()) {
-                renderItems(loadedItems);
-                return;
-            }
             try {
                 var connection = requireConnection();
                 if (!connection || !itemId) return;
@@ -8561,8 +8452,8 @@ function renderDashboard(options = {}) {
         }
 
         async function createItem() {
-            if (blockIfSubscriptionLocked()) return;
             if (isBusy) return;
+            if (!ensureSubscriptionAllowed("Creating products")) return;
 
             try {
                 var connection = requireConnection();
@@ -8614,8 +8505,8 @@ function renderDashboard(options = {}) {
         }
 
         async function updateItem(itemId) {
-            if (blockIfSubscriptionLocked()) return;
             if (isBusy) return;
+            if (!ensureSubscriptionAllowed("Saving products")) return;
 
             try {
                 var connection = requireConnection();
@@ -8690,8 +8581,8 @@ function renderDashboard(options = {}) {
         }
 
         async function deleteItem(itemId) {
-            if (blockIfSubscriptionLocked()) return;
             if (isBusy) return;
+            if (!ensureSubscriptionAllowed("Deleting products")) return;
 
             try {
                 var connection = requireConnection();
@@ -8716,6 +8607,7 @@ function renderDashboard(options = {}) {
         }
 
         function toggleAddPanel() {
+            if (!ensureSubscriptionAllowed("Add Product")) return;
             var addPanel = byId("addPanel");
             if (!addPanel) return;
             addPanel.classList.toggle("show");
@@ -8727,6 +8619,7 @@ function renderDashboard(options = {}) {
         }
 
         function toggleBulkPanel() {
+            if (!ensureSubscriptionAllowed("Bulk Update")) return;
             var bulkPanel = byId("bulkPanel");
             if (!bulkPanel) return;
             bulkPanel.classList.toggle("show");
@@ -8763,7 +8656,7 @@ function renderDashboard(options = {}) {
         bind("btnLowStock", "click", showLowStock);
         bind("btnReorder", "click", showReorderPlanning);
         bind("btnExportCsv", "click", exportProductsCsv);
-        bind("btnImportCsv", "click", function () { if (!blockIfSubscriptionLocked()) importCsvClicked(); });
+        bind("btnImportCsv", "click", importCsvClicked);
 
         var csvInput = byId("csvImportInput");
         if (csvInput) {
@@ -8774,8 +8667,8 @@ function renderDashboard(options = {}) {
         }
         bind("btnDuplicateReview", "click", showDuplicateDetector);
         bind("btnMissingCostLock", "click", showMissingCostLock);
-        bind("btnSmart99", "click", function () { if (!blockIfSubscriptionLocked()) applySmart99Rounding(); });
-        bind("btnUndoBulk", "click", function () { if (!blockIfSubscriptionLocked()) undoLastBulkUpdate(); });
+        bind("btnSmart99", "click", applySmart99Rounding);
+        bind("btnUndoBulk", "click", undoLastBulkUpdate);
         bind("btnOpenPriceHistory", "click", showFullPriceHistory);
         bind("btnPriceRules", "click", showSmartPricing);
         bind("btnProfitAlerts", "click", showProfitAlerts);
@@ -8809,7 +8702,6 @@ function renderDashboard(options = {}) {
         });
         bind("detailsClose", "click", closeItemDetails);
         updateLastSavedStatus();
-        applySubscriptionLock();
         setInterval(updateLastSavedStatus, 5000);
 
         // Select-all checkbox
@@ -8818,8 +8710,8 @@ function renderDashboard(options = {}) {
         });
 
         // Bulk action buttons
-        bind("btnBulkIncrease", "click", function () { if (!blockIfSubscriptionLocked()) runBulkPriceUpdate("increase"); });
-        bind("btnBulkDecrease", "click", function () { if (!blockIfSubscriptionLocked()) runBulkPriceUpdate("decrease"); });
+        bind("btnBulkIncrease", "click", function () { runBulkPriceUpdate("increase"); });
+        bind("btnBulkDecrease", "click", function () { runBulkPriceUpdate("decrease"); });
         bind("btnBulkClearPanel", "click", function () {
             clearSelection();
             renderItems(loadedItems);
@@ -8827,7 +8719,7 @@ function renderDashboard(options = {}) {
 
         document.querySelectorAll("[data-margin-preset]").forEach(function (btn) {
             btn.addEventListener("click", function () {
-                if (!blockIfSubscriptionLocked()) applyQuickMarginPreset(Number(btn.getAttribute("data-margin-preset")));
+                applyQuickMarginPreset(Number(btn.getAttribute("data-margin-preset")));
             });
         });
 
@@ -8871,7 +8763,6 @@ function renderDashboard(options = {}) {
                 var itemName = target.getAttribute("data-name") || "this product";
 
                 if (action === "save") {
-                    if (blockIfSubscriptionLocked()) return;
                     updateItem(itemId);
                 }
 
@@ -8880,7 +8771,6 @@ function renderDashboard(options = {}) {
                 }
 
                 if (action === "delete") {
-                    if (blockIfSubscriptionLocked()) return;
                     openConfirm(
                         "Delete Product?",
                         "This will delete " + itemName + " from Clover. This cannot be undone.",
@@ -8893,7 +8783,9 @@ function renderDashboard(options = {}) {
         loadStoredHistory();
 
         if (embeddedConnection.connected) {
-            loadItems();
+            loadSubscriptionStatus().finally(function () {
+                loadItems();
+            });
         }
     })();
     
@@ -9012,6 +8904,8 @@ async function handleOAuthCallback(req, res) {
             connected_at: new Date().toISOString()
         });
 
+        await ensureMerchantTrial(detectedMerchantId);
+
         logApiCall("/oauth-callback", latestCloverConnection.merchant_id, "GET", 200);
         console.log("Clover connected successfully.", {
             merchant_id: latestCloverConnection.merchant_id,
@@ -9050,11 +8944,19 @@ app.get("/.well-known/clover.json", (req, res) => {
         webhook_url: `${APP_BASE_URL}/clover-webhook`,
         uninstall_url: `${APP_BASE_URL}/clover-uninstall`,
         version: APP_VERSION,
+        charges_enabled: true,
+        monthly_fee: INVENTORYRITE_PLAN_PRICE_CENTS,
+        trial_days: INVENTORYRITE_TRIAL_DAYS,
+        billing_type: "recurring",
+        plan_name: INVENTORYRITE_PLAN_NAME,
         events: [
             "ITEM_CREATED",
             "ITEM_UPDATED",
             "ITEM_DELETED",
-            "INVENTORY_CHANGED"
+            "INVENTORY_CHANGED",
+            "SUBSCRIPTION_CREATED",
+            "SUBSCRIPTION_UPDATED",
+            "SUBSCRIPTION_CANCELED"
         ]
     });
 });
@@ -9216,6 +9118,66 @@ app.get("/clover-merchant", async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
+| SUBSCRIPTION + TRIAL STATUS
+|--------------------------------------------------------------------------
+*/
+
+app.get("/api/subscription-status", async (req, res) => {
+    try {
+        const { merchantId } = await getConnectionFromRequest(req);
+        const subscription = await getSubscriptionStatusForMerchant(merchantId);
+
+        return res.json({
+            success: true,
+            subscription
+        });
+    } catch (error) {
+        console.error("Subscription Status Error:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to load subscription status."
+        });
+    }
+});
+
+app.post("/clover-subscription-webhook", async (req, res) => {
+    if (!verifyWebhookSignature(req)) {
+        console.warn("Rejected Clover subscription webhook with invalid signature", { requestId: req.id });
+        return res.status(401).json({ success: false, message: "Invalid webhook signature." });
+    }
+
+    const eventType = String(req.body?.event || req.body?.type || req.body?.eventType || "").toUpperCase();
+    const merchantId = String(req.body?.merchantId || req.body?.merchant_id || req.body?.merchant?.id || "").trim();
+    const subscriptionId = String(req.body?.subscriptionId || req.body?.subscription_id || req.body?.subscription?.id || "").trim();
+
+    try {
+        if (merchantId) {
+            if (eventType.includes("CANCEL") || eventType.includes("UNINSTALL")) {
+                await setMerchantSubscriptionStatus(merchantId, "canceled", subscriptionId);
+            } else if (eventType.includes("FAIL") || eventType.includes("PAST_DUE")) {
+                await setMerchantSubscriptionStatus(merchantId, "payment_failed", subscriptionId);
+            } else if (eventType.includes("ACTIVE") || eventType.includes("CREATE") || eventType.includes("RENEW") || eventType.includes("PAID") || eventType.includes("SUBSCRIPTION")) {
+                await setMerchantSubscriptionStatus(merchantId, "active", subscriptionId);
+            }
+        }
+
+        logApiCall("/clover-subscription-webhook", merchantId, "POST", 200);
+
+        return res.json({
+            success: true,
+            message: "Subscription webhook processed."
+        });
+    } catch (error) {
+        console.error("Subscription webhook error:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Subscription webhook failed."
+        });
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
 | CLOVER ITEMS ROUTE
 |--------------------------------------------------------------------------
 */
@@ -9266,7 +9228,7 @@ app.get("/clover-items", async (req, res) => {
 |--------------------------------------------------------------------------
 */
 
-app.post("/clover-create-item", async (req, res) => {
+app.post("/clover-create-item", requireActiveSubscriptionForWrites, async (req, res) => {
     try {
         const { accessToken, merchantId } = await getConnectionFromRequest(req);
 
@@ -9323,7 +9285,7 @@ app.post("/clover-create-item", async (req, res) => {
 |--------------------------------------------------------------------------
 */
 
-app.post("/clover-update-item/:itemId", async (req, res) => {
+app.post("/clover-update-item/:itemId", requireActiveSubscriptionForWrites, async (req, res) => {
     try {
         const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
@@ -9404,7 +9366,7 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
 |--------------------------------------------------------------------------
 */
 
-app.post("/clover-delete-item/:itemId", async (req, res) => {
+app.post("/clover-delete-item/:itemId", requireActiveSubscriptionForWrites, async (req, res) => {
     try {
         const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
@@ -9633,7 +9595,7 @@ app.post("/debug-test-clover-cost", async (req, res) => {
     }
 });
 
-app.post("/item-cost/:itemId", async (req, res) => {
+app.post("/item-cost/:itemId", requireActiveSubscriptionForWrites, async (req, res) => {
     try {
         const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
@@ -10335,6 +10297,9 @@ app.get("/app-status", (req, res) => {
         connected: latestCloverConnection.connected,
         hasMerchant: !!latestCloverConnection.merchant_id,
         connectedAt: latestCloverConnection.connected_at || null,
+        planName: INVENTORYRITE_PLAN_NAME,
+        planPrice: formatPriceFromCents(INVENTORYRITE_PLAN_PRICE_CENTS) + "/month",
+        trialDays: INVENTORYRITE_TRIAL_DAYS,
         databaseEnabled: USE_DATABASE
     });
 });
