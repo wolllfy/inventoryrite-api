@@ -623,6 +623,95 @@ function getCloverError(error) {
     };
 }
 
+function buildCloverApiUrl(pathOrUrl) {
+    const value = String(pathOrUrl || "").trim();
+
+    if (!value) return "";
+
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+        return value;
+    }
+
+    if (value.startsWith("/")) {
+        return `${CLOVER_API_BASE_URL}${value}`;
+    }
+
+    return `${CLOVER_API_BASE_URL}/${value}`;
+}
+
+function extractNextCloverUrl(data) {
+    if (!data || typeof data !== "object") return "";
+
+    // Clover commonly returns `next` as a full URL or relative path.
+    if (data.next) return String(data.next);
+
+    // Defensive support for nested paging shapes in case Clover changes response shape.
+    if (data.pagination && data.pagination.next) return String(data.pagination.next);
+    if (data.links && data.links.next) return String(data.links.next);
+
+    return "";
+}
+
+async function fetchAllCloverItems(accessToken, merchantId) {
+    const safeLimit = Math.max(1, Math.min(Number(CLOVER_ITEM_LIMIT || 100), 1000));
+    const maxPages = Number(process.env.CLOVER_MAX_ITEM_PAGES || 250);
+    const allItems = [];
+    let pageCount = 0;
+    let offset = 0;
+    let nextUrl = `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${safeLimit}`;
+    const seenUrls = new Set();
+
+    while (nextUrl && pageCount < maxPages) {
+        const requestUrl = buildCloverApiUrl(nextUrl);
+
+        if (seenUrls.has(requestUrl)) {
+            console.warn("Stopped Clover item pagination because Clover returned a repeated next URL.");
+            break;
+        }
+
+        seenUrls.add(requestUrl);
+        pageCount++;
+
+        const response = await cloverApi.get(requestUrl, {
+            headers: cloverHeaders(accessToken)
+        });
+
+        const pageData = response.data || {};
+        const elements = Array.isArray(pageData.elements) ? pageData.elements : [];
+
+        allItems.push(...elements);
+
+        const cloverNext = extractNextCloverUrl(pageData);
+
+        if (cloverNext) {
+            nextUrl = cloverNext;
+            continue;
+        }
+
+        // Fallback for Clover responses that omit `next` but still support offset paging.
+        // If the page is full, try the next offset. If it is not full, we reached the end.
+        if (elements.length >= safeLimit) {
+            offset += safeLimit;
+            nextUrl = `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${safeLimit}&offset=${offset}`;
+        } else {
+            nextUrl = "";
+        }
+    }
+
+    if (pageCount >= maxPages) {
+        console.warn(`Stopped Clover item pagination after ${maxPages} pages to prevent runaway requests.`);
+    }
+
+    return {
+        elements: allItems,
+        href: `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${safeLimit}`,
+        pageCount,
+        limit: safeLimit,
+        truncated: pageCount >= maxPages,
+        totalLoaded: allItems.length
+    };
+}
+
 function isValidMoneyCents(value) {
     const numberValue = Number(value);
     return !Number.isNaN(numberValue) && numberValue >= 0 && Number.isFinite(numberValue);
@@ -7878,8 +7967,10 @@ function renderDashboard(options = {}) {
                 loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
-                showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
-                logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover.", "Success");
+                var pageCount = data.pagination && data.pagination.pageCount ? Number(data.pagination.pageCount) : 1;
+                var truncated = data.pagination && data.pagination.truncated;
+                showToast("Inventory loaded: " + loadedItems.length + " product(s)" + (pageCount > 1 ? " across " + pageCount + " pages" : "") + (truncated ? " (safety limit reached)" : "") + ".", truncated ? "info" : "success");
+                logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover" + (pageCount > 1 ? " across " + pageCount + " pages." : "."), truncated ? "Partial" : "Success");
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
@@ -8554,15 +8645,22 @@ app.get("/clover-items", async (req, res) => {
             });
         }
 
-        const itemsResponse = await cloverApi.get(
-            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${CLOVER_ITEM_LIMIT}`,
-            { headers: cloverHeaders(accessToken) }
-        );
+        const itemsData = await fetchAllCloverItems(accessToken, merchantId);
+
+        logApiCall("/clover-items", merchantId, "GET", 200);
 
         res.json({
             success: true,
-            message: "Clover inventory items loaded successfully",
-            data: itemsResponse.data
+            message: itemsData.truncated
+                ? `Clover inventory loaded ${itemsData.totalLoaded} product(s), but stopped at the configured safety page limit.`
+                : `Clover inventory items loaded successfully: ${itemsData.totalLoaded} product(s).`,
+            data: itemsData,
+            pagination: {
+                pageCount: itemsData.pageCount,
+                limit: itemsData.limit,
+                totalLoaded: itemsData.totalLoaded,
+                truncated: itemsData.truncated
+            }
         });
     } catch (error) {
         console.error("Clover Items Error:", error.response?.data || error.message);
