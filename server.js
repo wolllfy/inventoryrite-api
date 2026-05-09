@@ -5732,9 +5732,11 @@ function renderDashboard(options = {}) {
 
         .primary-stats-row {
             display: grid !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            grid-template-columns: repeat(4, minmax(170px, 190px)) !important;
+            justify-content: flex-start !important;
             gap: 9px !important;
             margin: 9px 0 10px !important;
+            width: auto !important;
         }
 
         .primary-stats-row .stat-box {
@@ -5743,7 +5745,7 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 900px) {
             .primary-stats-row {
-                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                grid-template-columns: repeat(2, minmax(170px, 1fr)) !important;
             }
         }
 
