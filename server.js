@@ -137,7 +137,7 @@ function issueCsrfToken() {
 }
 
 function verifyCsrfToken(req, res, next) {
-    const csrfExemptPaths = new Set(["/clover-webhook", "/clover-uninstall"]);
+    const csrfExemptPaths = new Set(["/clover-webhook", "/clover-uninstall", "/debug-test-clover-cost"]);
 
     if (csrfExemptPaths.has(req.path)) {
         return next();
@@ -611,7 +611,8 @@ async function getConnectionFromRequest(req) {
 function cloverHeaders(accessToken) {
     return {
         Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": `${CLOVER_APP_NAME || "InventoryRite"}/${APP_VERSION || "1.0.0"} (${APP_BASE_URL})`
     };
 }
 
@@ -5790,36 +5791,85 @@ app.get("/item-costs", async (req, res) => {
         });
     }
 });
+/*
+|--------------------------------------------------------------------------
+| DEBUG: CLOVER COST FIELD TEST
+|--------------------------------------------------------------------------
+| Temporary diagnostic route for testing whether Clover accepts cost-like
+| fields on item update requests. Keep this ABOVE the catch-all Route not
+| found handler. GET confirms the route is deployed. POST performs the test.
+|--------------------------------------------------------------------------
+*/
+
+app.get("/debug-test-clover-cost", (req, res) => {
+    res.json({
+        success: true,
+        message: "Debug route is installed. Use POST with itemId, fieldName, and costCents to test Clover cost syncing.",
+        exampleBody: {
+            itemId: "PUT_CLOVER_ITEM_ID_HERE",
+            fieldName: "cost",
+            costCents: 500
+        },
+        fieldNamesToTry: ["cost", "costCents", "unitCost", "unitCostCents", "defaultCost"]
+    });
+});
+
 app.post("/debug-test-clover-cost", async (req, res) => {
     try {
         const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const { itemId, fieldName, costCents } = req.body;
 
+        const allowedFields = new Set(["cost", "costCents", "unitCost", "unitCostCents", "defaultCost"]);
+
         if (!accessToken || !merchantId) {
             return res.status(401).json({
                 success: false,
-                message: "Clover is not connected."
+                message: "Clover is not connected. Open InventoryRite and connect Clover first."
             });
         }
 
         if (!itemId || !fieldName || costCents === undefined) {
             return res.status(400).json({
                 success: false,
-                message: "Missing itemId, fieldName, or costCents."
+                message: "Missing itemId, fieldName, or costCents.",
+                exampleBody: {
+                    itemId: "PUT_CLOVER_ITEM_ID_HERE",
+                    fieldName: "cost",
+                    costCents: 500
+                }
             });
         }
 
+        if (!allowedFields.has(String(fieldName))) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid fieldName for this diagnostic route.",
+                allowedFields: Array.from(allowedFields)
+            });
+        }
+
+        if (!isValidMoneyCents(costCents)) {
+            return res.status(400).json({
+                success: false,
+                message: "costCents must be a valid non-negative number. Example: 500 for $5.00."
+            });
+        }
+
+        const payload = { [fieldName]: Number(costCents) };
+
         const response = await cloverApi.post(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
-            { [fieldName]: Number(costCents) },
+            payload,
             { headers: cloverHeaders(accessToken) }
         );
 
         return res.json({
             success: true,
-            message: "Clover test request completed.",
+            message: "Clover test request completed. Now refresh Clover Dashboard and check the item Cost column.",
+            merchantId,
+            itemId,
             fieldName,
-            sentValue: Number(costCents),
+            sentPayload: payload,
             cloverResponse: response.data
         });
 
@@ -5833,6 +5883,7 @@ app.post("/debug-test-clover-cost", async (req, res) => {
         });
     }
 });
+
 app.post("/item-cost/:itemId", async (req, res) => {
     try {
         const { merchantId } = await getConnectionFromRequest(req);
