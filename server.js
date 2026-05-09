@@ -3435,21 +3435,62 @@ function renderDashboard(options = {}) {
 
         @media (max-width: 768px) {
 
+            html,
+            body {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
             .wrap {
-                padding: 0 10px 24px;
+                width: 100%;
+                max-width: 100%;
+                margin: 12px auto;
+                padding: 0 8px 24px;
+                overflow-x: hidden;
             }
 
             .inventory-card {
-                padding: 14px;
+                padding: 12px;
+                overflow: hidden;
+            }
+
+            .merchant-control-bar,
+            .inventory-command-center,
+            .bulk-panel,
+            .operations-summary-strip,
+            .hero,
+            .card {
+                max-width: 100%;
+                overflow: hidden;
+            }
+
+            .merchant-control-bar,
+            .command-center-top,
+            .bulk-panel-header,
+            .topbar-inner {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .merchant-control-left,
+            .command-copy,
+            .operations-summary-main {
+                min-width: 0;
+                width: 100%;
+                flex: 1 1 auto;
             }
 
             .merchant-control-actions {
+                display: grid;
                 grid-template-columns: 1fr;
+                gap: 8px;
+                width: 100%;
             }
 
-            .command-center-top {
-                flex-direction: column;
-                align-items: stretch;
+            .merchant-control-actions .control-btn {
+                width: 100%;
+                min-height: 42px;
             }
 
             .command-search-actions {
@@ -3459,7 +3500,9 @@ function renderDashboard(options = {}) {
                 width: 100%;
             }
 
-            .command-search-actions .search-input {
+            .command-search-actions .search-input,
+            .search-input {
+                flex: 1 1 auto;
                 min-width: 0;
                 width: 100%;
                 max-width: 100%;
@@ -3468,21 +3511,22 @@ function renderDashboard(options = {}) {
             .product-action-row {
                 display: grid;
                 grid-template-columns: 1fr;
+                gap: 8px;
                 width: 100%;
             }
 
-            .product-action-row .btn {
+            .product-action-row .btn,
+            .command-search-actions .btn {
                 width: 100%;
+                min-width: 0;
             }
 
             .bulk-panel {
-                padding: 14px;
+                padding: 12px;
                 border-radius: 18px;
             }
 
             .bulk-panel-header {
-                flex-direction: column;
-                align-items: stretch;
                 gap: 12px;
             }
 
@@ -3509,7 +3553,7 @@ function renderDashboard(options = {}) {
             .bulk-controls {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 10px;
+                gap: 8px;
                 width: 100%;
             }
 
@@ -3520,18 +3564,19 @@ function renderDashboard(options = {}) {
             .bulk-pct-input {
                 width: 100%;
                 min-width: 0;
-                height: 48px;
+                height: 46px;
                 font-size: 18px;
                 border-radius: 14px;
             }
 
             .bulk-controls .btn {
                 width: 100%;
-                min-height: 48px;
+                min-width: 0;
+                min-height: 46px;
                 border-radius: 14px;
-                font-size: 13px;
+                font-size: 12px;
                 line-height: 1.15;
-                padding: 10px 8px;
+                padding: 9px 6px;
                 text-align: center;
             }
 
@@ -3544,7 +3589,7 @@ function renderDashboard(options = {}) {
             .margin-preset-actions {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 10px;
+                gap: 8px;
                 width: 100%;
             }
 
@@ -3552,31 +3597,65 @@ function renderDashboard(options = {}) {
                 width: 100%;
                 min-height: 44px;
                 border-radius: 14px;
-                font-size: 14px;
+                font-size: 13px;
             }
 
             .protected-pricing-note {
                 font-size: 12px;
                 line-height: 1.45;
                 border-radius: 14px;
-                padding: 12px;
+                padding: 10px;
             }
 
             .table-wrap {
-                overflow-x: auto;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+                overflow-y: visible;
             }
 
             table {
-                min-width: 760px;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                table-layout: fixed;
+            }
+
+            th,
+            td {
+                padding-left: 6px;
+                padding-right: 6px;
+                font-size: 12px;
+            }
+
+            .check-col { width: 9%; }
+            .name-col { width: 35%; }
+            .money-col { width: 17%; }
+            .metric-col { width: 17%; }
+            .actions-col { width: 22%; }
+
+            .name-input,
+            .small-input {
+                min-width: 0;
+                width: 100%;
+                font-size: 14px;
+                padding: 8px 7px;
             }
 
             .row-actions {
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 6px;
                 width: 100%;
             }
 
             .row-actions .btn-small {
                 width: 100%;
+                min-width: 0;
+                min-height: 34px;
+                padding-left: 4px;
+                padding-right: 4px;
+                font-size: 11px;
             }
 
             .stats-row,
@@ -3588,36 +3667,42 @@ function renderDashboard(options = {}) {
             }
 
             .hero {
-                padding: 16px;
+                padding: 14px;
                 min-height: auto;
             }
 
             .hero h2 {
                 font-size: 22px;
             }
-
-            .topbar-inner {
-                flex-direction: column;
-                align-items: flex-start;
-            }
         }
 
         @media (max-width: 430px) {
             .bulk-controls {
-                grid-template-columns: 68px 1fr 1fr !important;
-                gap: 6px !important;
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+            }
+
+            .bulk-controls > div:first-child {
+                grid-column: auto !important;
             }
 
             .bulk-controls .btn,
             .bulk-controls button {
-                font-size: 10.5px !important;
-                padding-left: 5px !important;
-                padding-right: 5px !important;
+                width: 100% !important;
+                font-size: 12px !important;
+                padding-left: 6px !important;
+                padding-right: 6px !important;
             }
 
+            .check-col { width: 10%; }
+            .name-col { width: 34%; }
+            .money-col { width: 17%; }
+            .metric-col { width: 17%; }
+            .actions-col { width: 22%; }
+
             .protected-pricing-note {
-                max-height: 72px !important;
-                overflow: hidden !important;
+                max-height: none !important;
+                overflow: visible !important;
             }
         }
 </style>
