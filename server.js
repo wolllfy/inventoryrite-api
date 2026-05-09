@@ -4832,7 +4832,7 @@ function renderDashboard(options = {}) {
         /* ----------------------------------------------------------------
         | TRUE DASHBOARD MOBILE FIX - PRODUCT CARDS + ACTION BUTTONS
         | This must live inside the MAIN dashboard style, before the first
-        | </style>. It prevents Clover Flex / 400px layouts from stretching.
+        | main CSS block. It prevents Clover Flex / 400px layouts from stretching.
         ---------------------------------------------------------------- */
 
         @media (max-width: 768px) {
