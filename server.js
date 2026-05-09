@@ -5790,7 +5790,49 @@ app.get("/item-costs", async (req, res) => {
         });
     }
 });
+app.post("/debug-test-clover-cost", async (req, res) => {
+    try {
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
+        const { itemId, fieldName, costCents } = req.body;
 
+        if (!accessToken || !merchantId) {
+            return res.status(401).json({
+                success: false,
+                message: "Clover is not connected."
+            });
+        }
+
+        if (!itemId || !fieldName || costCents === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing itemId, fieldName, or costCents."
+            });
+        }
+
+        const response = await cloverApi.post(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+            { [fieldName]: Number(costCents) },
+            { headers: cloverHeaders(accessToken) }
+        );
+
+        return res.json({
+            success: true,
+            message: "Clover test request completed.",
+            fieldName,
+            sentValue: Number(costCents),
+            cloverResponse: response.data
+        });
+
+    } catch (error) {
+        const cloverError = getCloverError(error);
+
+        return res.status(cloverError.status).json({
+            success: false,
+            message: "Clover cost test failed.",
+            error: cloverError.data
+        });
+    }
+});
 app.post("/item-cost/:itemId", async (req, res) => {
     try {
         const { merchantId } = await getConnectionFromRequest(req);
