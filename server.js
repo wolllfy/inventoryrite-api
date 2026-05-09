@@ -5886,14 +5886,14 @@ app.post("/debug-test-clover-cost", async (req, res) => {
 
 app.post("/item-cost/:itemId", async (req, res) => {
     try {
-        const { merchantId } = await getConnectionFromRequest(req);
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
         const itemId = req.params.itemId;
         const costCents = Number(req.body.costCents || 0);
 
-        if (!merchantId || !itemId) {
+        if (!accessToken || !merchantId || !itemId) {
             return res.status(400).json({
                 success: false,
-                message: "Missing merchantId or itemId."
+                message: "Missing Clover connection, merchantId, or itemId."
             });
         }
 
@@ -5904,33 +5904,46 @@ app.post("/item-cost/:itemId", async (req, res) => {
             });
         }
 
-        // Clover's Items API does not provide a writable cost-of-goods field.
-        // InventoryRite stores item costs in its own database and uses those costs
-        // for margin, profit, cleanup, and pricing intelligence.
+        // Save locally first so InventoryRite keeps its own profit/margin record.
         const savedCostCents = await saveItemCostForMerchant(merchantId, itemId, costCents);
+
+        // IMPORTANT: Clover DOES accept the item cost field as cents using { cost: costCents }.
+        // This keeps InventoryRite and Clover Dashboard's Cost column in sync.
+        const cloverResponse = await cloverApi.post(
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+            {
+                cost: savedCostCents
+            },
+            {
+                headers: cloverHeaders(accessToken)
+            }
+        );
 
         logApiCall("/item-cost/:itemId", merchantId, "POST", 200);
 
-        res.json({
+        return res.json({
             success: true,
-            message: "Item cost saved successfully in InventoryRite.",
+            message: "Item cost saved successfully in InventoryRite and synced to Clover.",
             databaseEnabled: USE_DATABASE,
+            merchantId,
             itemId,
             costCents: savedCostCents,
-            cloverCostSynced: false,
+            cloverCostSynced: true,
             cloverCostSyncError: null,
-            note: "Clover does not support writing a custom cost field through the Items API."
+            cloverResponse: cloverResponse.data
         });
     } catch (error) {
-        console.error("Save Item Cost Error:", error.message);
-        res.status(500).json({
+        const cloverError = getCloverError(error);
+
+        console.error("Save Item Cost Error:", error.response?.data || error.message);
+
+        return res.status(cloverError.status).json({
             success: false,
-            message: "Failed to save item cost.",
-            error: error.message
+            message: "Failed to save and sync item cost.",
+            error: cloverError.data
         });
     }
 });
-
 
 /*
 |--------------------------------------------------------------------------
