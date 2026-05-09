@@ -3371,6 +3371,200 @@ function renderDashboard(options = {}) {
                 justify-content: flex-start !important;
             }
         }
+
+
+        /* ----------------------------------------------------------------
+        | SAFE FLEX / MINI BULK PANEL CLEANUP - CSS ONLY
+        | Added by ChatGPT: keeps Clover/backend/JS untouched.
+        | Goal: make Bulk Update smaller on Clover Flex and usable on Mini.
+        ---------------------------------------------------------------- */
+
+        @media (max-width: 1180px) and (min-width: 761px) {
+            .wrap {
+                margin-top: 14px !important;
+            }
+
+            .inventory-card {
+                padding: 18px !important;
+            }
+
+            .bulk-panel {
+                padding: 13px 14px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .bulk-panel-header {
+                margin-bottom: 10px !important;
+            }
+
+            .bulk-controls {
+                gap: 8px !important;
+            }
+
+            .bulk-controls .btn {
+                min-height: 38px !important;
+                padding: 9px 12px !important;
+            }
+
+            .bulk-pct-input {
+                min-height: 38px !important;
+            }
+
+            .protected-pricing-note {
+                font-size: 11px !important;
+                padding: 8px 10px !important;
+                margin-top: 10px !important;
+            }
+
+            .margin-preset-row {
+                margin-top: 10px !important;
+                padding-top: 10px !important;
+            }
+
+            .preset-btn {
+                min-height: 36px !important;
+                padding: 7px 10px !important;
+            }
+
+            tbody td {
+                height: 58px !important;
+                padding-top: 10px !important;
+                padding-bottom: 10px !important;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .bulk-panel {
+                padding: 10px 11px !important;
+                margin: 0 0 10px !important;
+                border-radius: 14px !important;
+                background: linear-gradient(135deg, #fffbeb 0%, #fff7d6 100%) !important;
+            }
+
+            .bulk-panel-header {
+                display: grid !important;
+                grid-template-columns: 1fr auto !important;
+                gap: 8px !important;
+                align-items: start !important;
+                margin-bottom: 9px !important;
+            }
+
+            .bulk-panel-title {
+                font-size: 13px !important;
+                line-height: 1.15 !important;
+                gap: 6px !important;
+            }
+
+            .bulk-count-badge {
+                font-size: 11px !important;
+                padding: 3px 8px !important;
+            }
+
+            .bulk-controls {
+                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: 76px 1fr 1fr !important;
+                gap: 7px !important;
+                align-items: stretch !important;
+            }
+
+            .bulk-pct-input {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 40px !important;
+                padding: 7px 8px !important;
+                font-size: 14px !important;
+            }
+
+            .bulk-controls .btn,
+            .bulk-controls button {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 40px !important;
+                padding: 7px 8px !important;
+                font-size: 11px !important;
+                line-height: 1.15 !important;
+                border-radius: 11px !important;
+            }
+
+            .bulk-controls .btn-bulk-clear,
+            .bulk-controls button.btn-bulk-clear,
+            .bulk-controls button:last-child {
+                grid-column: 1 / -1 !important;
+            }
+
+            .margin-preset-row {
+                margin-top: 9px !important;
+                padding-top: 9px !important;
+                gap: 8px !important;
+            }
+
+            .margin-preset-copy {
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+            }
+
+            .margin-preset-actions {
+                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 7px !important;
+            }
+
+            .preset-btn {
+                width: 100% !important;
+                min-height: 38px !important;
+                padding: 7px 8px !important;
+                font-size: 11px !important;
+            }
+
+            .protected-pricing-note {
+                margin-top: 9px !important;
+                padding: 8px 9px !important;
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+            }
+
+            .bulk-progress {
+                margin-top: 9px !important;
+            }
+
+            .stats-row {
+                gap: 8px !important;
+            }
+
+            .stat-box {
+                padding: 10px 11px !important;
+            }
+
+            .stat-label {
+                font-size: 11px !important;
+                margin-bottom: 3px !important;
+            }
+
+            .stat-value {
+                font-size: 18px !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .bulk-controls {
+                grid-template-columns: 68px 1fr 1fr !important;
+                gap: 6px !important;
+            }
+
+            .bulk-controls .btn,
+            .bulk-controls button {
+                font-size: 10.5px !important;
+                padding-left: 5px !important;
+                padding-right: 5px !important;
+            }
+
+            .protected-pricing-note {
+                max-height: 72px !important;
+                overflow: hidden !important;
+            }
+        }
 </style>
 </head>
 <body>
