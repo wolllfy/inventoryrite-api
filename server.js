@@ -5725,6 +5725,34 @@ function renderDashboard(options = {}) {
             }
         }
 
+    
+        /* ----------------------------------------------------------------
+        | FINAL PRIMARY STATS ROW - FILLS EMPTY SPACE CLEANLY
+        ---------------------------------------------------------------- */
+
+        .primary-stats-row {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 9px !important;
+            margin: 9px 0 10px !important;
+        }
+
+        .primary-stats-row .stat-box {
+            min-width: 0 !important;
+        }
+
+        @media (max-width: 900px) {
+            .primary-stats-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .primary-stats-row {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -5962,37 +5990,18 @@ function renderDashboard(options = {}) {
             </div>
             <input id="csvImportInput" type="file" accept=".csv,text/csv" style="display:none;" />
 
-            <div class="stats-row">
+            <div class="stats-row primary-stats-row">
                 <div class="stat-box">
                     <div class="stat-label">Loaded Products</div>
                     <div class="stat-value" id="statLoaded">0</div>
-                </div>
-                <div class="stat-box stat-secondary stat-hide-premium">
-                    <div class="stat-label">Visible Products</div>
-                    <div class="stat-value" id="statVisible">0</div>
-                </div>
-                <div class="stat-box stat-secondary stat-hide-premium">
-                    <div class="stat-label">Available Products</div>
-                    <div class="stat-value" id="statAvailable">0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Total Menu Value</div>
                     <div class="stat-value" id="statValue">$0.00</div>
                 </div>
-            </div>
-
-            <div class="stats-row" id="marginStatsRow">
                 <div class="stat-box">
                     <div class="stat-label">Average Margin</div>
                     <div class="stat-value" id="statAvgMargin">&mdash;</div>
-                </div>
-                <div class="stat-box stat-secondary stat-hide-premium">
-                    <div class="stat-label">Best Margin Item</div>
-                    <div class="stat-value" id="statBestMargin">&mdash;</div>
-                </div>
-                <div class="stat-box stat-secondary stat-hide-premium">
-                    <div class="stat-label">Lowest Margin Item</div>
-                    <div class="stat-value" id="statLowestMargin">&mdash;</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Below Cost</div>
