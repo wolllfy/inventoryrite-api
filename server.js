@@ -3197,6 +3197,180 @@ function renderDashboard(options = {}) {
             }
         }
 
+
+
+        /* ----------------------------------------------------------------
+        | FLEX / MINI / DUO FINAL CLEANUP PASS
+        | Purpose: remove duplicate mobile action buttons, reduce helper text,
+        | and make Product Controls the single action area on handheld screens.
+        | Safe CSS-only update: no Clover/backend/import/export JS changed.
+        ---------------------------------------------------------------- */
+
+        @media (max-width: 760px) {
+            /* Keep the hero as a headline only on Flex/phone. The real actions
+               live in Product Controls right below, so merchants do not see
+               the same Add/Sync/Tools buttons twice. */
+            .simple-hero-actions,
+            .hero-actions {
+                display: none !important;
+            }
+
+            .simple-hero {
+                padding: 13px 14px !important;
+                margin-bottom: 9px !important;
+            }
+
+            .simple-hero h2 {
+                font-size: 21px !important;
+                line-height: 1.12 !important;
+            }
+
+            .simple-hero p {
+                font-size: 12px !important;
+                line-height: 1.35 !important;
+                margin-top: 6px !important;
+            }
+
+            .simple-status-strip .operations-summary-main span,
+            .command-subtitle,
+            .table-top p {
+                display: none !important;
+            }
+
+            .simple-status-strip {
+                padding: 8px 10px !important;
+                margin-bottom: 9px !important;
+            }
+
+            .operations-summary-main {
+                min-width: 0 !important;
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+
+            .operations-summary-pills {
+                gap: 6px !important;
+            }
+
+            .summary-pill {
+                font-size: 10px !important;
+                padding: 5px 8px !important;
+            }
+
+            .table-top {
+                margin-bottom: 8px !important;
+            }
+
+            .table-top h3 {
+                font-size: 20px !important;
+                margin-bottom: 3px !important;
+            }
+
+            .sync-note {
+                font-size: 11px !important;
+                margin-top: 5px !important;
+            }
+
+            .inventory-command-center {
+                padding: 10px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .command-copy {
+                margin-bottom: 2px !important;
+            }
+
+            .command-title {
+                font-size: 12px !important;
+                text-transform: uppercase !important;
+                letter-spacing: .04em !important;
+                color: #475569 !important;
+            }
+
+            .command-search-actions {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+
+            .command-search-actions .search-input,
+            .command-search-actions .btn {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: none !important;
+            }
+
+            #btnRefreshInventoryTop {
+                order: 3;
+            }
+
+            #btnToggleAddTop {
+                order: 2;
+            }
+
+            #btnToggleBulkTop {
+                order: 4;
+            }
+
+            #btnToggleAdvancedTop {
+                order: 5;
+            }
+
+            #inventorySearch {
+                order: 1;
+            }
+
+            #btnRefreshInventoryTop,
+            #btnToggleBulkTop {
+                background: #f8fafc !important;
+                color: #111827 !important;
+                border: 1px solid #d1d5db !important;
+            }
+
+            #btnToggleAddTop {
+                background: #15803d !important;
+                color: #ffffff !important;
+                border-color: #15803d !important;
+            }
+
+            #btnToggleAdvancedTop {
+                background: #111827 !important;
+                color: #ffffff !important;
+                border-color: #111827 !important;
+            }
+
+            body.show-advanced #btnToggleAdvancedTop {
+                background: #f8fafc !important;
+                color: #111827 !important;
+                border: 1px solid #d1d5db !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .wrap {
+                padding-left: 7px !important;
+                padding-right: 7px !important;
+            }
+
+            .topbar {
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .simple-hero h2 {
+                font-size: 19px !important;
+            }
+
+            .simple-hero p {
+                font-size: 11px !important;
+            }
+
+            .operations-summary-pills {
+                width: 100% !important;
+                justify-content: flex-start !important;
+            }
+        }
 </style>
 </head>
 <body>
