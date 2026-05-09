@@ -4065,6 +4065,433 @@ function renderDashboard(options = {}) {
         }
         /* END FINAL PREMIUM CLOVER APP POLISH */
 
+
+
+        /* ----------------------------------------------------------------
+        | MAJOR VISUAL OVERHAUL - NOTICEABLE CLOVER MARKETPLACE POLISH
+        | Added by ChatGPT: CSS-only, keeps Clover/API/JS functionality intact.
+        | Purpose: make the page visibly tighter, denser, cleaner, and more app-like.
+        ---------------------------------------------------------------- */
+
+        body {
+            background:
+                radial-gradient(circle at 14% 0%, rgba(22, 163, 74, 0.13), transparent 25%),
+                radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.06), transparent 26%),
+                linear-gradient(180deg, #f6f8fb 0%, #eef3f7 100%) !important;
+        }
+
+        .topbar {
+            padding: 7px 18px !important;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.045) !important;
+        }
+
+        .topbar-inner,
+        .wrap {
+            max-width: 1180px !important;
+        }
+
+        .logo {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+        }
+
+        .brand {
+            gap: 9px !important;
+        }
+
+        .brand h1 {
+            font-size: 16px !important;
+            letter-spacing: -0.02em !important;
+        }
+
+        .brand p {
+            font-size: 10.5px !important;
+            margin-top: 1px !important;
+        }
+
+        .badge,
+        .last-saved-status {
+            padding: 4px 9px !important;
+            font-size: 10.5px !important;
+        }
+
+        .wrap {
+            margin-top: 10px !important;
+            padding-left: 14px !important;
+            padding-right: 14px !important;
+            padding-bottom: 26px !important;
+        }
+
+        .hero,
+        .simple-hero {
+            min-height: 70px !important;
+            padding: 12px 16px !important;
+            margin-bottom: 10px !important;
+            border-radius: 16px !important;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06) !important;
+            border-color: #dde7ef !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%) !important;
+        }
+
+        .simple-hero-copy,
+        .hero > div:first-child {
+            min-width: 0 !important;
+        }
+
+        .eyebrow {
+            font-size: 9.5px !important;
+            margin-bottom: 3px !important;
+            letter-spacing: .07em !important;
+        }
+
+        .hero h2,
+        .simple-hero h2 {
+            font-size: 21px !important;
+            line-height: 1.05 !important;
+            letter-spacing: -0.04em !important;
+        }
+
+        .hero p,
+        .simple-hero p {
+            margin-top: 5px !important;
+            font-size: 11.5px !important;
+            line-height: 1.35 !important;
+            max-width: 650px !important;
+        }
+
+        .hero-actions,
+        .simple-hero-actions {
+            gap: 7px !important;
+        }
+
+        .btn,
+        .control-btn {
+            min-height: 34px !important;
+            padding: 8px 12px !important;
+            border-radius: 10px !important;
+            font-size: 11.5px !important;
+            letter-spacing: -0.01em !important;
+        }
+
+        .inventory-card,
+        .card {
+            border-radius: 16px !important;
+        }
+
+        .inventory-card {
+            padding: 14px !important;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.065) !important;
+        }
+
+        .inventory-command-center,
+        .merchant-control-bar,
+        .operations-summary-strip,
+        .recent-sidebar,
+        .bulk-panel {
+            border-radius: 14px !important;
+            margin-bottom: 10px !important;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.035) !important;
+        }
+
+        .inventory-command-center {
+            padding: 11px !important;
+            background: #ffffff !important;
+        }
+
+        .command-title,
+        .table-top h3 {
+            font-size: 13px !important;
+        }
+
+        .command-subtitle,
+        .table-top p,
+        .sync-note {
+            font-size: 10.8px !important;
+        }
+
+        .search-input,
+        #inventorySearch {
+            min-height: 34px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            padding: 8px 11px !important;
+        }
+
+        .product-action-row {
+            gap: 7px !important;
+        }
+
+        .bulk-panel {
+            padding: 12px 13px !important;
+            background: linear-gradient(135deg, #fffbeb 0%, #fff7d6 100%) !important;
+            border-color: #f8d47a !important;
+        }
+
+        .bulk-panel-header {
+            margin-bottom: 8px !important;
+            padding-bottom: 7px !important;
+            border-bottom: 1px dashed rgba(146, 64, 14, 0.22) !important;
+        }
+
+        .bulk-panel-title {
+            font-size: 13px !important;
+        }
+
+        .bulk-count-badge {
+            min-width: 22px !important;
+            height: 22px !important;
+            padding: 0 7px !important;
+            font-size: 10px !important;
+        }
+
+        .bulk-controls {
+            gap: 7px !important;
+        }
+
+        .bulk-pct-input {
+            width: 70px !important;
+            min-width: 70px !important;
+            height: 34px !important;
+            border-radius: 10px !important;
+            font-size: 13px !important;
+            padding: 7px 8px !important;
+        }
+
+        .bulk-controls .btn,
+        .preset-btn {
+            min-height: 34px !important;
+            padding: 7px 10px !important;
+            font-size: 10.8px !important;
+            border-radius: 10px !important;
+        }
+
+        .margin-preset-row {
+            margin-top: 9px !important;
+            padding-top: 9px !important;
+        }
+
+        .protected-pricing-note,
+        .margin-preset-copy {
+            font-size: 10.6px !important;
+            line-height: 1.3 !important;
+        }
+
+        .protected-pricing-note {
+            padding: 8px 9px !important;
+            margin-top: 8px !important;
+            border-radius: 10px !important;
+        }
+
+        .stats-row,
+        .risk-score-row,
+        .intelligence-strip,
+        .productivity-hub,
+        .value-tools-row {
+            gap: 8px !important;
+            margin-top: 8px !important;
+            margin-bottom: 9px !important;
+        }
+
+        .stat-box,
+        .risk-score-box,
+        .intelligence-box,
+        .productivity-card {
+            border-radius: 12px !important;
+            padding: 9px 10px !important;
+            box-shadow: 0 5px 14px rgba(15, 23, 42, 0.035) !important;
+        }
+
+        .stat-label,
+        .risk-score-label,
+        .intelligence-label {
+            font-size: 9.5px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .stat-value,
+        .risk-score-value,
+        .intelligence-value {
+            font-size: 16px !important;
+        }
+
+        .table-wrap {
+            border-radius: 13px !important;
+            overflow-x: hidden !important;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.055) !important;
+        }
+
+        table {
+            table-layout: fixed !important;
+        }
+
+        th {
+            height: 34px !important;
+            padding: 8px 7px !important;
+            font-size: 10px !important;
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+        }
+
+        td,
+        tbody td {
+            height: 44px !important;
+            padding: 6px 7px !important;
+            font-size: 11.5px !important;
+        }
+
+        tbody tr:hover td {
+            background: #f8fafc !important;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 31px !important;
+            height: 31px !important;
+            border-radius: 8px !important;
+            font-size: 11.5px !important;
+            padding: 6px 8px !important;
+            box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02) !important;
+        }
+
+        .name-input {
+            font-weight: 900 !important;
+        }
+
+        .pill {
+            padding: 4px 7px !important;
+            font-size: 10px !important;
+            border-radius: 999px !important;
+        }
+
+        .row-actions {
+            gap: 5px !important;
+            justify-content: flex-end !important;
+            flex-wrap: nowrap !important;
+        }
+
+        .row-actions .btn-small,
+        .icon-action {
+            min-width: 30px !important;
+            width: 30px !important;
+            height: 30px !important;
+            min-height: 30px !important;
+            flex: 0 0 30px !important;
+            padding: 0 !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            box-shadow: none !important;
+        }
+
+        .btn-secondary.icon-action {
+            background: #eaf1ff !important;
+            color: #1d4ed8 !important;
+            border: 1px solid #c7d2fe !important;
+        }
+
+        .btn-light.icon-action {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+            border: 1px solid #d9e2ec !important;
+        }
+
+        .btn-danger.icon-action {
+            background: #fff1f2 !important;
+            color: #b91c1c !important;
+            border: 1px solid #fecdd3 !important;
+        }
+
+        .icon-action:hover {
+            transform: translateY(-1px) !important;
+            filter: brightness(0.98) !important;
+        }
+
+        .check-col { width: 4% !important; }
+        .name-col { width: 39% !important; }
+        .money-col { width: 13% !important; }
+        .metric-col { width: 12% !important; }
+        .actions-col { width: 19% !important; }
+
+        .toast {
+            border-radius: 12px !important;
+            font-size: 12px !important;
+        }
+
+        @media (min-width: 769px) {
+            .command-center-top {
+                display: grid !important;
+                grid-template-columns: 210px minmax(260px, 1fr) auto !important;
+                align-items: center !important;
+            }
+
+            .command-search-actions {
+                min-width: 0 !important;
+                display: grid !important;
+                grid-template-columns: minmax(250px, 1fr) auto auto auto auto !important;
+                gap: 7px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .topbar-inner {
+                align-items: center !important;
+            }
+
+            .wrap {
+                margin-top: 7px !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            .hero,
+            .simple-hero {
+                padding: 11px !important;
+                border-radius: 14px !important;
+            }
+
+            .hero h2,
+            .simple-hero h2 {
+                font-size: 19px !important;
+            }
+
+            .hero p,
+            .simple-hero p {
+                font-size: 11px !important;
+            }
+
+            .inventory-card {
+                padding: 10px !important;
+            }
+
+            .bulk-panel {
+                padding: 10px !important;
+            }
+
+            .bulk-controls {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                width: 100% !important;
+            }
+
+            .bulk-controls > div:first-child {
+                grid-column: 1 / -1 !important;
+            }
+
+            .bulk-pct-input,
+            .bulk-controls .btn {
+                width: 100% !important;
+            }
+
+            .table-wrap {
+                overflow-x: auto !important;
+            }
+
+            table {
+                min-width: 720px !important;
+            }
+        }
+        /* END MAJOR VISUAL OVERHAUL */
 </style>
 </head>
 <body>
