@@ -4562,9 +4562,7 @@ function renderDashboard(options = {}) {
         }
 
         function parseCSV(csvText) {
-            var lines = String(csvText || "").split(/
-?
-/).filter(function (line) {
+            var lines = String(csvText || "").split(/\\r?\\n/).filter(function (line) {
                 return line.trim();
             });
 
