@@ -55,24 +55,6 @@ const CLOVER_APP_NAME = process.env.CLOVER_APP_NAME?.trim() || "InventoryRite";
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY?.trim() || "";
 const APP_VERSION = process.env.APP_VERSION || "1.0.0";
 
-/*
-|--------------------------------------------------------------------------
-| TRIAL / SUBSCRIPTION SETTINGS
-|--------------------------------------------------------------------------
-| These keep the Clover App Market version honest and merchant-friendly.
-| Default behavior: every connected merchant gets a 14-day trial unless
-| APP_BILLING_STATUS / CLOVER_SUBSCRIPTION_STATUS is set to active/paid.
-|
-| Render env options you can use later:
-| APP_TRIAL_DAYS=14
-| APP_BILLING_STATUS=trial   // trial, active, paid, expired, canceled
-| APP_PRICE_TEXT=$19.99/month after trial
-|--------------------------------------------------------------------------
-*/
-const APP_TRIAL_DAYS = Math.max(1, Number(process.env.APP_TRIAL_DAYS || 14));
-const APP_PRICE_TEXT = process.env.APP_PRICE_TEXT || "$19.99/month after trial";
-const APP_BILLING_STATUS = (process.env.APP_BILLING_STATUS || process.env.CLOVER_SUBSCRIPTION_STATUS || "trial").toLowerCase().trim();
-
 const REQUIRED_CLOVER_SCOPES = [
     "merchant_read",
     "item_read",
@@ -835,52 +817,6 @@ function calculateMarginHealthScore(items) {
 |--------------------------------------------------------------------------
 */
 
-function getBillingView(connectedAtValue) {
-    const normalizedStatus = String(APP_BILLING_STATUS || "trial").toLowerCase().trim();
-    const paidStatuses = new Set(["active", "paid", "subscribed", "subscription_active", "approved"]);
-    const expiredStatuses = new Set(["expired", "canceled", "cancelled", "inactive", "past_due", "locked"]);
-
-    const trialStartDate = connectedAtValue ? new Date(connectedAtValue) : new Date();
-    const trialStartMs = Number.isFinite(trialStartDate.getTime()) ? trialStartDate.getTime() : nowMs();
-    const trialEndsMs = trialStartMs + (APP_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const remainingMs = trialEndsMs - nowMs();
-    const remainingDays = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
-
-    if (paidStatuses.has(normalizedStatus)) {
-        return {
-            status: "active",
-            label: "Subscription Active",
-            message: `InventoryRite is active. Plan: ${APP_PRICE_TEXT}.`,
-            remainingDays,
-            trialEndsAt: new Date(trialEndsMs).toISOString(),
-            isLocked: false,
-            cssClass: "subscription-active"
-        };
-    }
-
-    if (expiredStatuses.has(normalizedStatus) || remainingMs <= 0) {
-        return {
-            status: "expired",
-            label: "Trial Expired",
-            message: `Your InventoryRite trial has ended. Subscribe for ${APP_PRICE_TEXT} to continue editing Clover inventory.`,
-            remainingDays: 0,
-            trialEndsAt: new Date(trialEndsMs).toISOString(),
-            isLocked: true,
-            cssClass: "subscription-expired"
-        };
-    }
-
-    return {
-        status: "trial",
-        label: `${remainingDays} day${remainingDays === 1 ? "" : "s"} left in trial`,
-        message: `Free trial active. ${APP_PRICE_TEXT}.`,
-        remainingDays,
-        trialEndsAt: new Date(trialEndsMs).toISOString(),
-        isLocked: false,
-        cssClass: remainingDays <= 3 ? "subscription-warning" : "subscription-trial"
-    };
-}
-
 function renderDashboard(options = {}) {
     const merchantId = options.merchant_id || latestCloverConnection.merchant_id || "";
     const employeeId = options.employee_id || latestCloverConnection.employee_id || "";
@@ -888,7 +824,6 @@ function renderDashboard(options = {}) {
     const csrfToken = issueCsrfToken();
     const connected = !!accessToken || latestCloverConnection.connected;
     const connectedAt = options.connected_at || latestCloverConnection.connected_at || "";
-    const billingView = getBillingView(connectedAt);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -5320,411 +5255,6 @@ function renderDashboard(options = {}) {
             }
         }
 
-
-
-        /* ----------------------------------------------------------------
-        | MOBILE + TRIAL/SUBSCRIPTION LAUNCH POLISH
-        | Final Clover App Market cleanup: clear trial state, mobile-safe UI,
-        | no horizontal scroll, and expired-trial lock messaging.
-        ---------------------------------------------------------------- */
-
-        .subscription-banner {
-            border: 1px solid #bfdbfe;
-            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-            color: #1e3a8a;
-            border-radius: 16px;
-            padding: 12px 14px;
-            margin: 0 0 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045);
-        }
-
-        .subscription-banner.subscription-active {
-            border-color: #bbf7d0;
-            background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
-            color: #14532d;
-        }
-
-        .subscription-banner.subscription-warning {
-            border-color: #fde68a;
-            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
-            color: #92400e;
-        }
-
-        .subscription-banner.subscription-expired {
-            border-color: #fecaca;
-            background: linear-gradient(135deg, #fee2e2 0%, #ffffff 100%);
-            color: #991b1b;
-        }
-
-        .subscription-copy {
-            min-width: 0;
-        }
-
-        .subscription-title {
-            font-size: 13px;
-            font-weight: 900;
-            line-height: 1.25;
-        }
-
-        .subscription-message {
-            margin-top: 3px;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-            color: inherit;
-            opacity: .88;
-        }
-
-        .subscription-pill {
-            border-radius: 999px;
-            padding: 7px 10px;
-            background: rgba(255,255,255,.78);
-            border: 1px solid currentColor;
-            font-size: 11px;
-            font-weight: 900;
-            white-space: nowrap;
-        }
-
-        .expired-lock-card {
-            border: 1px solid #fecaca;
-            background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%);
-            color: #7f1d1d;
-            border-radius: 18px;
-            padding: 18px;
-            margin: 0 0 14px;
-            box-shadow: 0 10px 28px rgba(127, 29, 29, 0.08);
-        }
-
-        .expired-lock-card h3 {
-            margin: 0 0 6px;
-            font-size: 18px;
-            letter-spacing: -.015em;
-        }
-
-        .expired-lock-card p {
-            margin: 0;
-            color: #7f1d1d;
-            font-size: 13px;
-            font-weight: 800;
-            line-height: 1.5;
-        }
-
-        body.subscription-locked .inventory-command-center,
-        body.subscription-locked .bulk-panel,
-        body.subscription-locked .merchant-control-bar,
-        body.subscription-locked .productivity-hub,
-        body.subscription-locked .table-wrap,
-        body.subscription-locked .stats-row,
-        body.subscription-locked .merchant-hint {
-            opacity: .45;
-            pointer-events: none;
-            filter: grayscale(.2);
-        }
-
-        @media (max-width: 900px) {
-            body {
-                background: #f8fafc !important;
-            }
-
-            .topbar {
-                position: static !important;
-                padding: 10px 12px !important;
-            }
-
-            .topbar-inner {
-                align-items: flex-start !important;
-                gap: 10px !important;
-            }
-
-            .brand {
-                min-width: 0 !important;
-            }
-
-            .brand h1 {
-                font-size: 17px !important;
-            }
-
-            .brand p {
-                font-size: 11px !important;
-                line-height: 1.25 !important;
-            }
-
-            .badge {
-                padding: 6px 9px !important;
-                font-size: 11px !important;
-                white-space: nowrap !important;
-            }
-
-            .wrap {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 10px auto !important;
-                padding: 0 10px 28px !important;
-            }
-
-            .simple-hero,
-            .hero {
-                padding: 14px !important;
-                border-radius: 16px !important;
-                gap: 10px !important;
-                margin-bottom: 10px !important;
-            }
-
-            .simple-hero h2,
-            .hero h2 {
-                font-size: 21px !important;
-                line-height: 1.12 !important;
-            }
-
-            .simple-hero p,
-            .hero p {
-                font-size: 12px !important;
-                line-height: 1.35 !important;
-            }
-
-            .hero-product-summary {
-                width: 100% !important;
-                min-width: 0 !important;
-            }
-
-            .subscription-banner {
-                align-items: flex-start !important;
-                flex-direction: column !important;
-                padding: 11px 12px !important;
-                border-radius: 14px !important;
-            }
-
-            .subscription-pill {
-                width: 100% !important;
-                text-align: center !important;
-            }
-
-            .inventory-card {
-                padding: 12px !important;
-                border-radius: 16px !important;
-            }
-
-            .command-center-top,
-            .table-top,
-            .bulk-panel-header,
-            .bulk-controls,
-            .last-action-strip,
-            .operations-summary-strip {
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: stretch !important;
-            }
-
-            .command-copy,
-            .command-search-actions,
-            .merchant-control-left,
-            .operations-summary-main {
-                width: 100% !important;
-                min-width: 0 !important;
-                flex: 1 1 auto !important;
-            }
-
-            .command-search-actions {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 8px !important;
-            }
-
-            .command-search-actions .search-input {
-                grid-column: 1 / -1 !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: none !important;
-                flex: none !important;
-            }
-
-            .command-search-actions .btn,
-            .product-action-row .btn,
-            .simple-hero-actions .btn,
-            .hero-actions .btn,
-            .bulk-controls .btn {
-                width: 100% !important;
-                min-width: 0 !important;
-                white-space: normal !important;
-            }
-
-            .stats-row,
-            .intelligence-strip,
-            .risk-score-row,
-            .productivity-hub,
-            .recent-list,
-            .value-tools-row {
-                grid-template-columns: 1fr !important;
-                gap: 8px !important;
-            }
-
-            .merchant-control-actions,
-            .operations-tools-grid,
-            .tool-button-grid,
-            .tool-grid-primary,
-            .tool-grid-health,
-            .tool-grid-secondary {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                width: 100% !important;
-                gap: 8px !important;
-            }
-
-            .tool-section,
-            .tool-section-primary,
-            .tool-section-health,
-            .tool-section-secondary {
-                grid-column: 1 / -1 !important;
-                width: 100% !important;
-            }
-
-            .control-btn,
-            .btn {
-                min-height: 42px !important;
-                touch-action: manipulation !important;
-            }
-
-            .add-grid {
-                grid-template-columns: 1fr !important;
-            }
-
-            .bulk-panel {
-                padding: 12px !important;
-                border-radius: 14px !important;
-            }
-
-            .bulk-controls > div,
-            .bulk-controls > div[style] {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 1fr !important;
-                gap: 8px !important;
-                padding-bottom: 0 !important;
-            }
-
-            .bulk-pct-input {
-                width: 100% !important;
-                min-width: 0 !important;
-            }
-
-            .table-wrap {
-                overflow-x: hidden !important;
-                border-radius: 13px !important;
-            }
-
-            table {
-                table-layout: fixed !important;
-                min-width: 0 !important;
-            }
-
-            th, td {
-                font-size: 11px !important;
-                padding: 8px 4px !important;
-                line-height: 1.25 !important;
-            }
-
-            tbody td {
-                height: auto !important;
-                min-height: 54px !important;
-            }
-
-            .check-col { width: 8% !important; }
-            .name-col { width: 38% !important; }
-            .money-col { width: 15% !important; }
-            .metric-col { width: 14% !important; }
-            .actions-col { width: 10% !important; }
-
-            .row-actions {
-                display: grid !important;
-                grid-template-columns: 1fr !important;
-                gap: 5px !important;
-            }
-
-            .row-actions .btn-small {
-                width: 100% !important;
-                min-height: 32px !important;
-                font-size: 10px !important;
-                padding: 6px 4px !important;
-                white-space: normal !important;
-            }
-
-            .name-input,
-            .small-input {
-                min-height: 36px !important;
-                padding: 7px 6px !important;
-                font-size: 11px !important;
-            }
-
-            .toast-wrap {
-                left: 10px !important;
-                right: 10px !important;
-                bottom: 10px !important;
-            }
-
-            .toast {
-                max-width: none !important;
-                width: 100% !important;
-            }
-
-            .modal-backdrop {
-                padding: 10px !important;
-                align-items: flex-end !important;
-            }
-
-            .modal {
-                max-width: 100% !important;
-                max-height: 88vh !important;
-                overflow-y: auto !important;
-                border-radius: 18px 18px 12px 12px !important;
-                padding: 18px !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .command-search-actions,
-            .merchant-control-actions,
-            .operations-tools-grid,
-            .tool-button-grid,
-            .tool-grid-primary,
-            .tool-grid-health,
-            .tool-grid-secondary {
-                grid-template-columns: 1fr !important;
-            }
-
-            .topbar-inner {
-                flex-direction: column !important;
-                align-items: stretch !important;
-            }
-
-            .badge {
-                text-align: center !important;
-                width: 100% !important;
-            }
-
-            .simple-hero h2,
-            .hero h2 {
-                font-size: 19px !important;
-            }
-
-            .table-top h3 {
-                font-size: 18px !important;
-            }
-
-            .check-col { width: 9% !important; }
-            .name-col { width: 39% !important; }
-            .money-col { width: 16% !important; }
-            .metric-col { width: 15% !important; }
-            .actions-col { width: 5% !important; }
-
-            th:nth-child(6),
-            td:nth-child(6) {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -5760,21 +5290,6 @@ function renderDashboard(options = {}) {
                 <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
             </div>
         </section>
-
-        <section class="subscription-banner ${billingView.cssClass}" id="subscriptionBanner">
-            <div class="subscription-copy">
-                <div class="subscription-title">${safe(billingView.label)}</div>
-                <div class="subscription-message">${safe(billingView.message)}</div>
-            </div>
-            <div class="subscription-pill">${billingView.status === "active" ? "Active" : billingView.status === "expired" ? "Locked" : "Trial"}</div>
-        </section>
-
-        ${billingView.isLocked ? `
-        <section class="expired-lock-card" id="expiredLockCard">
-            <h3>Trial expired — inventory editing is locked.</h3>
-            <p>Your products are still safe in Clover. Subscribe through Clover App Market billing to unlock product edits, bulk price updates, CSV tools, and inventory cleanup features.</p>
-        </section>
-        ` : ``}
 
         
 <section class="card inventory-card">
@@ -6118,20 +5633,6 @@ function renderDashboard(options = {}) {
             connected_at: ${JSON.stringify(connectedAt)}
         };
 
-        var embeddedBilling = {
-            status: ${JSON.stringify(billingView.status)},
-            label: ${JSON.stringify(billingView.label)},
-            message: ${JSON.stringify(billingView.message)},
-            remaining_days: ${JSON.stringify(billingView.remainingDays)},
-            trial_ends_at: ${JSON.stringify(billingView.trialEndsAt)},
-            is_locked: ${billingView.isLocked ? "true" : "false"},
-            price_text: ${JSON.stringify(APP_PRICE_TEXT)}
-        };
-
-        if (embeddedBilling.is_locked) {
-            document.body.classList.add("subscription-locked");
-        }
-
         var loadedItems = [];
         var itemCosts = {};
         var lastUpdatedItemId = "";
@@ -6198,39 +5699,6 @@ function renderDashboard(options = {}) {
                     toast.parentNode.removeChild(toast);
                 }
             }, 4200);
-        }
-
-        function isSubscriptionLocked() {
-            return !!(embeddedBilling && embeddedBilling.is_locked);
-        }
-
-        function blockIfSubscriptionLocked() {
-            if (!isSubscriptionLocked()) return false;
-            showToast("Trial expired. Subscribe through Clover App Market billing to unlock InventoryRite editing tools.", "error");
-            return true;
-        }
-
-        function applySubscriptionLock() {
-            if (!isSubscriptionLocked()) return;
-
-            var lockedSelectors = [
-                "#btnCreateItem",
-                "#btnBulkIncrease",
-                "#btnBulkDecrease",
-                "#btnImportCsv",
-                "#btnSmart99",
-                "#btnUndoBulk",
-                ".preset-btn",
-                ".save-item-btn",
-                ".delete-item-btn"
-            ];
-
-            lockedSelectors.forEach(function (selector) {
-                document.querySelectorAll(selector).forEach(function (el) {
-                    el.disabled = true;
-                    el.title = "Trial expired - subscribe to unlock editing.";
-                });
-            });
         }
 
         function logActivity(title, message, status) {
@@ -8237,7 +7705,6 @@ function renderDashboard(options = {}) {
                     'Click Add Product to create your first item.' +
                     '</td></tr>';
                 syncBulkUI();
-                applySubscriptionLock();
                 return;
             }
 
@@ -8248,7 +7715,6 @@ function renderDashboard(options = {}) {
                     'Try a different product name, SKU, or Clover ID.' +
                     '</td></tr>';
                 syncBulkUI();
-                applySubscriptionLock();
                 return;
             }
 
@@ -8346,7 +7812,6 @@ function renderDashboard(options = {}) {
             });
 
             syncBulkUI();
-            applySubscriptionLock();
         }
 
         async function fetchJson(url, options) {
@@ -8473,10 +7938,6 @@ function renderDashboard(options = {}) {
         }
 
         async function saveItemCost(itemId, value) {
-            if (blockIfSubscriptionLocked()) {
-                renderItems(loadedItems);
-                return;
-            }
             try {
                 var connection = requireConnection();
                 if (!connection || !itemId) return;
@@ -8561,7 +8022,6 @@ function renderDashboard(options = {}) {
         }
 
         async function createItem() {
-            if (blockIfSubscriptionLocked()) return;
             if (isBusy) return;
 
             try {
@@ -8614,7 +8074,6 @@ function renderDashboard(options = {}) {
         }
 
         async function updateItem(itemId) {
-            if (blockIfSubscriptionLocked()) return;
             if (isBusy) return;
 
             try {
@@ -8690,7 +8149,6 @@ function renderDashboard(options = {}) {
         }
 
         async function deleteItem(itemId) {
-            if (blockIfSubscriptionLocked()) return;
             if (isBusy) return;
 
             try {
@@ -8763,7 +8221,7 @@ function renderDashboard(options = {}) {
         bind("btnLowStock", "click", showLowStock);
         bind("btnReorder", "click", showReorderPlanning);
         bind("btnExportCsv", "click", exportProductsCsv);
-        bind("btnImportCsv", "click", function () { if (!blockIfSubscriptionLocked()) importCsvClicked(); });
+        bind("btnImportCsv", "click", importCsvClicked);
 
         var csvInput = byId("csvImportInput");
         if (csvInput) {
@@ -8774,8 +8232,8 @@ function renderDashboard(options = {}) {
         }
         bind("btnDuplicateReview", "click", showDuplicateDetector);
         bind("btnMissingCostLock", "click", showMissingCostLock);
-        bind("btnSmart99", "click", function () { if (!blockIfSubscriptionLocked()) applySmart99Rounding(); });
-        bind("btnUndoBulk", "click", function () { if (!blockIfSubscriptionLocked()) undoLastBulkUpdate(); });
+        bind("btnSmart99", "click", applySmart99Rounding);
+        bind("btnUndoBulk", "click", undoLastBulkUpdate);
         bind("btnOpenPriceHistory", "click", showFullPriceHistory);
         bind("btnPriceRules", "click", showSmartPricing);
         bind("btnProfitAlerts", "click", showProfitAlerts);
@@ -8809,7 +8267,6 @@ function renderDashboard(options = {}) {
         });
         bind("detailsClose", "click", closeItemDetails);
         updateLastSavedStatus();
-        applySubscriptionLock();
         setInterval(updateLastSavedStatus, 5000);
 
         // Select-all checkbox
@@ -8818,8 +8275,8 @@ function renderDashboard(options = {}) {
         });
 
         // Bulk action buttons
-        bind("btnBulkIncrease", "click", function () { if (!blockIfSubscriptionLocked()) runBulkPriceUpdate("increase"); });
-        bind("btnBulkDecrease", "click", function () { if (!blockIfSubscriptionLocked()) runBulkPriceUpdate("decrease"); });
+        bind("btnBulkIncrease", "click", function () { runBulkPriceUpdate("increase"); });
+        bind("btnBulkDecrease", "click", function () { runBulkPriceUpdate("decrease"); });
         bind("btnBulkClearPanel", "click", function () {
             clearSelection();
             renderItems(loadedItems);
@@ -8827,7 +8284,7 @@ function renderDashboard(options = {}) {
 
         document.querySelectorAll("[data-margin-preset]").forEach(function (btn) {
             btn.addEventListener("click", function () {
-                if (!blockIfSubscriptionLocked()) applyQuickMarginPreset(Number(btn.getAttribute("data-margin-preset")));
+                applyQuickMarginPreset(Number(btn.getAttribute("data-margin-preset")));
             });
         });
 
@@ -8871,7 +8328,6 @@ function renderDashboard(options = {}) {
                 var itemName = target.getAttribute("data-name") || "this product";
 
                 if (action === "save") {
-                    if (blockIfSubscriptionLocked()) return;
                     updateItem(itemId);
                 }
 
@@ -8880,7 +8336,6 @@ function renderDashboard(options = {}) {
                 }
 
                 if (action === "delete") {
-                    if (blockIfSubscriptionLocked()) return;
                     openConfirm(
                         "Delete Product?",
                         "This will delete " + itemName + " from Clover. This cannot be undone.",
