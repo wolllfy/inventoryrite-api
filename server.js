@@ -623,6 +623,95 @@ function getCloverError(error) {
     };
 }
 
+function buildCloverApiUrl(pathOrUrl) {
+    const value = String(pathOrUrl || "").trim();
+
+    if (!value) return "";
+
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+        return value;
+    }
+
+    if (value.startsWith("/")) {
+        return `${CLOVER_API_BASE_URL}${value}`;
+    }
+
+    return `${CLOVER_API_BASE_URL}/${value}`;
+}
+
+function extractNextCloverUrl(data) {
+    if (!data || typeof data !== "object") return "";
+
+    // Clover commonly returns `next` as a full URL or relative path.
+    if (data.next) return String(data.next);
+
+    // Defensive support for nested paging shapes in case Clover changes response shape.
+    if (data.pagination && data.pagination.next) return String(data.pagination.next);
+    if (data.links && data.links.next) return String(data.links.next);
+
+    return "";
+}
+
+async function fetchAllCloverItems(accessToken, merchantId) {
+    const safeLimit = Math.max(1, Math.min(Number(CLOVER_ITEM_LIMIT || 100), 1000));
+    const maxPages = Number(process.env.CLOVER_MAX_ITEM_PAGES || 250);
+    const allItems = [];
+    let pageCount = 0;
+    let offset = 0;
+    let nextUrl = `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${safeLimit}`;
+    const seenUrls = new Set();
+
+    while (nextUrl && pageCount < maxPages) {
+        const requestUrl = buildCloverApiUrl(nextUrl);
+
+        if (seenUrls.has(requestUrl)) {
+            console.warn("Stopped Clover item pagination because Clover returned a repeated next URL.");
+            break;
+        }
+
+        seenUrls.add(requestUrl);
+        pageCount++;
+
+        const response = await cloverApi.get(requestUrl, {
+            headers: cloverHeaders(accessToken)
+        });
+
+        const pageData = response.data || {};
+        const elements = Array.isArray(pageData.elements) ? pageData.elements : [];
+
+        allItems.push(...elements);
+
+        const cloverNext = extractNextCloverUrl(pageData);
+
+        if (cloverNext) {
+            nextUrl = cloverNext;
+            continue;
+        }
+
+        // Fallback for Clover responses that omit `next` but still support offset paging.
+        // If the page is full, try the next offset. If it is not full, we reached the end.
+        if (elements.length >= safeLimit) {
+            offset += safeLimit;
+            nextUrl = `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${safeLimit}&offset=${offset}`;
+        } else {
+            nextUrl = "";
+        }
+    }
+
+    if (pageCount >= maxPages) {
+        console.warn(`Stopped Clover item pagination after ${maxPages} pages to prevent runaway requests.`);
+    }
+
+    return {
+        elements: allItems,
+        href: `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${safeLimit}`,
+        pageCount,
+        limit: safeLimit,
+        truncated: pageCount >= maxPages,
+        totalLoaded: allItems.length
+    };
+}
+
 function isValidMoneyCents(value) {
     const numberValue = Number(value);
     return !Number.isNaN(numberValue) && numberValue >= 0 && Number.isFinite(numberValue);
@@ -5117,7 +5206,526 @@ function renderDashboard(options = {}) {
                 padding: 5px 8px !important;
             }
         }
-</style>
+
+
+        /* ----------------------------------------------------------------
+        | PREMIUM DENSITY CLEANUP - TABLE-FIRST MERCHANT WORKSPACE
+        ---------------------------------------------------------------- */
+
+        .hero {
+            min-height: 82px !important;
+            padding: 13px 20px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .hero h2 {
+            font-size: 23px !important;
+        }
+
+        .hero p {
+            margin-top: 5px !important;
+            font-size: 12px !important;
+        }
+
+        .inventory-card {
+            padding: 18px !important;
+        }
+
+        .table-top {
+            margin-bottom: 10px !important;
+        }
+
+        .table-top h3 {
+            font-size: 17px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .table-top p {
+            font-size: 12px !important;
+        }
+
+        .sync-note {
+            margin-top: 5px !important;
+            font-size: 12px !important;
+        }
+
+        .inventory-command-center {
+            padding: 12px !important;
+            margin-bottom: 10px !important;
+            border-radius: 16px !important;
+        }
+
+        .command-title {
+            font-size: 13px !important;
+        }
+
+        .command-subtitle {
+            font-size: 11px !important;
+        }
+
+        .operations-collapsible {
+            display: block !important;
+            padding: 0 !important;
+            margin-bottom: 10px !important;
+            overflow: hidden !important;
+            background: #ffffff !important;
+            border-radius: 16px !important;
+        }
+
+        .operations-tools-summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            user-select: none;
+        }
+
+        .operations-tools-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .operations-toggle-label {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .operations-collapsible[open] .operations-toggle-label::before {
+            content: "Hide ";
+        }
+
+        .operations-collapsible:not([open]) .operations-toggle-label {
+            color: #15803d;
+            border-color: #bbf7d0;
+            background: #ecfdf5;
+        }
+
+        .operations-collapsible:not([open]) .operations-toggle-label::before {
+            content: "";
+        }
+
+        .operations-collapsible[open] .operations-toggle-label {
+            font-size: 0;
+        }
+
+        .operations-collapsible[open] .operations-toggle-label::before {
+            font-size: 11px;
+            content: "Hide Tools";
+        }
+
+        .operations-collapsible .operations-tools-grid {
+            padding: 0 14px 14px !important;
+        }
+
+        .productivity-hub {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .productivity-card {
+            min-height: 62px !important;
+            padding: 9px 10px !important;
+            border-radius: 13px !important;
+            box-shadow: none !important;
+        }
+
+        .productivity-kicker {
+            font-size: 9px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .productivity-title {
+            font-size: 12px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .productivity-copy {
+            font-size: 10px !important;
+            line-height: 1.25 !important;
+        }
+
+        .operations-summary-strip,
+        .last-action-strip {
+            padding: 8px 10px !important;
+            margin-bottom: 8px !important;
+            border-radius: 13px !important;
+        }
+
+        .operations-summary-main,
+        .last-action-strip {
+            font-size: 12px !important;
+        }
+
+        .recent-sidebar {
+            padding: 10px 12px !important;
+            margin-bottom: 9px !important;
+            border-radius: 14px !important;
+        }
+
+        .recent-sidebar-subtitle {
+            display: none !important;
+        }
+
+        .recent-sidebar-top {
+            margin-bottom: 7px !important;
+        }
+
+        .recent-list {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 0 !important;
+        }
+
+        .recent-list > *:nth-child(n+2) {
+            display: none !important;
+        }
+
+        .recent-item,
+        .recent-change-item {
+            padding: 8px 10px !important;
+            min-height: auto !important;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            margin: 8px 0 !important;
+        }
+
+        .stat-hide-premium {
+            display: none !important;
+        }
+
+        .stat-box {
+            padding: 10px 11px !important;
+            border-radius: 13px !important;
+        }
+
+        .stat-label {
+            font-size: 10px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .stat-value {
+            font-size: 18px !important;
+        }
+
+        #marginStatsRow {
+            margin-top: -2px !important;
+        }
+
+        .merchant-hint {
+            padding: 8px 10px !important;
+            margin-bottom: 9px !important;
+            font-size: 12px !important;
+            border-radius: 13px !important;
+        }
+
+        .table-wrap {
+            margin-top: 0 !important;
+        }
+
+        th {
+            height: 38px !important;
+            font-size: 11px !important;
+        }
+
+        tbody td {
+            height: 52px !important;
+            padding-top: 9px !important;
+            padding-bottom: 9px !important;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 34px !important;
+        }
+
+        @media (max-width: 900px) {
+            .productivity-hub {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 12px 14px !important;
+            }
+
+            .productivity-hub {
+                grid-template-columns: 1fr !important;
+            }
+
+            .productivity-copy {
+                display: none !important;
+            }
+
+            .operations-tools-summary {
+                align-items: flex-start;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+
+    
+
+        /* ----------------------------------------------------------------
+        | FINAL DUPLICATE-ACTION CLEANUP + ALIGNMENT PASS
+        | Keeps hero actions as the primary actions:
+        | Add Product / Sync Clover / Tools.
+        | Product Controls now stays focused on Search / Refresh / Bulk Update.
+        ---------------------------------------------------------------- */
+
+        .simple-hero {
+            min-height: 78px !important;
+            padding: 12px 18px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .simple-hero h2,
+        .hero h2 {
+            font-size: 22px !important;
+        }
+
+        .simple-hero p,
+        .hero p {
+            margin-top: 4px !important;
+            font-size: 12px !important;
+        }
+
+        .simple-hero-actions,
+        .hero-actions {
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        .simple-hero-actions .btn,
+        .hero-actions .btn {
+            min-height: 38px !important;
+            padding: 9px 13px !important;
+            border-radius: 11px !important;
+        }
+
+        .inventory-card {
+            padding: 16px !important;
+        }
+
+        .table-top {
+            margin-bottom: 8px !important;
+        }
+
+        .table-top h3 {
+            font-size: 16px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .table-top p {
+            font-size: 11px !important;
+        }
+
+        .sync-note {
+            margin-top: 4px !important;
+            font-size: 11px !important;
+        }
+
+        .inventory-command-center {
+            padding: 10px 12px !important;
+            margin-bottom: 8px !important;
+            border-radius: 15px !important;
+        }
+
+        .command-center-top {
+            align-items: center !important;
+            gap: 10px !important;
+        }
+
+        .command-copy {
+            min-width: 205px !important;
+        }
+
+        .command-title {
+            font-size: 13px !important;
+        }
+
+        .command-subtitle {
+            font-size: 11px !important;
+        }
+
+        .command-search-actions {
+            min-width: 0 !important;
+            display: grid !important;
+            grid-template-columns: minmax(260px, 1fr) 110px 120px !important;
+            gap: 8px !important;
+            align-items: center !important;
+        }
+
+        .command-search-actions .search-input {
+            min-width: 0 !important;
+            width: 100% !important;
+            flex: none !important;
+        }
+
+        .command-search-actions .btn {
+            min-width: 0 !important;
+            width: 100% !important;
+            min-height: 38px !important;
+            padding: 9px 10px !important;
+            border-radius: 11px !important;
+        }
+
+        .operations-collapsible,
+        .merchant-control-bar {
+            margin-bottom: 8px !important;
+        }
+
+        .operations-tools-summary {
+            padding: 9px 12px !important;
+        }
+
+        .operations-collapsible .operations-tools-grid {
+            padding: 0 12px 12px !important;
+        }
+
+        .merchant-control-title {
+            font-size: 13px !important;
+        }
+
+        .merchant-control-subtitle {
+            font-size: 10px !important;
+            margin-top: 2px !important;
+        }
+
+        .operations-toggle-label {
+            padding: 5px 9px !important;
+            font-size: 10px !important;
+        }
+
+        .productivity-hub {
+            gap: 7px !important;
+            margin-bottom: 8px !important;
+        }
+
+        .productivity-card {
+            min-height: 56px !important;
+            padding: 8px 9px !important;
+            border-radius: 12px !important;
+        }
+
+        .productivity-kicker {
+            font-size: 9px !important;
+            margin-bottom: 1px !important;
+        }
+
+        .productivity-title {
+            font-size: 11px !important;
+            margin-bottom: 1px !important;
+        }
+
+        .productivity-copy {
+            font-size: 9.5px !important;
+            line-height: 1.22 !important;
+        }
+
+        .operations-summary-strip,
+        .last-action-strip {
+            padding: 7px 9px !important;
+            margin-bottom: 7px !important;
+            border-radius: 12px !important;
+        }
+
+        .recent-sidebar {
+            padding: 9px 11px !important;
+            margin-bottom: 8px !important;
+            border-radius: 13px !important;
+        }
+
+        .recent-sidebar-subtitle {
+            display: none !important;
+        }
+
+        .recent-list > *:nth-child(n+2) {
+            display: none !important;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            max-width: 520px !important;
+            gap: 7px !important;
+            margin: 7px 0 !important;
+        }
+
+        .stat-hide-premium {
+            display: none !important;
+        }
+
+        .stat-box {
+            padding: 9px 10px !important;
+            border-radius: 12px !important;
+        }
+
+        .stat-label {
+            font-size: 10px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .stat-value {
+            font-size: 17px !important;
+        }
+
+        .merchant-hint {
+            padding: 7px 9px !important;
+            margin-bottom: 8px !important;
+            font-size: 11px !important;
+            border-radius: 12px !important;
+        }
+
+        th {
+            height: 36px !important;
+            font-size: 10px !important;
+        }
+
+        tbody td {
+            height: 50px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 33px !important;
+        }
+
+        @media (max-width: 900px) {
+            .command-search-actions {
+                grid-template-columns: 1fr !important;
+            }
+
+            .command-copy {
+                min-width: 0 !important;
+                width: 100% !important;
+            }
+
+            .stats-row {
+                max-width: none !important;
+            }
+        }
+
+    </style>
 </head>
 <body>
 
@@ -5167,15 +5775,13 @@ function renderDashboard(options = {}) {
                 <div class="command-center-top">
                     <div class="command-copy">
                         <div class="command-title">Product Controls</div>
-                        <div class="command-subtitle">Search first, then add, refresh, or bulk update.</div>
+                        <div class="command-subtitle">Search first, then refresh or bulk update.</div>
                     </div>
 
                     <div class="command-search-actions">
                         <input id="inventorySearch" class="search-input" type="text" placeholder="Search products..." />
                         <button id="btnRefreshInventoryTop" type="button" class="btn btn-light">Refresh</button>
-                        <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
                         <button id="btnToggleBulkTop" type="button" class="btn btn-light">Bulk Update</button>
-                        <button id="btnToggleAdvancedTop" type="button" class="btn btn-light">Tools</button>
                     </div>
                 </div>
             </div>
@@ -5254,11 +5860,14 @@ function renderDashboard(options = {}) {
 
 
 
-            <div class="merchant-control-bar" id="merchantControlBar">
-                <div class="merchant-control-left operations-tools-header">
-                    <div class="merchant-control-title">Operations Tools</div>
-                    <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
-                </div>
+            <details class="merchant-control-bar operations-collapsible" id="merchantControlBar">
+                <summary class="operations-tools-summary">
+                    <div class="merchant-control-left operations-tools-header">
+                        <div class="merchant-control-title">Operations Tools</div>
+                        <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
+                    </div>
+                    <span class="operations-toggle-label">Open Tools</span>
+                </summary>
                 <div class="merchant-control-actions operations-tools-grid">
                     <div class="tool-section tool-section-primary">
                         <div class="tool-section-title">Primary Actions</div>
@@ -5291,7 +5900,7 @@ function renderDashboard(options = {}) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
             <div class="view-filter-note" id="viewFilterNote"></div>
             <div class="productivity-hub" id="productivityHub">
                 <button id="btnProfitIntelligence" type="button" class="productivity-card">
@@ -5358,11 +5967,11 @@ function renderDashboard(options = {}) {
                     <div class="stat-label">Loaded Products</div>
                     <div class="stat-value" id="statLoaded">0</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Visible Products</div>
                     <div class="stat-value" id="statVisible">0</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Available Products</div>
                     <div class="stat-value" id="statAvailable">0</div>
                 </div>
@@ -5377,11 +5986,11 @@ function renderDashboard(options = {}) {
                     <div class="stat-label">Average Margin</div>
                     <div class="stat-value" id="statAvgMargin">&mdash;</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Best Margin Item</div>
                     <div class="stat-value" id="statBestMargin">&mdash;</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Lowest Margin Item</div>
                     <div class="stat-value" id="statLowestMargin">&mdash;</div>
                 </div>
@@ -6010,6 +6619,8 @@ function renderDashboard(options = {}) {
             var total = selectedIds.length;
             var successCount = 0;
             var failCount = 0;
+            var completedCount = 0;
+            var BATCH_SIZE = 5;
             var undoSnapshot = {
                 source: "Bulk Price Update",
                 direction: direction,
@@ -6020,13 +6631,13 @@ function renderDashboard(options = {}) {
 
             bulkUpdatedItemIds = [];
 
-            for (var i = 0; i < total; i++) {
-                var itemId = selectedIds[i];
+            async function updateOneBulkItem(itemId) {
                 var item = loadedItems.find(function (it) { return it.id === itemId; });
 
                 if (!item) {
                     failCount++;
-                    continue;
+                    completedCount++;
+                    return;
                 }
 
                 var currentCents = Number(item.price || 0);
@@ -6035,11 +6646,6 @@ function renderDashboard(options = {}) {
                     : (1 - pct / 100);
 
                 var newCents = Math.max(0, Math.round(currentCents * multiplier));
-
-                // Progress
-                var pctDone = Math.round(((i) / total) * 100);
-                if (progressBar) progressBar.style.width = pctDone + "%";
-                if (progressLabel) progressLabel.textContent = "Updating " + (i + 1) + " of " + total + ": " + escapeHtml(item.name || itemId);
 
                 try {
                     await fetchJson(
@@ -6050,6 +6656,7 @@ function renderDashboard(options = {}) {
                             body: JSON.stringify({ name: item.name || "", price: newCents })
                         }
                     );
+
                     successCount++;
                     undoSnapshot.items.push({ id: itemId, name: item.name || "Unnamed Product", oldCents: currentCents, newCents: newCents });
                     recordPriceChange(item, currentCents, newCents, "Bulk Price Update");
@@ -6057,10 +6664,21 @@ function renderDashboard(options = {}) {
                 } catch (err) {
                     failCount++;
                     console.error("Bulk update failed for item", itemId, err);
+                } finally {
+                    completedCount++;
+                    var pctDone = Math.round((completedCount / total) * 100);
+                    if (progressBar) progressBar.style.width = pctDone + "%";
+                    if (progressLabel) progressLabel.textContent = "Updating prices: " + completedCount + " of " + total + " complete.";
                 }
             }
 
-            // Complete progress
+            for (var i = 0; i < selectedIds.length; i += BATCH_SIZE) {
+                var batch = selectedIds.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(function (itemId) {
+                    return updateOneBulkItem(itemId);
+                }));
+            }
+
             if (progressBar) progressBar.style.width = "100%";
             if (progressLabel) progressLabel.textContent = "Done! " + successCount + " updated, " + failCount + " failed.";
 
@@ -6080,13 +6698,13 @@ function renderDashboard(options = {}) {
                 logActivity("Bulk Price Update", successCount + " price(s) " + dirLabel + " by " + pct + "%.", "Success");
             } else {
                 showToast("Bulk update: " + successCount + " succeeded, " + failCount + " failed.", failCount > 0 && successCount === 0 ? "error" : "info");
+                logActivity("Bulk Price Update", successCount + " succeeded, " + failCount + " failed.", successCount ? "Partial" : "Failed");
             }
 
             clearSelection();
             stopBusy();
             await loadItems();
         }
-
 
 
         /*
@@ -7142,15 +7760,22 @@ function renderDashboard(options = {}) {
             startBusy();
             var successCount = 0;
             var failCount = 0;
+            var completedCount = 0;
+            var BATCH_SIZE = 5;
+            var progressWrap = byId("bulkProgress");
+            var progressBar = byId("bulkProgressBar");
+            var progressLabel = byId("bulkProgressLabel");
             var undoSnapshot = {
                 source: sourceLabel,
                 timestamp: new Date().toISOString(),
                 items: []
             };
 
-            for (var i = 0; i < updateList.length; i++) {
-                var row = updateList[i];
-                var item = row.item;
+            if (progressWrap) progressWrap.classList.add("show");
+            if (progressLabel) progressLabel.classList.add("show");
+
+            async function updateOneDirectRow(row) {
+                var item = row.item || {};
                 try {
                     await fetchJson(
                         "/clover-update-item/" + encodeURIComponent(item.id || ""),
@@ -7160,6 +7785,7 @@ function renderDashboard(options = {}) {
                             body: JSON.stringify({ name: item.name || "", price: row.newCents })
                         }
                     );
+
                     successCount++;
                     undoSnapshot.items.push({ id: item.id || "", name: item.name || "Unnamed Product", oldCents: row.oldCents, newCents: row.newCents });
                     recordPriceChange(item, row.oldCents, row.newCents, sourceLabel);
@@ -7167,8 +7793,29 @@ function renderDashboard(options = {}) {
                 } catch (err) {
                     failCount++;
                     console.error(sourceLabel + " failed for item", item.id, err);
+                } finally {
+                    completedCount++;
+                    var pctDone = Math.round((completedCount / Math.max(1, updateList.length)) * 100);
+                    if (progressBar) progressBar.style.width = pctDone + "%";
+                    if (progressLabel) progressLabel.textContent = sourceLabel + ": " + completedCount + " of " + updateList.length + " complete.";
                 }
             }
+
+            for (var i = 0; i < updateList.length; i += BATCH_SIZE) {
+                var batch = updateList.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(function (row) {
+                    return updateOneDirectRow(row);
+                }));
+            }
+
+            if (progressBar) progressBar.style.width = "100%";
+            if (progressLabel) progressLabel.textContent = sourceLabel + " complete: " + successCount + " updated, " + failCount + " failed.";
+
+            setTimeout(function () {
+                if (progressWrap) progressWrap.classList.remove("show");
+                if (progressLabel) progressLabel.classList.remove("show");
+                if (progressBar) progressBar.style.width = "0%";
+            }, 2400);
 
             if (undoSnapshot.items.length) {
                 lastBulkUndoSnapshot = undoSnapshot;
@@ -7878,8 +8525,10 @@ function renderDashboard(options = {}) {
                 loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
-                showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
-                logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover.", "Success");
+                var pageCount = data.pagination && data.pagination.pageCount ? Number(data.pagination.pageCount) : 1;
+                var truncated = data.pagination && data.pagination.truncated;
+                showToast("Inventory loaded: " + loadedItems.length + " product(s)" + (pageCount > 1 ? " across " + pageCount + " pages" : "") + (truncated ? " (safety limit reached)" : "") + ".", truncated ? "info" : "success");
+                logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover" + (pageCount > 1 ? " across " + pageCount + " pages." : "."), truncated ? "Partial" : "Success");
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
@@ -8554,15 +9203,22 @@ app.get("/clover-items", async (req, res) => {
             });
         }
 
-        const itemsResponse = await cloverApi.get(
-            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items?limit=${CLOVER_ITEM_LIMIT}`,
-            { headers: cloverHeaders(accessToken) }
-        );
+        const itemsData = await fetchAllCloverItems(accessToken, merchantId);
+
+        logApiCall("/clover-items", merchantId, "GET", 200);
 
         res.json({
             success: true,
-            message: "Clover inventory items loaded successfully",
-            data: itemsResponse.data
+            message: itemsData.truncated
+                ? `Clover inventory loaded ${itemsData.totalLoaded} product(s), but stopped at the configured safety page limit.`
+                : `Clover inventory items loaded successfully: ${itemsData.totalLoaded} product(s).`,
+            data: itemsData,
+            pagination: {
+                pageCount: itemsData.pageCount,
+                limit: itemsData.limit,
+                totalLoaded: itemsData.totalLoaded,
+                truncated: itemsData.truncated
+            }
         });
     } catch (error) {
         console.error("Clover Items Error:", error.response?.data || error.message);
@@ -8969,33 +9625,49 @@ app.post("/item-cost/:itemId", async (req, res) => {
             });
         }
 
-        // Save locally first so InventoryRite keeps its own profit/margin record.
+        // Save locally first so InventoryRite always keeps its own profit/margin record.
         const savedCostCents = await saveItemCostForMerchant(merchantId, itemId, costCents);
 
-        // IMPORTANT: Clover DOES accept the item cost field as cents using { cost: costCents }.
-        // This keeps InventoryRite and Clover Dashboard's Cost column in sync.
-        const cloverResponse = await cloverApi.post(
-            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
-            {
-                cost: savedCostCents
-            },
-            {
-                headers: cloverHeaders(accessToken)
-            }
-        );
+        let cloverCostSynced = false;
+        let cloverCostSyncError = null;
+        let cloverResponseData = null;
 
-        logApiCall("/item-cost/:itemId", merchantId, "POST", 200);
+        try {
+            const cloverResponse = await cloverApi.post(
+                `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+                {
+                    cost: savedCostCents
+                },
+                {
+                    headers: cloverHeaders(accessToken)
+                }
+            );
+
+            cloverCostSynced = true;
+            cloverResponseData = cloverResponse.data || null;
+        } catch (cloverSyncError) {
+            const cloverError = getCloverError(cloverSyncError);
+            cloverCostSyncError = cloverError.data;
+
+            // Do NOT fail the whole request after local save succeeds.
+            // Some Clover accounts/plans do not allow item cost writes or require extra permissions.
+            console.warn("Clover cost sync skipped/failed after local save:", cloverSyncError.response?.data || cloverSyncError.message);
+        }
+
+        logApiCall("/item-cost/:itemId", merchantId, "POST", cloverCostSynced ? 200 : 207);
 
         return res.json({
             success: true,
-            message: "Item cost saved successfully in InventoryRite and synced to Clover.",
+            message: cloverCostSynced
+                ? "Item cost saved successfully in InventoryRite and synced to Clover."
+                : "Item cost saved in InventoryRite. Clover did not accept the cost sync, so profit tracking still works inside InventoryRite.",
             databaseEnabled: USE_DATABASE,
             merchantId,
             itemId,
             costCents: savedCostCents,
-            cloverCostSynced: true,
-            cloverCostSyncError: null,
-            cloverResponse: cloverResponse.data
+            cloverCostSynced,
+            cloverCostSyncError,
+            cloverResponse: cloverResponseData
         });
     } catch (error) {
         const cloverError = getCloverError(error);
@@ -9004,7 +9676,7 @@ app.post("/item-cost/:itemId", async (req, res) => {
 
         return res.status(cloverError.status).json({
             success: false,
-            message: "Failed to save and sync item cost.",
+            message: "Failed to save item cost in InventoryRite.",
             error: cloverError.data
         });
     }
