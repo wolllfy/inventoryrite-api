@@ -59,7 +59,6 @@ const REQUIRED_CLOVER_SCOPES = [
     "merchant_read",
     "item_read",
     "item_write",
-    "employee_read",
     "inventory_read",
     "inventory_write"
 ];
@@ -5325,16 +5324,6 @@ function renderDashboard(options = {}) {
                         </div>
                     </div>
                 </div>
-                <div class="margin-preset-row">
-                    <div class="margin-preset-copy">Quick margin presets use the saved Cost field to calculate new selling prices for selected products.</div>
-                    <div class="margin-preset-actions">
-                        <button type="button" class="preset-btn" data-margin-preset="35">35%</button>
-                        <button type="button" class="preset-btn" data-margin-preset="40">40%</button>
-                        <button type="button" class="preset-btn" data-margin-preset="45">45%</button>
-                        <button type="button" class="preset-btn" data-margin-preset="50">50%</button>
-                    </div>
-                </div>
-                <div class="protected-pricing-note">Protected Pricing: InventoryRite never changes Clover prices without confirmation. You can review the selected count before every bulk update.</div>
                 <div class="bulk-progress" id="bulkProgress">
                     <div class="bulk-progress-bar" id="bulkProgressBar"></div>
                 </div>
@@ -5364,7 +5353,6 @@ function renderDashboard(options = {}) {
                         <div class="tool-button-grid tool-grid-health">
                             <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
                             <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
-                            <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
                             <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
                             <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Cleanup Check</button>
                         </div>
@@ -6772,7 +6760,7 @@ function renderDashboard(options = {}) {
 
                 if (cost <= 0) {
                     penalty += 8;
-                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and margin checks cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This unlocks real margin alerts.", 0, "fix_cost"));
+                    issues.push(makeIssue("missing_cost", "warning", item, "Missing true cost", "No cost is saved for this item, so margin and margin checks cannot be trusted yet.", "Enter the merchant true cost in the Cost field. This helps real margin alerts work correctly.", 0, "fix_cost"));
                 }
 
                 if (price > 0 && cost > 0 && price < cost) {
@@ -7149,15 +7137,15 @@ function renderDashboard(options = {}) {
         function showMissingCostLock() {
             var missing = (loadedItems || []).filter(function (item) { return getCostCents(item.id || "") <= 0; });
             var rows = missing.slice(0, 35).map(function (item) {
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + " - Cost missing. Margin presets and margin review need a cost first.</span></div><div><span>Needs Cost</span></div>";
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + " - Cost missing. Margin review needs a cost first.</span></div><div><span>Needs Cost</span></div>";
             });
             openFeatureModal(
-                "Missing Cost Lock",
+                "Missing Costs",
                 missing.length ? (missing.length + " product(s) need a cost before margin tools can be trusted.") : "Every loaded product has a saved cost. Margin tools are ready.",
                 rows
             );
             setViewMode("missingCost");
-            logActivity("Missing Costs", missing.length + " product(s) checked for cost lock.", "Viewed");
+            logActivity("Missing Costs", missing.length + " product(s) checked for cost review.", "Viewed");
             showToast("Missing Costs view enabled.", missing.length ? "info" : "success");
         }
 
@@ -8190,7 +8178,6 @@ function renderDashboard(options = {}) {
             });
         }
         bind("btnDuplicateReview", "click", showDuplicateDetector);
-        bind("btnMissingCostLock", "click", showMissingCostLock);
         bind("btnSmart99", "click", applySmart99Rounding);
         bind("btnUndoBulk", "click", undoLastBulkUpdate);
         bind("btnOpenPriceHistory", "click", showFullPriceHistory);
@@ -8241,11 +8228,6 @@ function renderDashboard(options = {}) {
             renderItems(loadedItems);
         });
 
-        document.querySelectorAll("[data-margin-preset]").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                applyQuickMarginPreset(Number(btn.getAttribute("data-margin-preset")));
-            });
-        });
 
         var modal = byId("confirmModal");
         if (modal) {
@@ -8525,7 +8507,27 @@ app.get("/connect-clover", (req, res) => {
         `inventoryrite_oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${SECURE_COOKIE_FLAG}`
     );
 
-    const scope = process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" ");
+    // Keep OAuth lean so Clover does not block installs on lower service plans.
+    // Even if an old CLOVER_SCOPES env var exists in Render, remove restricted scopes here.
+    const blockedScopes = new Set([
+        "employee_read",
+        "employee_write",
+        "payment_read",
+        "payment_write",
+        "payments_read",
+        "payments_write",
+        "customer_read",
+        "customer_write",
+        "ecommerce_write"
+    ]);
+
+    const requestedScopes = String(process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" "))
+        .split(/\s+/)
+        .map((scopeName) => scopeName.trim())
+        .filter(Boolean)
+        .filter((scopeName) => !blockedScopes.has(scopeName.toLowerCase()));
+
+    const scope = Array.from(new Set(requestedScopes)).join(" ");
 
     const cloverAuthUrl =
         `${CLOVER_BASE_URL}/oauth/authorize` +
