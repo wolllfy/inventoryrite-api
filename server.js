@@ -4681,12 +4681,12 @@ function renderDashboard(options = {}) {
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
             <div class="productivity-hub" id="productivityHub">
-                <button id="btnProfitIntelligence" type="button" class="productivity-card" data-icon="↗">
+                <button id="btnProfitIntelligence" type="button" class="productivity-card" data-icon="$">
                     <div class="productivity-kicker">Profit</div>
                     <div class="productivity-title">Profit Review</div>
                     <div class="productivity-copy">Review pricing performance, low margins, and missing costs quickly.</div>
                 </button>
-                <button id="btnBulkOperationsHub" type="button" class="productivity-card" data-icon="▦">
+                <button id="btnBulkOperationsHub" type="button" class="productivity-card" data-icon="B">
                     <div class="productivity-kicker">Bulk</div>
                     <div class="productivity-title">Bulk Tools</div>
                     <div class="productivity-copy">Select rows, update prices, export CSV, and move faster.</div>
@@ -4696,12 +4696,12 @@ function renderDashboard(options = {}) {
                     <div class="productivity-title">Pricing Review</div>
                     <div class="productivity-copy">Margin checks and faster menu price reviews.</div>
                 </button>
-                <button id="btnCleanupToolsHub" type="button" class="productivity-card" data-icon="✓">
+                <button id="btnCleanupToolsHub" type="button" class="productivity-card" data-icon="C">
                     <div class="productivity-kicker">Cleanup</div>
                     <div class="productivity-title">Cleanup Check</div>
                     <div class="productivity-copy">Review missing prices, duplicate products, weak costs, and inventory issues.</div>
                 </button>
-                <button id="btnShortcutHub" type="button" class="productivity-card" data-icon="⚡">
+                <button id="btnShortcutHub" type="button" class="productivity-card" data-icon="Q">
                     <div class="productivity-kicker">Speed</div>
                     <div class="productivity-title">Quick Actions</div>
                     <div class="productivity-copy">Common product actions merchants use every day.</div>
@@ -8515,6 +8515,78 @@ function renderSimplePage(title, bodyHtml) {
 
             .simple-hero-actions .btn {
                 flex: 1 1 140px;
+            }
+        }
+
+
+        /* ----------------------------------------------------------------
+        | FINAL FIX - CLEAN PRODUCTIVITY CARD ICON BADGES
+        | Keeps icons aligned inside cards and prevents clipped/overlapping symbols.
+        ---------------------------------------------------------------- */
+
+        .productivity-hub {
+            align-items: stretch !important;
+        }
+
+        .productivity-card {
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 12px 14px 12px 46px !important;
+            min-height: 82px !important;
+            border-radius: 15px !important;
+        }
+
+        .productivity-card::before {
+            content: attr(data-icon) !important;
+            position: absolute !important;
+            left: 14px !important;
+            top: 14px !important;
+            width: 22px !important;
+            height: 22px !important;
+            min-width: 22px !important;
+            min-height: 22px !important;
+            border-radius: 8px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: #ecfdf5 !important;
+            border: 1px solid #bbf7d0 !important;
+            color: #166534 !important;
+            font-size: 11px !important;
+            font-weight: 900 !important;
+            line-height: 1 !important;
+            box-shadow: none !important;
+            transform: none !important;
+            z-index: 1 !important;
+        }
+
+        .productivity-title,
+        .productivity-copy,
+        .productivity-kicker {
+            position: relative !important;
+            z-index: 2 !important;
+        }
+
+        .productivity-title {
+            margin-top: 0 !important;
+            line-height: 1.18 !important;
+        }
+
+        .productivity-copy {
+            line-height: 1.28 !important;
+        }
+
+        @media (max-width: 768px) {
+            .productivity-card {
+                padding: 12px 12px 12px 44px !important;
+                min-height: 82px !important;
+            }
+
+            .productivity-card::before {
+                left: 13px !important;
+                top: 14px !important;
+                width: 21px !important;
+                height: 21px !important;
             }
         }
 
