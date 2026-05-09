@@ -4568,6 +4568,180 @@ function renderDashboard(options = {}) {
             }
         }
 
+
+        /* ----------------------------------------------------------------
+        | FINAL MOBILE PRODUCT CARD FIX - ACTION BUTTONS STAY INSIDE CARD
+        | This belongs in the main dashboard CSS. It converts table rows into
+        | safe mobile cards and keeps Save / Info / Delete inside the row.
+        ---------------------------------------------------------------- */
+        @media (max-width: 768px) {
+            .table-wrap {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+                border: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+
+            #itemsTable,
+            #itemsTable thead,
+            #itemsTable tbody,
+            #itemsTable tr,
+            #itemsTable th,
+            #itemsTable td {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                table-layout: auto !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsTable thead {
+                display: none !important;
+            }
+
+            #itemsBody tr {
+                background: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 18px !important;
+                margin: 0 0 12px !important;
+                padding: 12px !important;
+                height: auto !important;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045) !important;
+                overflow: visible !important;
+            }
+
+            #itemsBody tr:hover td {
+                background: transparent !important;
+            }
+
+            #itemsBody td {
+                border-bottom: 0 !important;
+                padding: 0 0 12px !important;
+                height: auto !important;
+                min-height: 0 !important;
+                text-align: left !important;
+                background: transparent !important;
+                overflow: visible !important;
+            }
+
+            #itemsBody td:last-child {
+                padding-bottom: 0 !important;
+            }
+
+            #itemsBody td::before {
+                display: block !important;
+                margin: 0 0 6px !important;
+                color: #64748b !important;
+                font-size: 11px !important;
+                font-weight: 900 !important;
+                letter-spacing: .06em !important;
+                line-height: 1.1 !important;
+                text-transform: uppercase !important;
+            }
+
+            #itemsBody td:nth-child(1)::before { content: "Select Product" !important; }
+            #itemsBody td:nth-child(2)::before { content: "Product" !important; }
+            #itemsBody td:nth-child(3)::before { content: "Price" !important; }
+            #itemsBody td:nth-child(4)::before { content: "Cost" !important; }
+            #itemsBody td:nth-child(5)::before { content: "Margin" !important; }
+            #itemsBody td:nth-child(6)::before { content: "Actions" !important; }
+
+            #itemsBody td.col-check {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 10px !important;
+                padding-bottom: 14px !important;
+            }
+
+            #itemsBody td.col-check::before {
+                margin: 0 !important;
+                flex: 1 1 auto !important;
+            }
+
+            #itemsBody input[type="checkbox"] {
+                width: 20px !important;
+                height: 20px !important;
+                min-width: 20px !important;
+            }
+
+            #itemsBody .name-input,
+            #itemsBody .small-input {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                height: 42px !important;
+                min-height: 42px !important;
+                padding: 9px 10px !important;
+                border-radius: 12px !important;
+                font-size: 15px !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsBody .pill {
+                min-height: 28px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            #itemsBody .cost-warning-chip {
+                display: inline-flex !important;
+                margin-top: 6px !important;
+            }
+
+            #itemsBody .row-actions {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                overflow: visible !important;
+                align-items: stretch !important;
+                justify-content: stretch !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsBody .row-actions .btn-small,
+            #itemsBody .row-actions .icon-action,
+            #itemsBody .icon-action {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                flex: none !important;
+                flex-basis: auto !important;
+                height: 44px !important;
+                min-height: 44px !important;
+                padding: 0 !important;
+                border-radius: 13px !important;
+                font-size: 15px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsBody .check-col,
+            #itemsBody .name-col,
+            #itemsBody .money-col,
+            #itemsBody .metric-col,
+            #itemsBody .actions-col {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 360px) {
+            #itemsBody .row-actions {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
 </style>
 </head>
 <body>
