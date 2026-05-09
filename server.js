@@ -2348,6 +2348,106 @@ function renderDashboard(options = {}) {
             .command-search-actions .btn { flex-basis: 100%; }
             .row-actions .btn-small { flex-basis: 100%; }
         }
+
+
+        /* ----------------------------------------------------------------
+        | SIMPLIFIED MERCHANT UI - SIMPLE BY DEFAULT, ADVANCED ON DEMAND
+        | Keeps all functionality but hides noisy panels until requested.
+        ---------------------------------------------------------------- */
+
+        .simple-hero {
+            min-height: auto !important;
+            padding: 24px 26px !important;
+            align-items: center;
+        }
+
+        .simple-hero:after { display: none; }
+
+        .simple-hero-copy { max-width: 720px; }
+
+        .simple-hero h2 {
+            font-size: 31px !important;
+            line-height: 1.08;
+            margin: 0;
+        }
+
+        .simple-hero p {
+            font-size: 14px !important;
+            max-width: 680px;
+            margin-top: 9px;
+        }
+
+        .simple-hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 2;
+        }
+
+        .simple-status-strip {
+            border-color: #e5e7eb !important;
+            background: #ffffff !important;
+        }
+
+        .inventory-command-center {
+            box-shadow: none !important;
+            border-color: #e5e7eb !important;
+            background: #ffffff !important;
+        }
+
+        .command-search-actions .btn { min-width: 112px; }
+
+        #merchantControlBar,
+        #productivityHub,
+        #operationsSummaryStrip,
+        #lastActionStrip,
+        #recentChangesPanel,
+        #marginStatsRow,
+        .merchant-hint {
+            display: none !important;
+        }
+
+        body.show-advanced #merchantControlBar { display: flex !important; }
+        body.show-advanced #productivityHub { display: grid !important; }
+        body.show-advanced #operationsSummaryStrip { display: flex !important; }
+        body.show-advanced #lastActionStrip { display: flex !important; }
+        body.show-advanced #recentChangesPanel { display: block !important; }
+        body.show-advanced #marginStatsRow { display: grid !important; }
+        body.show-advanced .merchant-hint { display: block !important; }
+
+        body.show-advanced #btnToggleAdvancedTop,
+        body.show-advanced #btnHeroAdvanced {
+            background: #111827;
+            color: #ffffff;
+            border-color: #111827;
+        }
+
+        .stats-row:first-of-type {
+            margin-top: 4px;
+        }
+
+        .stat-box {
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 760px) {
+            .simple-hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .simple-hero-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .simple-hero-actions .btn {
+                flex: 1 1 140px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2356,8 +2456,8 @@ function renderDashboard(options = {}) {
         <div class="brand">
             <div class="logo">IR</div>
             <div>
-                <h1>InventoryRite Profit Tools</h1>
-                <p>Inventory tools for pricing, margin checks, cleanup, and faster Clover product updates</p>
+                <h1>InventoryRite</h1>
+                <p>Simple Clover inventory, pricing, and product updates</p>
             </div>
         </div>
 
@@ -2369,46 +2469,37 @@ function renderDashboard(options = {}) {
     <main class="wrap">
 
         ${connected ? `
-        <section class="hero">
-            <div>
+        <section class="hero simple-hero">
+            <div class="simple-hero-copy">
                 <div class="eyebrow">Clover Inventory</div>
-                <h2>Clean up Clover products, protect margins, and update pricing faster from one workspace.</h2>
-                <p>Review pricing performance, missing costs, duplicate products, and inventory issues from one operational dashboard.</p>
+                <h2>Manage products without the clutter.</h2>
+                <p>Search, edit prices, add products, and sync Clover from one clean inventory screen. Advanced tools are still here when you need them.</p>
             </div>
-
+            <div class="simple-hero-actions">
+                <button id="btnHeroAdd" type="button" class="btn btn-primary">Add Product</button>
+                <button id="btnHeroSync" type="button" class="btn btn-light">Sync Clover</button>
+                <button id="btnHeroAdvanced" type="button" class="btn btn-light">Advanced Tools</button>
+            </div>
         </section>
 
         
 <section class="card inventory-card">
 
-            <div class="operations-summary-strip">
-
+            <div class="operations-summary-strip simple-status-strip">
                 <div class="operations-summary-main">
-                    <strong>InventoryRite Protected Pricing Active</strong>
-
-                    <span>
-                        Monitoring low margins, missing costs, duplicate items, and risky pricing.
-                    </span>
+                    <strong>Ready to work</strong>
+                    <span>Start with search, add product, or sync Clover. Extra review tools are tucked under Advanced Tools.</span>
                 </div>
-
                 <div class="operations-summary-pills">
-
-                    <div class="summary-pill" id="marginHealthStatus">
-                        Margin Health: Good
-                    </div>
-
-                    <div class="summary-pill">
-                        Live Clover Sync
-                    </div>
-
+                    <div class="summary-pill" id="marginHealthStatus">Connected</div>
+                    <div class="summary-pill">Live Clover Sync</div>
                 </div>
-
             </div>
 
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Loaded Clover products appear below. Search, refresh, bulk update, review pricing, or add a new Clover item from one clean control area.</p>
+                    <p>Your Clover products appear below. Search, edit, save, or select rows for bulk updates.</p>
                     <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
@@ -2416,15 +2507,16 @@ function renderDashboard(options = {}) {
             <div class="inventory-command-center">
                 <div class="command-center-top">
                     <div class="command-copy">
-                        <div class="command-title">Product Operations</div>
-                        <div class="command-subtitle">Search products, sync Clover, update prices, or create a new item.</div>
+                        <div class="command-title">Start Here</div>
+                        <div class="command-subtitle">Search first. Use Advanced Tools only when you need more options.</div>
                     </div>
 
                     <div class="command-search-actions">
-                        <input id="inventorySearch" class="search-input" type="text" placeholder="Search product, SKU, or Clover ID..." />
-                        <button id="btnRefreshInventoryTop" type="button" class="btn btn-secondary">Refresh</button>
-                        <button id="btnToggleBulkTop" type="button" class="btn btn-amber">&#9889; Bulk Update</button>
+                        <input id="inventorySearch" class="search-input" type="text" placeholder="Search products..." />
+                        <button id="btnRefreshInventoryTop" type="button" class="btn btn-light">Sync Clover</button>
                         <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
+                        <button id="btnToggleBulkTop" type="button" class="btn btn-light">Bulk Update</button>
+                        <button id="btnToggleAdvancedTop" type="button" class="btn btn-light">Advanced Tools</button>
                     </div>
                 </div>
             </div>
@@ -4929,6 +5021,21 @@ function renderDashboard(options = {}) {
             }
         }
 
+        function toggleAdvancedTools() {
+            document.body.classList.toggle("show-advanced");
+
+            var isOpen = document.body.classList.contains("show-advanced");
+            var label = isOpen ? "Hide Advanced" : "Advanced Tools";
+
+            var topButton = byId("btnToggleAdvancedTop");
+            if (topButton) topButton.textContent = label;
+
+            var heroButton = byId("btnHeroAdvanced");
+            if (heroButton) heroButton.textContent = label;
+
+            showToast(isOpen ? "Advanced tools are now visible." : "Advanced tools are hidden for a cleaner view.", "info");
+        }
+
         /*
         |------------------------------------------------------------------
         | EVENT BINDINGS
@@ -4959,6 +5066,10 @@ function renderDashboard(options = {}) {
 
         bind("btnRefreshInventoryTop", "click", loadItems);
         bind("btnRefreshInventory", "click", loadItems);
+        bind("btnHeroSync", "click", loadItems);
+        bind("btnHeroAdd", "click", toggleAddPanel);
+        bind("btnHeroAdvanced", "click", toggleAdvancedTools);
+        bind("btnToggleAdvancedTop", "click", toggleAdvancedTools);
         bind("btnToggleAddTop", "click", toggleAddPanel);
         bind("btnToggleAdd", "click", toggleAddPanel);
         bind("btnToggleBulkTop", "click", toggleBulkPanel);
@@ -5749,6 +5860,106 @@ function renderSimplePage(title, bodyHtml) {
         h2 { margin-top:24px; }
         p, li { color:#475569; }
         a { color:#15803d; font-weight:900; text-decoration:none; }
+
+
+        /* ----------------------------------------------------------------
+        | SIMPLIFIED MERCHANT UI - SIMPLE BY DEFAULT, ADVANCED ON DEMAND
+        | Keeps all functionality but hides noisy panels until requested.
+        ---------------------------------------------------------------- */
+
+        .simple-hero {
+            min-height: auto !important;
+            padding: 24px 26px !important;
+            align-items: center;
+        }
+
+        .simple-hero:after { display: none; }
+
+        .simple-hero-copy { max-width: 720px; }
+
+        .simple-hero h2 {
+            font-size: 31px !important;
+            line-height: 1.08;
+            margin: 0;
+        }
+
+        .simple-hero p {
+            font-size: 14px !important;
+            max-width: 680px;
+            margin-top: 9px;
+        }
+
+        .simple-hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 2;
+        }
+
+        .simple-status-strip {
+            border-color: #e5e7eb !important;
+            background: #ffffff !important;
+        }
+
+        .inventory-command-center {
+            box-shadow: none !important;
+            border-color: #e5e7eb !important;
+            background: #ffffff !important;
+        }
+
+        .command-search-actions .btn { min-width: 112px; }
+
+        #merchantControlBar,
+        #productivityHub,
+        #operationsSummaryStrip,
+        #lastActionStrip,
+        #recentChangesPanel,
+        #marginStatsRow,
+        .merchant-hint {
+            display: none !important;
+        }
+
+        body.show-advanced #merchantControlBar { display: flex !important; }
+        body.show-advanced #productivityHub { display: grid !important; }
+        body.show-advanced #operationsSummaryStrip { display: flex !important; }
+        body.show-advanced #lastActionStrip { display: flex !important; }
+        body.show-advanced #recentChangesPanel { display: block !important; }
+        body.show-advanced #marginStatsRow { display: grid !important; }
+        body.show-advanced .merchant-hint { display: block !important; }
+
+        body.show-advanced #btnToggleAdvancedTop,
+        body.show-advanced #btnHeroAdvanced {
+            background: #111827;
+            color: #ffffff;
+            border-color: #111827;
+        }
+
+        .stats-row:first-of-type {
+            margin-top: 4px;
+        }
+
+        .stat-box {
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 760px) {
+            .simple-hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .simple-hero-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .simple-hero-actions .btn {
+                flex: 1 1 140px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -5939,6 +6150,106 @@ app.get("/dev", (req, res) => {
         .row:last-child { border-bottom:0; }
         .label { color:#64748b; }
         .value { font-weight:800; word-break:break-all; text-align:right; }
+
+
+        /* ----------------------------------------------------------------
+        | SIMPLIFIED MERCHANT UI - SIMPLE BY DEFAULT, ADVANCED ON DEMAND
+        | Keeps all functionality but hides noisy panels until requested.
+        ---------------------------------------------------------------- */
+
+        .simple-hero {
+            min-height: auto !important;
+            padding: 24px 26px !important;
+            align-items: center;
+        }
+
+        .simple-hero:after { display: none; }
+
+        .simple-hero-copy { max-width: 720px; }
+
+        .simple-hero h2 {
+            font-size: 31px !important;
+            line-height: 1.08;
+            margin: 0;
+        }
+
+        .simple-hero p {
+            font-size: 14px !important;
+            max-width: 680px;
+            margin-top: 9px;
+        }
+
+        .simple-hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 2;
+        }
+
+        .simple-status-strip {
+            border-color: #e5e7eb !important;
+            background: #ffffff !important;
+        }
+
+        .inventory-command-center {
+            box-shadow: none !important;
+            border-color: #e5e7eb !important;
+            background: #ffffff !important;
+        }
+
+        .command-search-actions .btn { min-width: 112px; }
+
+        #merchantControlBar,
+        #productivityHub,
+        #operationsSummaryStrip,
+        #lastActionStrip,
+        #recentChangesPanel,
+        #marginStatsRow,
+        .merchant-hint {
+            display: none !important;
+        }
+
+        body.show-advanced #merchantControlBar { display: flex !important; }
+        body.show-advanced #productivityHub { display: grid !important; }
+        body.show-advanced #operationsSummaryStrip { display: flex !important; }
+        body.show-advanced #lastActionStrip { display: flex !important; }
+        body.show-advanced #recentChangesPanel { display: block !important; }
+        body.show-advanced #marginStatsRow { display: grid !important; }
+        body.show-advanced .merchant-hint { display: block !important; }
+
+        body.show-advanced #btnToggleAdvancedTop,
+        body.show-advanced #btnHeroAdvanced {
+            background: #111827;
+            color: #ffffff;
+            border-color: #111827;
+        }
+
+        .stats-row:first-of-type {
+            margin-top: 4px;
+        }
+
+        .stat-box {
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 760px) {
+            .simple-hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .simple-hero-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .simple-hero-actions .btn {
+                flex: 1 1 140px;
+            }
+        }
+
     </style>
 </head>
 <body>
