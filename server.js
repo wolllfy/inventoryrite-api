@@ -4496,16 +4496,263 @@ function renderDashboard(options = {}) {
         }
 
         function importCsvClicked() {
-            openFeatureModal(
-                "Import CSV",
-                "Safe CSV import is prepared as a preview-first workflow. For launch, Export CSV is active and Import CSV is locked to prevent accidental Clover overwrites.",
-                [
-                    "<div><strong>Step 1</strong><span>Export products to CSV and edit safely.</span></div><div><span>Active</span></div>",
-                    "<div><strong>Step 2</strong><span>Upload CSV, preview changes, then confirm updates.</span></div><div><span>Next</span></div>"
-                ]
-            );
-            logActivity("Import CSV", "Import CSV workflow opened.", "Viewed");
-            showToast("Import CSV preview workflow opened.", "info");
+            var input = byId("csvImportInput");
+            if (!input) {
+                showToast("CSV import control was not found. Refresh the page and try again.", "error");
+                return;
+            }
+
+            input.value = "";
+            input.click();
+        }
+
+        async function importCsvFile(file) {
+            if (!file) return;
+
+            var connection = requireConnection();
+            if (!connection) return;
+
+            var fileName = String(file.name || "").toLowerCase();
+            if (fileName && !fileName.endsWith(".csv")) {
+                showToast("Please choose a .csv file exported from InventoryRite or Clover.", "error");
+                return;
+            }
+
+            try {
+                var text = await file.text();
+                var rows = parseCSV(text);
+
+                if (!rows.length) {
+                    showToast("CSV file is empty or does not include Clover ID rows.", "error");
+                    return;
+                }
+
+                var previewRows = rows.slice(0, 5);
+                var previewHtml = buildCsvPreviewHtml(previewRows);
+
+                openConfirm(
+                    "Import " + rows.length + " Product" + (rows.length === 1 ? "" : "s") + "?",
+                    "<div style='line-height:1.5;'>" +
+                        "<strong>Safe CSV import preview</strong><br>" +
+                        "This will update matching Clover products only when a Clover ID is present.<br><br>" +
+                        previewHtml +
+                        "<br><strong>Supported editable columns:</strong> Product Name/Name, Price, and Cost.<br>" +
+                        "Rows without changes will be skipped. This will not create new products." +
+                    "</div>",
+                    async function () {
+                        await applyCsvImport(rows);
+                    },
+                    true
+                );
+
+                logActivity("CSV Import Preview", rows.length + " CSV row(s) ready for confirmation.", "Viewed");
+                showToast("CSV preview ready. Confirm to import changes.", "info");
+            } catch (error) {
+                showToast("Failed to read CSV file: " + (error && error.message ? error.message : "Unknown error."), "error");
+            }
+        }
+
+        function normalizeCsvHeader(header) {
+            return String(header || "")
+                .replace(/^﻿/, "")
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "_")
+                .replace(/^_+|_+$/g, "");
+        }
+
+        function parseCSV(csvText) {
+            var lines = String(csvText || "").split(/
+?
+/).filter(function (line) {
+                return line.trim();
+            });
+
+            if (lines.length < 2) return [];
+
+            var headers = parseCSVRow(lines[0]).map(normalizeCsvHeader);
+            var rows = [];
+
+            for (var i = 1; i < lines.length; i++) {
+                var values = parseCSVRow(lines[i]);
+                var row = {};
+
+                headers.forEach(function (header, index) {
+                    if (header) row[header] = values[index] || "";
+                });
+
+                var itemId = row.clover_id || row.id || row.item_id || row.product_id;
+                if (!itemId) continue;
+
+                row.id = String(itemId || "").trim();
+                row.name = row.product_name || row.name || row.item_name || row.title || "";
+                row.price = row.price || row.price_dollars || row.sale_price || "";
+                row.cost = row.cost || row.cost_dollars || row.unit_cost || "";
+                rows.push(row);
+            }
+
+            return rows;
+        }
+
+        function parseCSVRow(rowText) {
+            var result = [];
+            var current = "";
+            var inQuotes = false;
+            var text = String(rowText || "");
+
+            for (var i = 0; i < text.length; i++) {
+                var char = text[i];
+                var next = text[i + 1];
+
+                if (char === '"' && inQuotes && next === '"') {
+                    current += '"';
+                    i++;
+                    continue;
+                }
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+
+                if (char === "," && !inQuotes) {
+                    result.push(current.trim());
+                    current = "";
+                    continue;
+                }
+
+                current += char;
+            }
+
+            result.push(current.trim());
+            return result;
+        }
+
+        function buildCsvPreviewHtml(rows) {
+            if (!rows.length) return "<div>No preview rows found.</div>";
+
+            var headers = ["id", "name", "price", "cost"];
+            var html = "<div style='max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;'>";
+            html += "<table style='width:100%;font-size:12px;border-collapse:collapse;background:white;'>";
+            html += "<tr>" + headers.map(function (header) {
+                return "<th style='border-bottom:1px solid #e5e7eb;padding:7px;text-align:left;background:#f8fafc;'>" + escapeHtml(header.toUpperCase()) + "</th>";
+            }).join("") + "</tr>";
+
+            rows.forEach(function (row) {
+                html += "<tr>" + headers.map(function (header) {
+                    return "<td style='border-bottom:1px solid #f1f5f9;padding:7px;'>" + escapeHtml(row[header] || "") + "</td>";
+                }).join("") + "</tr>";
+            });
+
+            html += "</table></div>";
+            return html;
+        }
+
+        async function applyCsvImport(rows) {
+            if (isBusy) return;
+
+            var connection = requireConnection();
+            if (!connection) return;
+
+            startBusy();
+
+            var successCount = 0;
+            var failCount = 0;
+            var skippedCount = 0;
+            var undoSnapshot = {
+                source: "CSV Import",
+                timestamp: new Date().toISOString(),
+                items: []
+            };
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var itemId = String(row.id || "").trim();
+                var existingItem = (loadedItems || []).find(function (item) {
+                    return String(item.id || "") === itemId;
+                });
+
+                if (!itemId || !existingItem) {
+                    skippedCount++;
+                    continue;
+                }
+
+                var newName = row.name ? String(row.name).trim() : (existingItem.name || "");
+                var oldPriceCents = Number(existingItem.price || 0);
+                var oldCostCents = getCostCents(itemId);
+                var newPriceCents = row.price ? priceToCentsFromDollarsString(row.price) : oldPriceCents;
+                var newCostCents = row.cost ? priceToCentsFromDollarsString(row.cost) : oldCostCents;
+
+                if (!newName || newPriceCents === null || newCostCents === null) {
+                    skippedCount++;
+                    continue;
+                }
+
+                var nameChanged = newName !== (existingItem.name || "");
+                var priceChanged = newPriceCents !== oldPriceCents;
+                var costChanged = newCostCents !== oldCostCents;
+
+                if (!nameChanged && !priceChanged && !costChanged) {
+                    skippedCount++;
+                    continue;
+                }
+
+                try {
+                    if (nameChanged || priceChanged) {
+                        await fetchJson(
+                            "/clover-update-item/" + encodeURIComponent(itemId),
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ name: newName, price: newPriceCents })
+                            }
+                        );
+                    }
+
+                    if (costChanged) {
+                        await fetchJson(
+                            "/item-cost/" + encodeURIComponent(itemId),
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ costCents: newCostCents })
+                            }
+                        );
+                        itemCosts[itemId] = newCostCents;
+                    }
+
+                    existingItem.name = newName;
+                    existingItem.price = newPriceCents;
+                    existingItem.cost = newCostCents;
+
+                    if (priceChanged) {
+                        recordPriceChange({ id: itemId, name: newName }, oldPriceCents, newPriceCents, "CSV Import");
+                        undoSnapshot.items.push({ id: itemId, name: newName, oldCents: oldPriceCents, newCents: newPriceCents });
+                        bulkUpdatedItemIds.push(itemId);
+                    }
+
+                    successCount++;
+                } catch (err) {
+                    failCount++;
+                    console.error("CSV import failed for item", itemId, err);
+                }
+
+                if ((i + 1) % 10 === 0) {
+                    showToast("CSV import running: " + successCount + " updated, " + failCount + " failed, " + skippedCount + " skipped.", "info");
+                }
+            }
+
+            if (undoSnapshot.items.length) {
+                lastBulkUndoSnapshot = undoSnapshot;
+                saveStoredHistory();
+            }
+
+            markSavedNow();
+            logActivity("CSV Import", successCount + " updated, " + failCount + " failed, " + skippedCount + " skipped.", failCount ? "Partial" : "Success");
+            showToast("CSV Import complete: " + successCount + " updated, " + failCount + " failed, " + skippedCount + " skipped.", failCount ? "error" : "success");
+
+            stopBusy();
+            await loadItems();
         }
 
         /*
@@ -4738,7 +4985,7 @@ function renderDashboard(options = {}) {
             return data;
         }
 
-        function openConfirm(title, message, onConfirm) {
+        function openConfirm(title, message, onConfirm, allowHtml) {
             pendingConfirmAction = onConfirm;
 
             var modal = byId("confirmModal");
@@ -4746,7 +4993,10 @@ function renderDashboard(options = {}) {
             var messageEl = byId("confirmMessage");
 
             if (titleEl) titleEl.textContent = title || "Confirm Action";
-            if (messageEl) messageEl.textContent = message || "Are you sure?";
+            if (messageEl) {
+                if (allowHtml) messageEl.innerHTML = message || "Are you sure?";
+                else messageEl.textContent = message || "Are you sure?";
+            }
             if (modal) modal.classList.add("show");
         }
 
@@ -5079,6 +5329,14 @@ function renderDashboard(options = {}) {
         bind("btnReorder", "click", showReorderPlanning);
         bind("btnExportCsv", "click", exportProductsCsv);
         bind("btnImportCsv", "click", importCsvClicked);
+
+        var csvInput = byId("csvImportInput");
+        if (csvInput) {
+            csvInput.addEventListener("change", function (event) {
+                var file = event.target && event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                if (file) importCsvFile(file);
+            });
+        }
         bind("btnDuplicateReview", "click", showDuplicateDetector);
         bind("btnMissingCostLock", "click", showMissingCostLock);
         bind("btnSmart99", "click", applySmart99Rounding);
