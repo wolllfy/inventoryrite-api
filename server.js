@@ -4592,7 +4592,8 @@ function renderDashboard(options = {}) {
                         "<strong>Safe CSV import preview</strong><br>" +
                         "This will update matching Clover products only when a Clover ID is present.<br><br>" +
                         previewHtml +
-                        "<br><strong>Supported editable columns:</strong> Product Name/Name, Price, Cost, SKU/Item Code, Barcode/UPC, Available, and Hidden.<br>" +
+                        "<br><strong>Supported editable columns:</strong> Product Name, Price, Cost, SKU/Item Code, Barcode/UPC, Available, and Hidden.<br>" +
+                        "<strong>Audit-only columns:</strong> Category, Quantity, Reorder Level, Margin %, and Profit Per Unit are read safely but not pushed to Clover by CSV import yet.<br>" +
                         "Rows without changes will be skipped. This will not create new products." +
                     "</div>",
                     async function () {
@@ -4635,24 +4636,27 @@ function renderDashboard(options = {}) {
                     if (header) rawRow[header] = values[index] || "";
                 });
 
+                // InventoryRite export headers are merchant-friendly ("Clover ID", "Product Name", etc.).
+                // normalizeCsvHeader turns those into clover_id, product_name, reorder_level, and so on.
+                // These aliases also accept common Clover/Excel-style field names merchants may use.
                 var itemId = csvValue(rawRow, [
-                    "clover_id", "id", "item_id", "product_id", "clover_item_id", "item_uuid"
+                    "clover_id", "cloverid", "id", "item_id", "product_id", "clover_item_id", "item_uuid", "uuid"
                 ]);
 
                 if (!itemId) continue;
 
                 var row = {
                     id: itemId,
-                    name: csvValue(rawRow, ["product_name", "name", "item_name", "title"]),
-                    price: csvValue(rawRow, ["price", "price_dollars", "sale_price", "menu_price", "selling_price"]),
-                    cost: csvValue(rawRow, ["cost", "cost_dollars", "unit_cost", "item_cost", "product_cost"]),
-                    sku: csvValue(rawRow, ["sku", "item_code", "code", "product_code"]),
-                    barcode: csvValue(rawRow, ["barcode", "bar_code", "upc", "ean", "gtin", "scan_code"]),
-                    category: csvValue(rawRow, ["category", "category_name", "categories"]),
-                    quantity: csvValue(rawRow, ["quantity", "qty", "stock", "stock_count", "inventory_count", "available_quantity"]),
-                    reorderLevel: csvValue(rawRow, ["reorder_level", "reorder", "reorder_point", "low_stock", "low_stock_level"]),
-                    available: normalizeCsvBoolean(csvValue(rawRow, ["available", "is_available", "enabled", "active"])),
-                    hidden: normalizeCsvBoolean(csvValue(rawRow, ["hidden", "is_hidden", "visible", "visibility"]))
+                    name: csvValue(rawRow, ["product_name", "product", "name", "item_name", "item", "title"]),
+                    price: csvValue(rawRow, ["price", "price_dollars", "sale_price", "menu_price", "selling_price", "retail_price"]),
+                    cost: csvValue(rawRow, ["cost", "cost_dollars", "unit_cost", "item_cost", "product_cost", "unit_price_cost"]),
+                    sku: csvValue(rawRow, ["sku", "item_code", "itemcode", "code", "product_code", "productcode"]),
+                    barcode: csvValue(rawRow, ["barcode", "bar_code", "upc", "ean", "gtin", "scan_code", "plu"]),
+                    category: csvValue(rawRow, ["category", "category_name", "categories", "department"]),
+                    quantity: csvValue(rawRow, ["quantity", "qty", "stock", "stock_count", "inventory_count", "available_quantity", "on_hand"]),
+                    reorderLevel: csvValue(rawRow, ["reorder_level", "reorder", "reorder_point", "low_stock", "low_stock_level", "par_level"]),
+                    available: normalizeCsvBoolean(csvValue(rawRow, ["available", "is_available", "enabled", "active", "is_active"])),
+                    hidden: normalizeCsvBoolean(csvValue(rawRow, ["hidden", "is_hidden", "visible", "visibility", "is_hidden"]))
                 };
 
                 rows.push(row);
@@ -4698,7 +4702,7 @@ function renderDashboard(options = {}) {
         function buildCsvPreviewHtml(rows) {
             if (!rows.length) return "<div>No preview rows found.</div>";
 
-            var headers = ["id", "name", "price", "cost", "sku", "barcode", "available", "hidden"];
+            var headers = ["id", "name", "price", "cost", "sku", "barcode", "category", "quantity", "reorderLevel", "available", "hidden"];
             var html = "<div style='max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;'>";
             html += "<table style='width:100%;font-size:12px;border-collapse:collapse;background:white;'>";
             html += "<tr>" + headers.map(function (header) {
