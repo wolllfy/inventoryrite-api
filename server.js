@@ -3548,7 +3548,7 @@ function renderDashboard(options = {}) {
                 ].join(","));
             });
 
-            var blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+            var blob = new Blob([rows.join("\\n")], { type: "text/csv;charset=utf-8;" });
             var url = URL.createObjectURL(blob);
             var link = document.createElement("a");
             link.href = url;
@@ -4618,7 +4618,7 @@ function renderDashboard(options = {}) {
         }
 
         function parseCSV(csvText) {
-            var lines = String(csvText || "").split(/\r?\n/).filter(function (line) {
+            var lines = String(csvText || "").split(/\\r?\\n/).filter(function (line) {
                 return line.trim();
             });
 
