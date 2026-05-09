@@ -540,7 +540,14 @@ async function refreshTokenIfNeeded(connection) {
 async function getConnectionFromRequest(req) {
     // Security note: tokens are intentionally not accepted from query strings.
     // The browser may send X-Merchant-Id, but bearer tokens stay server-side.
-    let merchantFromRequest = req.headers["x-merchant-id"] || req.body?.merchantId || req.query.merchantId || "";
+    let merchantFromRequest =
+        req.headers["x-merchant-id"] ||
+        req.body?.merchantId ||
+        req.body?.merchant_id ||
+        req.query.merchantId ||
+        req.query.merchant_id ||
+        "";
+
     merchantFromRequest = String(merchantFromRequest || "").trim();
 
     // Older frontend attempts used the word "server" as a placeholder. Do not
@@ -562,12 +569,31 @@ async function getConnectionFromRequest(req) {
                  LIMIT 1;`,
                 [merchantFromRequest]
             );
-        }
 
-        // If the browser does not know the merchant id yet, fall back to the most
-        // recently connected Clover merchant saved in the database. This keeps
-        // inventory sync working after Render restarts/deploys.
-        if (!result || result.rows.length === 0) {
+            // CRITICAL MULTI-MERCHANT FIX:
+            // If the browser explicitly asks for a merchant, never fall back to another
+            // merchant's token. This prevents Jack/merchant B from seeing merchant A's
+            // cached Clover products when switching between sandbox merchants.
+            if (result.rows.length === 0) {
+                return {
+                    accessToken: "",
+                    merchantId: merchantFromRequest,
+                    connection: {
+                        connected: false,
+                        merchant_id: merchantFromRequest,
+                        employee_id: "",
+                        access_token: "",
+                        refresh_token: "",
+                        token_expires_at: "",
+                        scopes: "",
+                        connected_at: ""
+                    }
+                };
+            }
+        } else {
+            // If the browser does not know the merchant id yet, fall back to the most
+            // recently connected Clover merchant saved in the database. This keeps
+            // inventory sync working after Render restarts/deploys.
             result = await dbPool.query(
                 `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
                  FROM merchant_connections
@@ -576,7 +602,7 @@ async function getConnectionFromRequest(req) {
             );
         }
 
-        if (result.rows.length > 0) {
+        if (result && result.rows.length > 0) {
             const row = result.rows[0];
             connection = {
                 connected: true,
@@ -602,7 +628,7 @@ async function getConnectionFromRequest(req) {
 
     return {
         accessToken: connection.access_token || "",
-        merchantId: connection.merchant_id || "",
+        merchantId: connection.merchant_id || merchantFromRequest || "",
         connection
     };
 }
@@ -5592,8 +5618,23 @@ function renderDashboard(options = {}) {
         var lastBulkUndoSnapshot = null;
         var lastSavedAt = null;
         var currentUserLabel = embeddedConnection.employee_id ? ("Employee " + embeddedConnection.employee_id) : "Current Clover user";
-        var HISTORY_STORAGE_KEY = "inventoryrite_price_history_" + (embeddedConnection.merchant_id || "demo");
-        var UNDO_STORAGE_KEY = "inventoryrite_last_bulk_undo_" + (embeddedConnection.merchant_id || "demo");
+        var MERCHANT_STORAGE_ID = embeddedConnection.merchant_id || "demo";
+        var HISTORY_STORAGE_KEY = "inventoryrite_price_history_" + MERCHANT_STORAGE_ID;
+        var UNDO_STORAGE_KEY = "inventoryrite_last_bulk_undo_" + MERCHANT_STORAGE_ID;
+        var LAST_MERCHANT_STORAGE_KEY = "inventoryrite_last_open_merchant";
+
+        try {
+            var lastOpenMerchant = sessionStorage.getItem(LAST_MERCHANT_STORAGE_KEY) || "";
+            if (lastOpenMerchant && lastOpenMerchant !== MERCHANT_STORAGE_ID) {
+                // Clear runtime-only arrays immediately when switching merchants in the same browser tab.
+                loadedItems = [];
+                itemCosts = {};
+                activityLog = [];
+                priceChangeHistory = [];
+                lastBulkUndoSnapshot = null;
+            }
+            sessionStorage.setItem(LAST_MERCHANT_STORAGE_KEY, MERCHANT_STORAGE_ID);
+        } catch (merchantStorageError) {}
 
         // Track selected item IDs for bulk operations
         var selectedItemIds = new Set();
@@ -7927,6 +7968,13 @@ function renderDashboard(options = {}) {
                 setButtonText("btnRefreshInventory", "Refreshing...");
                 setButtonText("btnRefreshInventoryTop", "Refreshing...");
 
+                // Clear the current table before loading so a merchant with 0 items never
+                // temporarily displays another merchant's old products.
+                loadedItems = [];
+                itemCosts = {};
+                selectedItemIds.clear();
+                renderItems(loadedItems);
+
                 var requestHeaders = {};
                 if (connection.merchantId) {
                     requestHeaders["X-Merchant-Id"] = connection.merchantId;
@@ -7957,8 +8005,13 @@ function renderDashboard(options = {}) {
                 updateLastSyncNote();
                 var pageCount = data.pagination && data.pagination.pageCount ? Number(data.pagination.pageCount) : 1;
                 var truncated = data.pagination && data.pagination.truncated;
-                showToast("Inventory loaded: " + loadedItems.length + " product(s)" + (pageCount > 1 ? " across " + pageCount + " pages" : "") + (truncated ? " (safety limit reached)" : "") + ".", truncated ? "info" : "success");
-                logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover" + (pageCount > 1 ? " across " + pageCount + " pages." : "."), truncated ? "Partial" : "Success");
+                if (loadedItems.length === 0) {
+                    showToast("Inventory loaded: this merchant has 0 Clover products.", "info");
+                    logActivity("Inventory Loaded", "0 product(s) synced from Clover for this merchant.", "Success");
+                } else {
+                    showToast("Inventory loaded: " + loadedItems.length + " product(s)" + (pageCount > 1 ? " across " + pageCount + " pages" : "") + (truncated ? " (safety limit reached)" : "") + ".", truncated ? "info" : "success");
+                    logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover" + (pageCount > 1 ? " across " + pageCount + " pages." : "."), truncated ? "Partial" : "Success");
+                }
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
             } finally {
@@ -8310,11 +8363,39 @@ function renderDashboard(options = {}) {
 |--------------------------------------------------------------------------
 */
 
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    return res.send(renderDashboard());
+
+    try {
+        // CRITICAL MULTI-MERCHANT FIX:
+        // Clover may launch the web app at /?merchant_id=MERCHANT_ID.
+        // Render the dashboard for THAT merchant instead of blindly using the last
+        // connected merchant in memory. This prevents one merchant from seeing another
+        // merchant's product list after switching accounts.
+        const requestedMerchantId = String(req.query.merchant_id || req.query.merchantId || "").trim();
+
+        if (requestedMerchantId) {
+            const { connection } = await getConnectionFromRequest(req);
+
+            return res.send(renderDashboard({
+                connected: !!connection.access_token,
+                merchant_id: requestedMerchantId,
+                employee_id: connection.employee_id || "",
+                access_token: connection.access_token || "",
+                refresh_token: connection.refresh_token || "",
+                token_expires_at: connection.token_expires_at || "",
+                scopes: connection.scopes || "",
+                connected_at: connection.connected_at || ""
+            }));
+        }
+
+        return res.send(renderDashboard());
+    } catch (error) {
+        console.error("Dashboard launch error:", error.message);
+        return res.send(renderDashboard());
+    }
 });
 
 async function handleOAuthCallback(req, res) {
