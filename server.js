@@ -8507,27 +8507,10 @@ app.get("/connect-clover", (req, res) => {
         `inventoryrite_oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${SECURE_COOKIE_FLAG}`
     );
 
-    // Keep OAuth lean so Clover does not block installs on lower service plans.
-    // Even if an old CLOVER_SCOPES env var exists in Render, remove restricted scopes here.
-    const blockedScopes = new Set([
-        "employee_read",
-        "employee_write",
-        "payment_read",
-        "payment_write",
-        "payments_read",
-        "payments_write",
-        "customer_read",
-        "customer_write",
-        "ecommerce_write"
-    ]);
-
-    const requestedScopes = String(process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" "))
-        .split(/\s+/)
-        .map((scopeName) => scopeName.trim())
-        .filter(Boolean)
-        .filter((scopeName) => !blockedScopes.has(scopeName.toLowerCase()));
-
-    const scope = Array.from(new Set(requestedScopes)).join(" ");
+    // Use the full configured Clover scopes without filtering/blocking them.
+    // This restores the original OAuth behavior and avoids mismatches between
+    // Clover Developer Dashboard permissions and the scopes sent during install.
+    const scope = process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" ");
 
     const cloverAuthUrl =
         `${CLOVER_BASE_URL}/oauth/authorize` +
