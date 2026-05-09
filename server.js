@@ -5393,6 +5393,249 @@ function renderDashboard(options = {}) {
             }
         }
 
+    
+
+        /* ----------------------------------------------------------------
+        | FINAL DUPLICATE-ACTION CLEANUP + ALIGNMENT PASS
+        | Keeps hero actions as the primary actions:
+        | Add Product / Sync Clover / Tools.
+        | Product Controls now stays focused on Search / Refresh / Bulk Update.
+        ---------------------------------------------------------------- */
+
+        .simple-hero {
+            min-height: 78px !important;
+            padding: 12px 18px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .simple-hero h2,
+        .hero h2 {
+            font-size: 22px !important;
+        }
+
+        .simple-hero p,
+        .hero p {
+            margin-top: 4px !important;
+            font-size: 12px !important;
+        }
+
+        .simple-hero-actions,
+        .hero-actions {
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        .simple-hero-actions .btn,
+        .hero-actions .btn {
+            min-height: 38px !important;
+            padding: 9px 13px !important;
+            border-radius: 11px !important;
+        }
+
+        .inventory-card {
+            padding: 16px !important;
+        }
+
+        .table-top {
+            margin-bottom: 8px !important;
+        }
+
+        .table-top h3 {
+            font-size: 16px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .table-top p {
+            font-size: 11px !important;
+        }
+
+        .sync-note {
+            margin-top: 4px !important;
+            font-size: 11px !important;
+        }
+
+        .inventory-command-center {
+            padding: 10px 12px !important;
+            margin-bottom: 8px !important;
+            border-radius: 15px !important;
+        }
+
+        .command-center-top {
+            align-items: center !important;
+            gap: 10px !important;
+        }
+
+        .command-copy {
+            min-width: 205px !important;
+        }
+
+        .command-title {
+            font-size: 13px !important;
+        }
+
+        .command-subtitle {
+            font-size: 11px !important;
+        }
+
+        .command-search-actions {
+            min-width: 0 !important;
+            display: grid !important;
+            grid-template-columns: minmax(260px, 1fr) 110px 120px !important;
+            gap: 8px !important;
+            align-items: center !important;
+        }
+
+        .command-search-actions .search-input {
+            min-width: 0 !important;
+            width: 100% !important;
+            flex: none !important;
+        }
+
+        .command-search-actions .btn {
+            min-width: 0 !important;
+            width: 100% !important;
+            min-height: 38px !important;
+            padding: 9px 10px !important;
+            border-radius: 11px !important;
+        }
+
+        .operations-collapsible,
+        .merchant-control-bar {
+            margin-bottom: 8px !important;
+        }
+
+        .operations-tools-summary {
+            padding: 9px 12px !important;
+        }
+
+        .operations-collapsible .operations-tools-grid {
+            padding: 0 12px 12px !important;
+        }
+
+        .merchant-control-title {
+            font-size: 13px !important;
+        }
+
+        .merchant-control-subtitle {
+            font-size: 10px !important;
+            margin-top: 2px !important;
+        }
+
+        .operations-toggle-label {
+            padding: 5px 9px !important;
+            font-size: 10px !important;
+        }
+
+        .productivity-hub {
+            gap: 7px !important;
+            margin-bottom: 8px !important;
+        }
+
+        .productivity-card {
+            min-height: 56px !important;
+            padding: 8px 9px !important;
+            border-radius: 12px !important;
+        }
+
+        .productivity-kicker {
+            font-size: 9px !important;
+            margin-bottom: 1px !important;
+        }
+
+        .productivity-title {
+            font-size: 11px !important;
+            margin-bottom: 1px !important;
+        }
+
+        .productivity-copy {
+            font-size: 9.5px !important;
+            line-height: 1.22 !important;
+        }
+
+        .operations-summary-strip,
+        .last-action-strip {
+            padding: 7px 9px !important;
+            margin-bottom: 7px !important;
+            border-radius: 12px !important;
+        }
+
+        .recent-sidebar {
+            padding: 9px 11px !important;
+            margin-bottom: 8px !important;
+            border-radius: 13px !important;
+        }
+
+        .recent-sidebar-subtitle {
+            display: none !important;
+        }
+
+        .recent-list > *:nth-child(n+2) {
+            display: none !important;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            max-width: 520px !important;
+            gap: 7px !important;
+            margin: 7px 0 !important;
+        }
+
+        .stat-hide-premium {
+            display: none !important;
+        }
+
+        .stat-box {
+            padding: 9px 10px !important;
+            border-radius: 12px !important;
+        }
+
+        .stat-label {
+            font-size: 10px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .stat-value {
+            font-size: 17px !important;
+        }
+
+        .merchant-hint {
+            padding: 7px 9px !important;
+            margin-bottom: 8px !important;
+            font-size: 11px !important;
+            border-radius: 12px !important;
+        }
+
+        th {
+            height: 36px !important;
+            font-size: 10px !important;
+        }
+
+        tbody td {
+            height: 50px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 33px !important;
+        }
+
+        @media (max-width: 900px) {
+            .command-search-actions {
+                grid-template-columns: 1fr !important;
+            }
+
+            .command-copy {
+                min-width: 0 !important;
+                width: 100% !important;
+            }
+
+            .stats-row {
+                max-width: none !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -5443,15 +5686,13 @@ function renderDashboard(options = {}) {
                 <div class="command-center-top">
                     <div class="command-copy">
                         <div class="command-title">Product Controls</div>
-                        <div class="command-subtitle">Search first, then add, refresh, or bulk update.</div>
+                        <div class="command-subtitle">Search first, then refresh or bulk update.</div>
                     </div>
 
                     <div class="command-search-actions">
                         <input id="inventorySearch" class="search-input" type="text" placeholder="Search products..." />
                         <button id="btnRefreshInventoryTop" type="button" class="btn btn-light">Refresh</button>
-                        <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
                         <button id="btnToggleBulkTop" type="button" class="btn btn-light">Bulk Update</button>
-                        <button id="btnToggleAdvancedTop" type="button" class="btn btn-light">Tools</button>
                     </div>
                 </div>
             </div>
