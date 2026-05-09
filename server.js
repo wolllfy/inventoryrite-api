@@ -5231,6 +5231,145 @@ function renderDashboard(options = {}) {
                 padding: 5px 8px !important;
             }
         }
+
+
+        /* ----------------------------------------------------------------
+        | PREMIUM PROFIT DASHBOARD - $19.99/MONTH VALUE
+        ---------------------------------------------------------------- */
+        .premium-profit-dashboard {
+            border: 1px solid #bbf7d0;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 55%, #f8fafc 100%);
+            border-radius: 18px;
+            padding: 16px;
+            margin: 0 0 14px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
+        }
+
+        .premium-profit-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 13px;
+        }
+
+        .premium-profit-kicker {
+            color: #15803d;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .premium-profit-title {
+            color: #0f172a;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+
+        .premium-profit-subtitle {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.4;
+            margin-top: 4px;
+            max-width: 760px;
+        }
+
+        .premium-profit-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .premium-profit-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .premium-profit-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 12px;
+            min-height: 82px;
+        }
+
+        .premium-profit-label {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .035em;
+            margin-bottom: 6px;
+        }
+
+        .premium-profit-value {
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .premium-profit-help {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+            margin-top: 5px;
+            line-height: 1.35;
+        }
+
+        .premium-profit-alert-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 11px 12px;
+            border-radius: 14px;
+            border: 1px solid #fed7aa;
+            background: #fff7ed;
+            color: #9a3412;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
+        .premium-profit-alert-panel.good {
+            border-color: #bbf7d0;
+            background: #ecfdf5;
+            color: #166534;
+        }
+
+        .premium-profit-alert-panel.critical {
+            border-color: #fecaca;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .premium-profit-alert-panel span {
+            color: inherit;
+        }
+
+        @media (max-width: 980px) {
+            .premium-profit-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+        }
+
+        @media (max-width: 640px) {
+            .premium-profit-dashboard { padding: 12px; }
+            .premium-profit-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .premium-profit-value { font-size: 17px; }
+            .premium-profit-actions { width: 100%; }
+            .premium-profit-actions .btn { width: 100%; }
+        }
+
 </style>
 </head>
 <body>
@@ -5434,6 +5573,73 @@ function renderDashboard(options = {}) {
                     <span class="summary-pill" id="summaryBelowCostPill">0 below cost</span>
                     <span class="summary-pill" id="summaryAvgMarginPill">Avg margin --</span>
                     <span class="summary-pill" id="summaryOpportunityPill">$0 opportunity</span>
+                </div>
+            </div>
+
+
+
+            <div class="premium-profit-dashboard" id="premiumProfitDashboard">
+                <div class="premium-profit-top">
+                    <div>
+                        <div class="premium-profit-kicker">Premium Profit Intelligence</div>
+                        <div class="premium-profit-title">Real Profit Dashboard</div>
+                        <div class="premium-profit-subtitle">Shows what Clover does not: estimated cost, gross profit, margin risk, missing costs, and one-click pricing fixes.</div>
+                    </div>
+                    <div class="premium-profit-actions">
+                        <button id="btnFixMargins35" type="button" class="btn btn-primary">Fix Low Margins to 35%</button>
+                        <button id="btnOpenPremiumProfitReview" type="button" class="btn btn-light">Review Alerts</button>
+                    </div>
+                </div>
+
+                <div class="premium-profit-grid">
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Total Menu Value</div>
+                        <div class="premium-profit-value" id="premiumTotalRevenue">$0.00</div>
+                        <div class="premium-profit-help">Sum of current Clover sell prices.</div>
+                    </div>
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Estimated Cost</div>
+                        <div class="premium-profit-value" id="premiumTotalCost">$0.00</div>
+                        <div class="premium-profit-help">Based on costs entered in InventoryRite.</div>
+                    </div>
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Estimated Gross Profit</div>
+                        <div class="premium-profit-value" id="premiumGrossProfit">$0.00</div>
+                        <div class="premium-profit-help">Price minus cost across costed products.</div>
+                    </div>
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Average Margin</div>
+                        <div class="premium-profit-value" id="premiumAvgMargin">--</div>
+                        <div class="premium-profit-help">Average across products with price and cost.</div>
+                    </div>
+                </div>
+
+                <div class="premium-profit-grid">
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Below Cost</div>
+                        <div class="premium-profit-value" id="premiumBelowCost">0</div>
+                        <div class="premium-profit-help">Products losing money per sale.</div>
+                    </div>
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Low Margin</div>
+                        <div class="premium-profit-value" id="premiumLowMargin">0</div>
+                        <div class="premium-profit-help">Products under 20% margin.</div>
+                    </div>
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">Missing Cost</div>
+                        <div class="premium-profit-value" id="premiumMissingCost">0</div>
+                        <div class="premium-profit-help">Needs cost entered for true profit.</div>
+                    </div>
+                    <div class="premium-profit-card">
+                        <div class="premium-profit-label">35% Margin Opportunity</div>
+                        <div class="premium-profit-value" id="premiumOpportunity">$0.00</div>
+                        <div class="premium-profit-help">Potential per-sale lift from fixing weak margins.</div>
+                    </div>
+                </div>
+
+                <div class="premium-profit-alert-panel" id="premiumProfitAlertPanel">
+                    <span id="premiumAlertText">Refresh inventory to review profit alerts.</span>
+                    <span id="premiumTopBottomText">Top profit and lowest margin will appear after costs are entered.</span>
                 </div>
             </div>
 
@@ -6007,6 +6213,7 @@ function renderDashboard(options = {}) {
             setStatText("statLowestMargin", lowest ? lowest.name.substring(0, 18) + " - " + lowest.margin.toFixed(1) + "%" : "-");
             setStatText("statBelowCost", belowCost);
             renderIntelligencePanel();
+            updatePremiumProfitDashboard();
         }
 
         /*
@@ -8210,6 +8417,265 @@ function renderDashboard(options = {}) {
             showToast(isOpen ? "Tools are now visible." : "Tools are hidden for a cleaner view.", "info");
         }
 
+
+
+        /*
+        |------------------------------------------------------------------
+        | PREMIUM PROFIT DASHBOARD + ONE-CLICK MARGIN FIX
+        |------------------------------------------------------------------
+        */
+
+        function getPremiumProfitDashboardData() {
+            var items = loadedItems || [];
+            var totalRevenueCents = 0;
+            var totalCostCents = 0;
+            var totalProfitCents = 0;
+            var marginSum = 0;
+            var marginCount = 0;
+            var belowCostItems = [];
+            var lowMarginItems = [];
+            var missingCostItems = [];
+            var fixableItems = [];
+            var topProfitItem = null;
+            var lowestMarginItem = null;
+            var opportunityCents = 0;
+
+            items.forEach(function (item) {
+                var id = item.id || "";
+                var price = Number(item.price || 0);
+                var cost = getCostCents(id);
+                var margin = calculateMargin(price, cost);
+                var profit = price - cost;
+
+                if (price > 0) totalRevenueCents += price;
+                if (cost > 0) totalCostCents += cost;
+
+                if (cost <= 0) {
+                    missingCostItems.push(item);
+                }
+
+                if (price > 0 && cost > 0) {
+                    totalProfitCents += profit;
+                    if (margin !== null && Number.isFinite(margin)) {
+                        marginSum += margin;
+                        marginCount++;
+                    }
+
+                    var profitRecord = {
+                        item: item,
+                        price: price,
+                        cost: cost,
+                        profit: profit,
+                        margin: margin
+                    };
+
+                    if (!topProfitItem || profit > topProfitItem.profit) topProfitItem = profitRecord;
+                    if (!lowestMarginItem || margin < lowestMarginItem.margin) lowestMarginItem = profitRecord;
+
+                    if (price < cost) belowCostItems.push(item);
+                    if (margin !== null && margin < 20) lowMarginItems.push(item);
+
+                    var targetPrice = getTargetPriceForMargin(cost, 35);
+                    if (targetPrice > price) {
+                        fixableItems.push({ item: item, currentPrice: price, suggestedPrice: targetPrice, cost: cost, margin: margin });
+                        opportunityCents += (targetPrice - price);
+                    }
+                }
+            });
+
+            return {
+                totalRevenueCents: totalRevenueCents,
+                totalCostCents: totalCostCents,
+                totalProfitCents: totalProfitCents,
+                avgMargin: marginCount ? (marginSum / marginCount) : null,
+                marginCount: marginCount,
+                belowCostItems: belowCostItems,
+                lowMarginItems: lowMarginItems,
+                missingCostItems: missingCostItems,
+                fixableItems: fixableItems,
+                topProfitItem: topProfitItem,
+                lowestMarginItem: lowestMarginItem,
+                opportunityCents: opportunityCents
+            };
+        }
+
+        function updatePremiumProfitDashboard() {
+            var data = getPremiumProfitDashboardData();
+
+            setStatText("premiumTotalRevenue", formatCurrencyFromCents(data.totalRevenueCents));
+            setStatText("premiumTotalCost", formatCurrencyFromCents(data.totalCostCents));
+            setStatText("premiumGrossProfit", formatCurrencyFromCents(data.totalProfitCents));
+            setStatText("premiumAvgMargin", data.avgMargin === null ? "--" : data.avgMargin.toFixed(1) + "%");
+            setStatText("premiumBelowCost", data.belowCostItems.length);
+            setStatText("premiumLowMargin", data.lowMarginItems.length);
+            setStatText("premiumMissingCost", data.missingCostItems.length);
+            setStatText("premiumOpportunity", formatCurrencyFromCents(data.opportunityCents));
+
+            var alertPanel = byId("premiumProfitAlertPanel");
+            var alertText = byId("premiumAlertText");
+            var topBottomText = byId("premiumTopBottomText");
+            var fixButton = byId("btnFixMargins35");
+
+            var totalAlerts = data.belowCostItems.length + data.lowMarginItems.length + data.missingCostItems.length;
+            if (alertPanel) {
+                alertPanel.classList.remove("good", "critical");
+                if (data.belowCostItems.length > 0) alertPanel.classList.add("critical");
+                else if (totalAlerts === 0 && (loadedItems || []).length > 0) alertPanel.classList.add("good");
+            }
+
+            if (alertText) {
+                if (!(loadedItems || []).length) {
+                    alertText.textContent = "Refresh inventory to review profit alerts.";
+                } else if (totalAlerts === 0) {
+                    alertText.textContent = "No major profit alerts found. Keep entering costs to improve accuracy.";
+                } else {
+                    alertText.textContent = data.belowCostItems.length + " below cost, " + data.lowMarginItems.length + " low margin, " + data.missingCostItems.length + " missing cost.";
+                }
+            }
+
+            if (topBottomText) {
+                var topText = data.topProfitItem ? ("Top profit: " + (data.topProfitItem.item.name || "Unnamed") + " " + formatCurrencyFromCents(data.topProfitItem.profit)) : "Top profit: add costs first";
+                var lowText = data.lowestMarginItem ? ("Lowest margin: " + (data.lowestMarginItem.item.name || "Unnamed") + " " + data.lowestMarginItem.margin.toFixed(1) + "%") : "Lowest margin: add costs first";
+                topBottomText.textContent = topText + " | " + lowText;
+            }
+
+            if (fixButton) {
+                fixButton.disabled = data.fixableItems.length === 0 || isBusy;
+                fixButton.textContent = data.fixableItems.length ? ("Fix " + data.fixableItems.length + " to 35% Margin") : "No Margin Fix Needed";
+            }
+        }
+
+        function openPremiumProfitReview() {
+            var data = getPremiumProfitDashboardData();
+            var rows = [];
+
+            rows.push("<div><strong>Estimated Gross Profit</strong><span>" + escapeHtml(formatCurrencyFromCents(data.totalProfitCents)) + " across " + escapeHtml(data.marginCount) + " costed product(s).</span></div><div><span>Profit</span></div>");
+            rows.push("<div><strong>Average Margin</strong><span>" + escapeHtml(data.avgMargin === null ? "Add costs to calculate average margin." : data.avgMargin.toFixed(1) + "%") + "</span></div><div><span>Margin</span></div>");
+            rows.push("<div><strong>35% Margin Opportunity</strong><span>" + escapeHtml(formatCurrencyFromCents(data.opportunityCents)) + " per-sale improvement if weak products are moved to a 35% target margin.</span></div><div><span>Opportunity</span></div>");
+
+            data.belowCostItems.slice(0, 8).forEach(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                rows.push("<div><strong>Below Cost: " + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Price " + escapeHtml(formatCurrencyFromCents(price)) + " is below cost " + escapeHtml(formatCurrencyFromCents(cost)) + ".</span></div><div><span>Critical</span></div>");
+            });
+
+            data.lowMarginItems.slice(0, 8).forEach(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                var margin = calculateMargin(price, cost);
+                rows.push("<div><strong>Low Margin: " + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current margin is " + escapeHtml(margin === null ? "--" : margin.toFixed(1) + "%") + ". Suggested 35% price: " + escapeHtml(formatCurrencyFromCents(getTargetPriceForMargin(cost, 35))) + ".</span></div><div><span>Warning</span></div>");
+            });
+
+            data.missingCostItems.slice(0, 8).forEach(function (item) {
+                rows.push("<div><strong>Missing Cost: " + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Add cost to calculate true margin and profit.</span></div><div><span>Cost Needed</span></div>");
+            });
+
+            if (!rows.length) {
+                rows.push("<div><strong>No alerts</strong><span>No profit issues found on the current loaded inventory.</span></div><div><span>Good</span></div>");
+            }
+
+            openFeatureModal("Premium Profit Dashboard", "This is the $19.99/month value: find losses, weak margins, and missing costs before they hurt the business.", rows);
+            logActivity("Profit Dashboard", "Premium profit dashboard reviewed.", "Viewed");
+        }
+
+        function getMarginFixCandidates(targetMarginPercent) {
+            var target = Number(targetMarginPercent || 35);
+            return (loadedItems || []).map(function (item) {
+                var price = Number(item.price || 0);
+                var cost = getCostCents(item.id || "");
+                var margin = calculateMargin(price, cost);
+                var suggestedPrice = getTargetPriceForMargin(cost, target);
+                return { item: item, price: price, cost: cost, margin: margin, suggestedPrice: suggestedPrice };
+            }).filter(function (record) {
+                return record.item && record.item.id && record.price > 0 && record.cost > 0 && record.suggestedPrice > record.price;
+            });
+        }
+
+        function confirmFixLowMargins35() {
+            if (isBusy) return;
+            var connection = requireConnection();
+            if (!connection) return;
+
+            var candidates = getMarginFixCandidates(35);
+            if (!candidates.length) {
+                showToast("No low-margin products need a 35% margin fix right now.", "success");
+                return;
+            }
+
+            var opportunity = candidates.reduce(function (sum, record) { return sum + Math.max(0, record.suggestedPrice - record.price); }, 0);
+            openConfirm(
+                "Fix Low Margins to 35%",
+                "InventoryRite will update " + candidates.length + " Clover product price(s) to reach about a 35% margin. Estimated per-sale profit improvement: " + formatCurrencyFromCents(opportunity) + ". Please confirm before live prices are changed.",
+                async function () {
+                    await executeMarginFix35(candidates);
+                }
+            );
+        }
+
+        async function executeMarginFix35(candidates) {
+            startBusy();
+            var successCount = 0;
+            var failCount = 0;
+            var undoSnapshot = {
+                source: "35% Margin Fix",
+                direction: "margin_fix_35",
+                pct: 0,
+                timestamp: new Date().toISOString(),
+                items: []
+            };
+
+            bulkUpdatedItemIds = [];
+
+            for (var i = 0; i < candidates.length; i++) {
+                var record = candidates[i];
+                var item = record.item;
+                var itemId = item.id || "";
+                var oldPrice = Number(item.price || 0);
+                var newPrice = Number(record.suggestedPrice || 0);
+
+                if (!itemId || !newPrice || newPrice <= oldPrice) continue;
+
+                try {
+                    await fetchJson(
+                        "/clover-update-item/" + encodeURIComponent(itemId),
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: item.name || "Unnamed Product", price: newPrice })
+                        }
+                    );
+
+                    undoSnapshot.items.push({ id: itemId, name: item.name || "Unnamed Product", oldPrice: oldPrice, newPrice: newPrice });
+                    recordPriceChange(item, oldPrice, newPrice, "35% Margin Fix");
+                    item.price = newPrice;
+                    bulkUpdatedItemIds.push(itemId);
+                    successCount++;
+                } catch (error) {
+                    console.error("35% margin fix failed for", itemId, error);
+                    failCount++;
+                }
+            }
+
+            if (undoSnapshot.items.length) {
+                lastBulkUndoSnapshot = undoSnapshot;
+                saveUndoSnapshot();
+            }
+
+            stopBusy();
+            renderItems(loadedItems);
+            updatePremiumProfitDashboard();
+            markSavedNow();
+
+            if (successCount) {
+                logActivity("35% Margin Fix", successCount + " product(s) updated to protect margin.", failCount ? "Partial" : "Success");
+                showToast("Fixed " + successCount + " product price(s) to about 35% margin." + (failCount ? " " + failCount + " failed." : ""), failCount ? "info" : "success");
+                await loadItems();
+            } else {
+                showToast("No prices were updated. Check Clover permissions or try again.", "error");
+            }
+        }
+
+
         /*
         |------------------------------------------------------------------
         | EVENT BINDINGS
@@ -8236,6 +8702,8 @@ function renderDashboard(options = {}) {
         bind("btnOpenPriceHistory", "click", showFullPriceHistory);
         bind("btnPriceRules", "click", showSmartPricing);
         bind("btnProfitAlerts", "click", showProfitAlerts);
+        bind("btnOpenPremiumProfitReview", "click", openPremiumProfitReview);
+        bind("btnFixMargins35", "click", confirmFixLowMargins35);
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
         bind("btnProfitIntelligence", "click", showProfitIntelligence);
@@ -8266,6 +8734,7 @@ function renderDashboard(options = {}) {
         });
         bind("detailsClose", "click", closeItemDetails);
         updateLastSavedStatus();
+        updatePremiumProfitDashboard();
         setInterval(updateLastSavedStatus, 5000);
 
         // Select-all checkbox
