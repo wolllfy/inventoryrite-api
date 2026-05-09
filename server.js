@@ -5522,7 +5522,7 @@ function renderDashboard(options = {}) {
         }
 
         .inventory-card {
-            padding: 14px !important;
+            padding: 16px !important;
         }
 
         .table-top {
@@ -5722,38 +5722,6 @@ function renderDashboard(options = {}) {
 
             .stats-row {
                 max-width: none !important;
-            }
-        }
-
-    
-        /* ----------------------------------------------------------------
-        | FINAL PRIMARY STATS ROW - FILLS EMPTY SPACE CLEANLY
-        ---------------------------------------------------------------- */
-
-        .primary-stats-row {
-            display: inline-grid !important;
-            grid-template-columns: repeat(4, 165px) !important;
-            justify-content: flex-start !important;
-            align-items: stretch !important;
-            gap: 8px !important;
-            margin: 8px 0 8px !important;
-            width: auto !important;
-            max-width: max-content !important;
-        }
-
-        .primary-stats-row .stat-box {
-            min-width: 0 !important;
-        }
-
-        @media (max-width: 900px) {
-            .primary-stats-row {
-                grid-template-columns: repeat(2, minmax(170px, 1fr)) !important;
-            }
-        }
-
-        @media (max-width: 560px) {
-            .primary-stats-row {
-                grid-template-columns: 1fr 1fr !important;
             }
         }
 
@@ -5994,18 +5962,37 @@ function renderDashboard(options = {}) {
             </div>
             <input id="csvImportInput" type="file" accept=".csv,text/csv" style="display:none;" />
 
-            <div class="stats-row primary-stats-row">
+            <div class="stats-row">
                 <div class="stat-box">
                     <div class="stat-label">Loaded Products</div>
                     <div class="stat-value" id="statLoaded">0</div>
+                </div>
+                <div class="stat-box stat-secondary stat-hide-premium">
+                    <div class="stat-label">Visible Products</div>
+                    <div class="stat-value" id="statVisible">0</div>
+                </div>
+                <div class="stat-box stat-secondary stat-hide-premium">
+                    <div class="stat-label">Available Products</div>
+                    <div class="stat-value" id="statAvailable">0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Total Menu Value</div>
                     <div class="stat-value" id="statValue">$0.00</div>
                 </div>
+            </div>
+
+            <div class="stats-row" id="marginStatsRow">
                 <div class="stat-box">
                     <div class="stat-label">Average Margin</div>
                     <div class="stat-value" id="statAvgMargin">&mdash;</div>
+                </div>
+                <div class="stat-box stat-secondary stat-hide-premium">
+                    <div class="stat-label">Best Margin Item</div>
+                    <div class="stat-value" id="statBestMargin">&mdash;</div>
+                </div>
+                <div class="stat-box stat-secondary stat-hide-premium">
+                    <div class="stat-label">Lowest Margin Item</div>
+                    <div class="stat-value" id="statLowestMargin">&mdash;</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Below Cost</div>
