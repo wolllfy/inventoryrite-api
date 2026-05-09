@@ -8884,7 +8884,184 @@ app.get("/dev", (req, res) => {
             }
         }
 
-    </style>
+    
+
+        /* ----------------------------------------------------------------
+        | FINAL MOBILE TABLE FIX - NO HORIZONTAL CROP / NO BROKEN ACTIONS
+        | Converts product rows into clean mobile cards so Save, Info, Delete
+        | always stay inside the card on Clover Flex and phone widths.
+        ---------------------------------------------------------------- */
+
+        @media (max-width: 768px) {
+            .table-wrap {
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+                border: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            table,
+            thead,
+            tbody,
+            tr,
+            th,
+            td {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                table-layout: auto !important;
+            }
+
+            thead {
+                display: none !important;
+            }
+
+            tbody tr {
+                background: #ffffff !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 18px !important;
+                margin: 0 0 12px !important;
+                padding: 12px !important;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045) !important;
+                height: auto !important;
+                overflow: hidden !important;
+            }
+
+            tbody tr:hover td {
+                background: transparent !important;
+            }
+
+            tbody td {
+                border-bottom: 0 !important;
+                padding: 0 0 12px !important;
+                height: auto !important;
+                min-height: 0 !important;
+                text-align: left !important;
+                background: transparent !important;
+            }
+
+            tbody td:last-child {
+                padding-bottom: 0 !important;
+            }
+
+            tbody td::before {
+                display: block !important;
+                margin: 0 0 6px !important;
+                color: #64748b !important;
+                font-size: 11px !important;
+                font-weight: 900 !important;
+                letter-spacing: .06em !important;
+                line-height: 1.1 !important;
+                text-transform: uppercase !important;
+            }
+
+            tbody td:nth-child(1)::before { content: "Select Product" !important; }
+            tbody td:nth-child(2)::before { content: "Product" !important; }
+            tbody td:nth-child(3)::before { content: "Price" !important; }
+            tbody td:nth-child(4)::before { content: "Cost" !important; }
+            tbody td:nth-child(5)::before { content: "Margin" !important; }
+            tbody td:nth-child(6)::before { content: "Actions" !important; }
+
+            tbody td.col-check {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 10px !important;
+                padding-bottom: 14px !important;
+            }
+
+            tbody td.col-check::before {
+                margin: 0 !important;
+                flex: 1 1 auto !important;
+            }
+
+            input[type="checkbox"] {
+                width: 20px !important;
+                height: 20px !important;
+                min-width: 20px !important;
+            }
+
+            .name-input,
+            .small-input {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                min-height: 42px !important;
+                height: 42px !important;
+                padding: 9px 10px !important;
+                border-radius: 12px !important;
+                font-size: 15px !important;
+                box-sizing: border-box !important;
+            }
+
+            .pill {
+                min-height: 28px !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .cost-warning-chip {
+                display: inline-flex !important;
+                margin-top: 6px !important;
+            }
+
+            .row-actions {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                align-items: stretch !important;
+                justify-content: stretch !important;
+            }
+
+            .row-actions .btn-small,
+            .row-actions .icon-action,
+            .icon-action {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                min-height: 44px !important;
+                height: 44px !important;
+                flex: 0 1 auto !important;
+                padding: 0 !important;
+                border-radius: 13px !important;
+                font-size: 15px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-sizing: border-box !important;
+            }
+
+            .check-col,
+            .name-col,
+            .money-col,
+            .metric-col,
+            .actions-col {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .row-actions {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+
+            .row-actions .btn-small,
+            .row-actions .icon-action,
+            .icon-action {
+                min-height: 44px !important;
+                height: 44px !important;
+                font-size: 15px !important;
+            }
+        }
+
+</style>
 </head>
 <body>
     <div class="wrap">
