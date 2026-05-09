@@ -5206,56 +5206,7 @@ function renderDashboard(options = {}) {
                 padding: 5px 8px !important;
             }
         }
-
-        /* ----------------------------------------------------------------
-        | HERO PRODUCT SUMMARY - REPLACES DUPLICATE TOP BUTTONS
-        ---------------------------------------------------------------- */
-
-        .hero-product-summary {
-            position: relative;
-            z-index: 2;
-            min-width: 330px;
-            max-width: 470px;
-            text-align: left;
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 12px 14px;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
-        }
-
-        .hero-product-summary h3 {
-            margin: 0 0 4px;
-            font-size: 17px;
-            font-weight: 900;
-            color: #0f172a;
-            letter-spacing: -0.015em;
-        }
-
-        .hero-product-summary p {
-            margin: 0;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 700;
-            line-height: 1.35;
-        }
-
-        .hero-product-summary .sync-note {
-            margin-top: 7px;
-            font-size: 12px;
-            font-weight: 900;
-            color: #334155;
-        }
-
-        @media (max-width: 760px) {
-            .hero-product-summary {
-                width: 100%;
-                max-width: none;
-                min-width: 0;
-            }
-        }
-
-    </style>
+</style>
 </head>
 <body>
 
@@ -5284,16 +5235,24 @@ function renderDashboard(options = {}) {
                 <h2>Manage Clover inventory faster.</h2>
                 <p>Search, edit, import/export CSV, and review pricing tools from one clean workspace.</p>
             </div>
-            <div class="hero-product-summary">
-                <h3>Products</h3>
-                <p>Search, edit, save, or select rows for bulk updates.</p>
-                <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
+            <div class="simple-hero-actions">
+                <button id="btnHeroAdd" type="button" class="btn btn-primary">Add Product</button>
+                <button id="btnHeroSync" type="button" class="btn btn-light">Sync Clover</button>
+                <button id="btnHeroAdvanced" type="button" class="btn btn-light">Tools</button>
             </div>
         </section>
 
         
 <section class="card inventory-card">
-<div class="inventory-command-center">
+<div class="table-top">
+                <div>
+                    <h3>Products</h3>
+                    <p>Search, edit, save, or select rows for bulk updates.</p>
+                    <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
+                </div>
+            </div>
+
+            <div class="inventory-command-center">
                 <div class="command-center-top">
                     <div class="command-copy">
                         <div class="command-title">Product Controls</div>
