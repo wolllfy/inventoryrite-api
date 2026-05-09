@@ -2747,107 +2747,6 @@ function renderDashboard(options = {}) {
             .tool-button-grid { grid-template-columns: 1fr !important; }
             .productivity-hub { grid-template-columns: 1fr !important; }
         }
-
-
-        /* ----------------------------------------------------------------
-        | FINANCIAL CLARITY DASHBOARD + SYNC POLISH
-        ---------------------------------------------------------------- */
-
-        .profit-dashboard {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(160px, 1fr));
-            gap: 12px;
-            margin: 0 0 18px;
-        }
-
-        .profit-card {
-            border-radius: 16px;
-            padding: 16px;
-            color: white;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .profit-card:after {
-            content: "";
-            position: absolute;
-            width: 92px;
-            height: 92px;
-            border-radius: 999px;
-            right: -34px;
-            top: -34px;
-            background: rgba(255,255,255,0.16);
-        }
-
-        .profit-card-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .profit-card-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-        .profit-card-amber { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .profit-card-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-
-        .profit-label {
-            font-size: 12px;
-            font-weight: 900;
-            opacity: .92;
-            position: relative;
-            z-index: 1;
-        }
-
-        .profit-value {
-            font-size: 28px;
-            line-height: 1;
-            font-weight: 900;
-            margin-top: 8px;
-            letter-spacing: -0.03em;
-            position: relative;
-            z-index: 1;
-        }
-
-        .profit-help {
-            font-size: 11px;
-            font-weight: 800;
-            opacity: .84;
-            margin-top: 7px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .sync-status-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin: 10px 0 0;
-        }
-
-        .sync-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 900;
-        }
-
-        .sync-status-light {
-            width: 10px;
-            height: 10px;
-            min-width: 10px;
-            border-radius: 999px;
-            background: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
-        }
-
-        @media (max-width: 980px) {
-            .profit-dashboard { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
-        }
-
-        @media (max-width: 620px) {
-            .profit-dashboard { grid-template-columns: 1fr; }
-            .sync-status-row { align-items: flex-start; }
-        }
-
 </style>
 </head>
 <body>
@@ -2862,11 +2761,8 @@ function renderDashboard(options = {}) {
                 </div>
             </div>
 
-            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-                <a href="/support" class="btn btn-small btn-light" style="text-decoration:none;">Help</a>
-                <div class="badge ${connected ? "connected" : "disconnected"}" id="topBadge">
-                    ${connected ? "Connected" : "Connection Required"}
-                </div>
+            <div class="badge ${connected ? "connected" : "disconnected"}" id="topBadge">
+                ${connected ? "Connected" : "Connection Required"}
             </div>
         </div>
     </div>
@@ -2887,30 +2783,6 @@ function renderDashboard(options = {}) {
             </div>
         </section>
 
-        <!-- FINANCIAL CLARITY DASHBOARD -->
-        <section class="profit-dashboard" aria-label="Financial clarity dashboard">
-            <div class="profit-card profit-card-green">
-                <div class="profit-label">Estimated Daily Profit</div>
-                <div class="profit-value" id="todayProfit">$0.00</div>
-                <div class="profit-help">Based on loaded prices and saved costs</div>
-            </div>
-            <div class="profit-card profit-card-blue">
-                <div class="profit-label">Low Stock Items</div>
-                <div class="profit-value" id="lowStockCount">0</div>
-                <div class="profit-help">Products needing reorder attention</div>
-            </div>
-            <div class="profit-card profit-card-amber">
-                <div class="profit-label">Missing Cost Items</div>
-                <div class="profit-value" id="missingCostCount">0</div>
-                <div class="profit-help">Add costs to see true profit</div>
-            </div>
-            <div class="profit-card profit-card-purple">
-                <div class="profit-label">Monthly Opportunity</div>
-                <div class="profit-value" id="monthlyOpportunity">$0.00</div>
-                <div class="profit-help">Potential pricing/margin opportunity</div>
-            </div>
-        </section>
-
         
 <section class="card inventory-card">
 
@@ -2926,17 +2798,10 @@ function renderDashboard(options = {}) {
             </div>
 
             <div class="table-top">
-                <div style="width:100%;">
+                <div>
                     <h3>Products</h3>
                     <p>Search, edit, save, or select rows for bulk updates.</p>
-                    <div class="sync-status-row">
-                        <div class="sync-status-pill">
-                            <span id="syncStatusLight" class="sync-status-light"></span>
-                            <span id="lastSyncTime">Last synced: Not yet</span>
-                        </div>
-                        <button id="btnForceSync" type="button" class="btn btn-small btn-light">Force Sync</button>
-                    </div>
-                    <div class="sync-note" id="lastSyncNote" style="display:none;">Last synced: Not yet</div>
+                    <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
 
@@ -3064,8 +2929,6 @@ function renderDashboard(options = {}) {
                             <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
                             <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
                             <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
-                            <button id="btnDeadStock" type="button" class="control-btn control-neutral">Dead Stock</button>
-                            <button id="btnCogsReport" type="button" class="control-btn control-neutral">COGS Report</button>
                             <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
                         </div>
                     </div>
@@ -3293,7 +3156,6 @@ function renderDashboard(options = {}) {
         var priceChangeHistory = [];
         var lastBulkUndoSnapshot = null;
         var lastSavedAt = null;
-        var lastSyncTime = null;
         var currentUserLabel = embeddedConnection.employee_id ? ("Employee " + embeddedConnection.employee_id) : "Current Clover user";
         var HISTORY_STORAGE_KEY = "inventoryrite_price_history_" + (embeddedConnection.merchant_id || "demo");
         var UNDO_STORAGE_KEY = "inventoryrite_last_bulk_undo_" + (embeddedConnection.merchant_id || "demo");
@@ -3895,160 +3757,6 @@ function renderDashboard(options = {}) {
                 var qty = getItemQuantity(item);
                 return qty !== null && qty <= 5;
             });
-        }
-
-        function updateProfitDashboard() {
-            var items = loadedItems || [];
-            var itemsWithCost = items.filter(function (item) {
-                var cost = getCostCents(item.id || "");
-                var price = Number(item.price || 0);
-                return cost > 0 && price > 0;
-            });
-
-            var avgProfitPerItem = 0;
-            if (itemsWithCost.length) {
-                avgProfitPerItem = itemsWithCost.reduce(function (sum, item) {
-                    return sum + (Number(item.price || 0) - getCostCents(item.id || ""));
-                }, 0) / itemsWithCost.length;
-            }
-
-            // Safe estimate only: no Clover sales data is being pulled here yet.
-            var estimatedDailyUnits = Math.max(1, Math.min(30, itemsWithCost.length || 1));
-            var todayProfit = avgProfitPerItem * estimatedDailyUnits;
-
-            var lowStockCount = getLowStockItems().length;
-            var missingCostCount = items.filter(function (item) {
-                return getCostCents(item.id || "") <= 0 && Number(item.price || 0) > 0;
-            }).length;
-
-            var totalOpportunity = 0;
-            items.forEach(function (item) {
-                var price = Number(item.price || 0);
-                var cost = getCostCents(item.id || "");
-                if (cost > 0 && price > 0) {
-                    var currentMargin = ((price - cost) / price) * 100;
-                    if (currentMargin < 40) {
-                        var targetPrice = Math.ceil(cost / 0.60);
-                        var opportunityPerUnit = Math.max(0, targetPrice - price);
-                        totalOpportunity += opportunityPerUnit * 30;
-                    }
-                }
-            });
-
-            var todayProfitEl = byId("todayProfit");
-            var lowStockEl = byId("lowStockCount");
-            var missingCostEl = byId("missingCostCount");
-            var monthlyOppEl = byId("monthlyOpportunity");
-
-            if (todayProfitEl) todayProfitEl.textContent = formatCurrencyFromCents(todayProfit);
-            if (lowStockEl) lowStockEl.textContent = lowStockCount;
-            if (missingCostEl) missingCostEl.textContent = missingCostCount;
-            if (monthlyOppEl) monthlyOppEl.textContent = formatCurrencyFromCents(totalOpportunity);
-        }
-
-        function updateSyncStatus() {
-            var light = byId("syncStatusLight");
-            var timeEl = byId("lastSyncTime");
-            if (!light || !timeEl) return;
-
-            if (!lastSyncTime) {
-                light.style.backgroundColor = "#94a3b8";
-                light.style.boxShadow = "0 0 0 4px rgba(148, 163, 184, 0.12)";
-                timeEl.textContent = "Last synced: Not yet";
-                return;
-            }
-
-            var minutesAgo = Math.max(0, Math.floor((Date.now() - lastSyncTime) / 60000));
-            if (minutesAgo < 5) {
-                light.style.backgroundColor = "#10b981";
-                light.style.boxShadow = "0 0 0 4px rgba(16, 185, 129, 0.12)";
-                timeEl.textContent = minutesAgo === 0 ? "Last synced: just now" : "Last synced: " + minutesAgo + " minute" + (minutesAgo === 1 ? "" : "s") + " ago";
-            } else if (minutesAgo < 30) {
-                light.style.backgroundColor = "#f59e0b";
-                light.style.boxShadow = "0 0 0 4px rgba(245, 158, 11, 0.14)";
-                timeEl.textContent = "Last synced: " + minutesAgo + " minutes ago (refresh recommended)";
-            } else {
-                light.style.backgroundColor = "#ef4444";
-                light.style.boxShadow = "0 0 0 4px rgba(239, 68, 68, 0.14)";
-                timeEl.textContent = "Last synced: " + minutesAgo + " minutes ago (click Force Sync)";
-            }
-        }
-
-        function showDeadStock() {
-            var staleItems = (loadedItems || []).filter(function (item) {
-                var modifiedTime = item.modifiedTime || item.updatedTime || item.createdTime || 0;
-                if (!modifiedTime) return false;
-                var daysSinceUpdate = (Date.now() - Number(modifiedTime)) / 86400000;
-                return daysSinceUpdate > 90;
-            });
-
-            var rows = staleItems.slice(0, 25).map(function (item) {
-                var modifiedTime = item.modifiedTime || item.updatedTime || item.createdTime || 0;
-                var daysSince = Math.floor((Date.now() - Number(modifiedTime || 0)) / 86400000);
-                var safeSearch = escapeHtml(item.id || item.name || "");
-                return '<div><strong>' + escapeHtml(item.name || "Unnamed Product") + '</strong><span>Not updated in ' + daysSince + ' days</span></div><div><button class="insight-fix-btn" onclick="document.getElementById(\'inventorySearch\').value=\'' + safeSearch + '\'; document.getElementById(\'inventorySearch\').dispatchEvent(new Event(\'input\')); closeFeatureModal();">Review</button></div>';
-            });
-
-            if (!rows.length) {
-                rows = ['<div><strong>No dead stock detected</strong><span>All loaded products have recent Clover activity or no stale-date signal.</span></div><div><span>Healthy</span></div>'];
-            }
-
-            openFeatureModal(
-                "Dead Stock Detector",
-                staleItems.length ? staleItems.length + " products have not been updated in 90+ days. Review them for discontinued, stale, or slow-moving inventory." : "No dead stock detected in the currently loaded Clover products.",
-                rows
-            );
-            logActivity("Dead Stock", staleItems.length + " stale product(s) identified.", "Viewed");
-        }
-
-        function showCogsReport() {
-            var itemsWithCost = (loadedItems || []).filter(function (item) {
-                return getCostCents(item.id || "") > 0 && Number(item.price || 0) > 0;
-            });
-
-            var totalRevenue = itemsWithCost.reduce(function (sum, item) { return sum + Number(item.price || 0); }, 0);
-            var totalCost = itemsWithCost.reduce(function (sum, item) { return sum + getCostCents(item.id || ""); }, 0);
-            var totalProfit = totalRevenue - totalCost;
-            var avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-            var top5Profit = itemsWithCost.map(function (item) {
-                var price = Number(item.price || 0);
-                var cost = getCostCents(item.id || "");
-                var profit = price - cost;
-                return {
-                    name: item.name || "Unnamed Product",
-                    profit: profit,
-                    margin: price > 0 ? (profit / price) * 100 : 0
-                };
-            }).sort(function (a, b) { return b.profit - a.profit; }).slice(0, 5);
-
-            var html = '<div style="padding:10px;width:100%;">' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">' +
-                    '<div style="background:#f0fdf4;padding:12px;border-radius:12px;text-align:center;">' +
-                        '<div style="font-size:11px;color:#166534;font-weight:900;">Total Menu Value</div>' +
-                        '<div style="font-size:24px;font-weight:900;color:#166534;">' + formatCurrencyFromCents(totalRevenue) + '</div>' +
-                    '</div>' +
-                    '<div style="background:#fef3c7;padding:12px;border-radius:12px;text-align:center;">' +
-                        '<div style="font-size:11px;color:#92400e;font-weight:900;">Saved COGS</div>' +
-                        '<div style="font-size:24px;font-weight:900;color:#92400e;">' + formatCurrencyFromCents(totalCost) + '</div>' +
-                    '</div>' +
-                '</div>' +
-                '<div style="background:#dbeafe;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;">' +
-                    '<div style="font-size:11px;color:#1e40af;font-weight:900;">Potential Gross Profit</div>' +
-                    '<div style="font-size:32px;font-weight:900;color:#1e40af;">' + formatCurrencyFromCents(totalProfit) + '</div>' +
-                    '<div style="font-size:12px;font-weight:800;color:#1e3a8a;">Average Margin: ' + avgMargin.toFixed(1) + '%</div>' +
-                '</div>' +
-                '<div style="font-weight:900;margin-bottom:8px;">Top 5 Most Profitable Items</div>' +
-                (top5Profit.length ? top5Profit.map(function (p) {
-                    return '<div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #e5e7eb;">' +
-                        '<span>' + escapeHtml(p.name) + '</span>' +
-                        '<span style="font-weight:900;white-space:nowrap;">' + formatCurrencyFromCents(p.profit) + ' (' + p.margin.toFixed(0) + '%)</span>' +
-                    '</div>';
-                }).join('') : '<div style="color:#64748b;font-weight:800;">Add product costs to unlock this report.</div>') +
-            '</div>';
-
-            openFeatureModal("COGS & Profit Report", "Your loaded inventory value, saved costs, and gross profit estimate at a glance.", [html]);
-            logActivity("COGS Report", "Potential gross profit: " + formatCurrencyFromCents(totalProfit), "Viewed");
         }
 
         function getProfitAlertItems() {
@@ -5501,7 +5209,6 @@ function renderDashboard(options = {}) {
             });
 
             updateStats(items || []);
-            updateProfitDashboard();
 
             if (!items || !items.length) {
                 body.innerHTML =
@@ -5813,8 +5520,6 @@ function renderDashboard(options = {}) {
                 loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
-                lastSyncTime = Date.now();
-                updateSyncStatus();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
                 logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover.", "Success");
             } catch (error) {
@@ -6044,12 +5749,6 @@ function renderDashboard(options = {}) {
         bind("btnProfitAlerts", "click", showProfitAlerts);
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
-        bind("btnDeadStock", "click", showDeadStock);
-        bind("btnCogsReport", "click", showCogsReport);
-        bind("btnForceSync", "click", async function () {
-            showToast("Force syncing with Clover...", "info");
-            await loadItems();
-        });
         bind("btnProfitIntelligence", "click", showProfitIntelligence);
         bind("btnBulkOperationsHub", "click", showBulkOperationsHub);
         bind("btnSmartPricingHub", "click", showSmartPricing);
@@ -6078,9 +5777,7 @@ function renderDashboard(options = {}) {
         });
         bind("detailsClose", "click", closeItemDetails);
         updateLastSavedStatus();
-        updateSyncStatus();
         setInterval(updateLastSavedStatus, 5000);
-        setInterval(updateSyncStatus, 60000);
 
         // Select-all checkbox
         bind("selectAllCheckbox", "change", function (e) {
