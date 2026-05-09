@@ -3433,117 +3433,172 @@ function renderDashboard(options = {}) {
             }
         }
 
-        @media (max-width: 760px) {
+        @media (max-width: 768px) {
+
+            .wrap {
+                padding: 0 10px 24px;
+            }
+
+            .inventory-card {
+                padding: 14px;
+            }
+
+            .merchant-control-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .command-center-top {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .command-search-actions {
+                flex-direction: column;
+                align-items: stretch;
+                min-width: 0;
+                width: 100%;
+            }
+
+            .command-search-actions .search-input {
+                min-width: 0;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .product-action-row {
+                display: grid;
+                grid-template-columns: 1fr;
+                width: 100%;
+            }
+
+            .product-action-row .btn {
+                width: 100%;
+            }
+
             .bulk-panel {
-                padding: 10px 11px !important;
-                margin: 0 0 10px !important;
-                border-radius: 14px !important;
-                background: linear-gradient(135deg, #fffbeb 0%, #fff7d6 100%) !important;
+                padding: 14px;
+                border-radius: 18px;
             }
 
             .bulk-panel-header {
-                display: grid !important;
-                grid-template-columns: 1fr auto !important;
-                gap: 8px !important;
-                align-items: start !important;
-                margin-bottom: 9px !important;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
             }
 
             .bulk-panel-title {
-                font-size: 13px !important;
-                line-height: 1.15 !important;
-                gap: 6px !important;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                width: 100%;
+                font-size: 15px;
+                line-height: 1.2;
             }
 
             .bulk-count-badge {
-                font-size: 11px !important;
-                padding: 3px 8px !important;
+                min-width: 28px;
+                height: 28px;
+                padding: 0 10px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
             }
 
             .bulk-controls {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 76px 1fr 1fr !important;
-                gap: 7px !important;
-                align-items: stretch !important;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .bulk-controls > div:first-child {
+                grid-column: 1 / -1;
             }
 
             .bulk-pct-input {
-                width: 100% !important;
-                min-width: 0 !important;
-                min-height: 40px !important;
-                padding: 7px 8px !important;
-                font-size: 14px !important;
+                width: 100%;
+                min-width: 0;
+                height: 48px;
+                font-size: 18px;
+                border-radius: 14px;
             }
 
-            .bulk-controls .btn,
-            .bulk-controls button {
-                width: 100% !important;
-                min-width: 0 !important;
-                min-height: 40px !important;
-                padding: 7px 8px !important;
-                font-size: 11px !important;
-                line-height: 1.15 !important;
-                border-radius: 11px !important;
-            }
-
-            .bulk-controls .btn-bulk-clear,
-            .bulk-controls button.btn-bulk-clear,
-            .bulk-controls button:last-child {
-                grid-column: 1 / -1 !important;
+            .bulk-controls .btn {
+                width: 100%;
+                min-height: 48px;
+                border-radius: 14px;
+                font-size: 13px;
+                line-height: 1.15;
+                padding: 10px 8px;
+                text-align: center;
             }
 
             .margin-preset-row {
-                margin-top: 9px !important;
-                padding-top: 9px !important;
-                gap: 8px !important;
-            }
-
-            .margin-preset-copy {
-                font-size: 11px !important;
-                line-height: 1.25 !important;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
             }
 
             .margin-preset-actions {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 7px !important;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                width: 100%;
             }
 
             .preset-btn {
-                width: 100% !important;
-                min-height: 38px !important;
-                padding: 7px 8px !important;
-                font-size: 11px !important;
+                width: 100%;
+                min-height: 44px;
+                border-radius: 14px;
+                font-size: 14px;
             }
 
             .protected-pricing-note {
-                margin-top: 9px !important;
-                padding: 8px 9px !important;
-                font-size: 11px !important;
-                line-height: 1.25 !important;
+                font-size: 12px;
+                line-height: 1.45;
+                border-radius: 14px;
+                padding: 12px;
             }
 
-            .bulk-progress {
-                margin-top: 9px !important;
+            .table-wrap {
+                overflow-x: auto;
             }
 
-            .stats-row {
-                gap: 8px !important;
+            table {
+                min-width: 760px;
             }
 
-            .stat-box {
-                padding: 10px 11px !important;
+            .row-actions {
+                flex-direction: column;
+                width: 100%;
             }
 
-            .stat-label {
-                font-size: 11px !important;
-                margin-bottom: 3px !important;
+            .row-actions .btn-small {
+                width: 100%;
             }
 
-            .stat-value {
-                font-size: 18px !important;
+            .stats-row,
+            .risk-score-row,
+            .intelligence-strip,
+            .productivity-hub,
+            .value-tools-row {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                padding: 16px;
+                min-height: auto;
+            }
+
+            .hero h2 {
+                font-size: 22px;
+            }
+
+            .topbar-inner {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
 
