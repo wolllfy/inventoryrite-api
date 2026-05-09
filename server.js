@@ -4742,6 +4742,91 @@ function renderDashboard(options = {}) {
             }
         }
 
+
+
+        /* ----------------------------------------------------------------
+        | EMERGENCY FINAL MOBILE ACTION BUTTON FIX
+        | Keeps Save / Info / Delete buttons inside each mobile product card.
+        | This broad override is intentionally placed last in the main CSS.
+        ---------------------------------------------------------------- */
+        @media (max-width: 768px) {
+            html,
+            body {
+                overflow-x: hidden !important;
+                max-width: 100% !important;
+            }
+
+            .wrap,
+            .inventory-card,
+            .table-wrap,
+            #itemsTable,
+            #itemsBody,
+            #itemsBody tr,
+            #itemsBody td {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsBody tr {
+                width: 100% !important;
+                overflow: hidden !important;
+            }
+
+            #itemsBody td:nth-child(6),
+            #itemsBody td.actions-col,
+            #itemsBody td:has(.row-actions),
+            .table-wrap td:has(.row-actions) {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsBody .row-actions,
+            .table-wrap .row-actions {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                align-items: stretch !important;
+                justify-content: stretch !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            #itemsBody .row-actions > button,
+            #itemsBody .row-actions .btn,
+            #itemsBody .row-actions .btn-small,
+            #itemsBody .row-actions .icon-action,
+            .table-wrap .row-actions > button,
+            .table-wrap .row-actions .btn,
+            .table-wrap .row-actions .btn-small,
+            .table-wrap .row-actions .icon-action {
+                flex: 1 1 0 !important;
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                height: 44px !important;
+                min-height: 44px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border-radius: 13px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+                white-space: nowrap !important;
+            }
+        }
 </style>
 </head>
 <body>
