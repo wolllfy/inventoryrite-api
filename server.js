@@ -4827,6 +4827,267 @@ function renderDashboard(options = {}) {
                 white-space: nowrap !important;
             }
         }
+
+
+        /* ----------------------------------------------------------------
+        | TRUE DASHBOARD MOBILE FIX - PRODUCT CARDS + ACTION BUTTONS
+        | This must live inside the MAIN dashboard style, before the first
+        | </style>. It prevents Clover Flex / 400px layouts from stretching.
+        ---------------------------------------------------------------- */
+
+        @media (max-width: 768px) {
+            html,
+            body {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow-x: hidden !important;
+            }
+
+            .wrap {
+                width: 100% !important;
+                max-width: 100vw !important;
+                margin: 0 auto !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+
+            .card,
+            .inventory-card,
+            .inventory-command-center,
+            .merchant-control-bar,
+            .operations-summary-strip,
+            .last-action-strip,
+            .recent-sidebar,
+            .merchant-hint,
+            .bulk-panel,
+            .add-panel,
+            .table-wrap {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                overflow-x: hidden !important;
+            }
+
+            .inventory-card {
+                padding: 10px !important;
+            }
+
+            .table-wrap {
+                border: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+            }
+
+            table,
+            thead,
+            tbody,
+            tr,
+            th,
+            td {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                table-layout: auto !important;
+            }
+
+            thead {
+                display: none !important;
+            }
+
+            tbody tr {
+                position: relative !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                height: auto !important;
+                margin: 0 0 12px !important;
+                padding: 12px !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 18px !important;
+                background: #ffffff !important;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045) !important;
+                overflow: hidden !important;
+            }
+
+            tbody tr:hover td,
+            tbody tr.row-selected td,
+            tr.row-below-cost td,
+            tr.row-below-cost.row-selected td {
+                background: transparent !important;
+            }
+
+            tbody td {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                height: auto !important;
+                min-height: 0 !important;
+                padding: 0 0 12px !important;
+                border-bottom: 0 !important;
+                background: transparent !important;
+                text-align: left !important;
+                overflow: visible !important;
+            }
+
+            tbody td:last-child {
+                padding-bottom: 0 !important;
+            }
+
+            tbody td::before {
+                display: block !important;
+                margin: 0 0 6px !important;
+                color: #64748b !important;
+                font-size: 11px !important;
+                font-weight: 900 !important;
+                letter-spacing: .06em !important;
+                line-height: 1.1 !important;
+                text-transform: uppercase !important;
+            }
+
+            tbody td:nth-child(1)::before { content: "Select Product" !important; }
+            tbody td:nth-child(2)::before { content: "Product" !important; }
+            tbody td:nth-child(3)::before { content: "Price" !important; }
+            tbody td:nth-child(4)::before { content: "Cost" !important; }
+            tbody td:nth-child(5)::before { content: "Margin" !important; }
+            tbody td:nth-child(6)::before { content: "Actions" !important; }
+
+            tbody td.col-check {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 10px !important;
+                padding-bottom: 14px !important;
+            }
+
+            tbody td.col-check::before {
+                margin: 0 !important;
+                flex: 1 1 auto !important;
+            }
+
+            .check-col,
+            .name-col,
+            .money-col,
+            .metric-col,
+            .actions-col,
+            .product-name-cell {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            input[type="checkbox"] {
+                width: 20px !important;
+                height: 20px !important;
+                min-width: 20px !important;
+            }
+
+            .name-input,
+            .small-input,
+            input,
+            select,
+            textarea {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            .name-input,
+            .small-input {
+                min-height: 42px !important;
+                height: 42px !important;
+                padding: 9px 10px !important;
+                border-radius: 12px !important;
+                font-size: 15px !important;
+            }
+
+            .pill {
+                min-height: 28px !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .cost-warning-chip {
+                display: inline-flex !important;
+                margin-top: 6px !important;
+            }
+
+            td.actions-col,
+            td:last-child {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+            }
+
+            .row-actions {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                align-items: stretch !important;
+                justify-content: stretch !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+            }
+
+            .row-actions .btn-small,
+            .row-actions .icon-action,
+            .icon-action {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                min-height: 44px !important;
+                height: 44px !important;
+                flex: none !important;
+                padding: 0 !important;
+                border-radius: 13px !important;
+                font-size: 15px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .wrap {
+                padding-left: 6px !important;
+                padding-right: 6px !important;
+            }
+
+            .inventory-card {
+                padding: 8px !important;
+            }
+
+            tbody tr {
+                padding: 10px !important;
+            }
+
+            .row-actions {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 7px !important;
+            }
+
+            .row-actions .btn-small,
+            .row-actions .icon-action,
+            .icon-action {
+                min-height: 42px !important;
+                height: 42px !important;
+                font-size: 15px !important;
+            }
+        }
+
 </style>
 </head>
 <body>
