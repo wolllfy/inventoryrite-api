@@ -2718,7 +2718,7 @@ function renderDashboard(options = {}) {
         }
 
         .tool-grid-health {
-            grid-template-columns: repeat(5, minmax(104px, 1fr)) !important;
+            grid-template-columns: repeat(6, minmax(104px, 1fr)) !important;
         }
 
         .control-dark {
@@ -3523,7 +3523,7 @@ function renderDashboard(options = {}) {
             <div class="merchant-control-bar" id="merchantControlBar">
                 <div class="merchant-control-left operations-tools-header">
                     <div class="merchant-control-title">Operations Tools</div>
-                    <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
+                    <div class="merchant-control-subtitle">Import, export, pricing, action plan, inventory health, cleanup, and bulk history.</div>
                 </div>
                 <div class="merchant-control-actions operations-tools-grid">
                     <div class="tool-section tool-section-primary">
@@ -3543,6 +3543,7 @@ function renderDashboard(options = {}) {
                             <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
                             <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
                             <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
+                            <button id="btnActionPlan" type="button" class="control-btn control-dark">Action Plan</button>
                             <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Cleanup Check</button>
                         </div>
                     </div>
@@ -5221,6 +5222,130 @@ function renderDashboard(options = {}) {
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
+
+        function getMerchantActionPlanItems() {
+            var duplicateMap = getDuplicateNameMap();
+            var actions = [];
+
+            (loadedItems || []).forEach(function (item) {
+                var itemId = item.id || "";
+                var name = String(item.name || "").trim();
+                var price = Number(item.price || 0);
+                var cost = getCostCents(itemId);
+                var margin = calculateMargin(price, cost);
+                var sku = getItemSku(item);
+                var duplicateCount = name ? ((duplicateMap[name.toLowerCase()] || []).length) : 0;
+
+                if (price > 0 && cost > 0 && price < cost) {
+                    actions.push({
+                        priority: 1,
+                        label: "Stop Loss",
+                        title: name || "Unnamed Product",
+                        message: "Selling below cost. Price " + formatCurrencyFromCents(price) + " vs cost " + formatCurrencyFromCents(cost) + ". Fix this first.",
+                        action: "fix_price",
+                        itemId: itemId
+                    });
+                    return;
+                }
+
+                if (price > 0 && cost > 0 && margin !== null && margin < 30) {
+                    actions.push({
+                        priority: 2,
+                        label: "Low Margin",
+                        title: name || "Unnamed Product",
+                        message: "Margin is only " + margin.toFixed(1) + "%. Review price or cost before this quietly eats profit.",
+                        action: "fix_price",
+                        itemId: itemId
+                    });
+                    return;
+                }
+
+                if (price > 0 && cost <= 0) {
+                    actions.push({
+                        priority: 3,
+                        label: "Add Cost",
+                        title: name || "Unnamed Product",
+                        message: "Price exists, but cost is missing. InventoryRite cannot show true profit until cost is entered.",
+                        action: "fix_cost",
+                        itemId: itemId
+                    });
+                    return;
+                }
+
+                if (price <= 0) {
+                    actions.push({
+                        priority: 4,
+                        label: "Missing Price",
+                        title: name || "Unnamed Product",
+                        message: "No selling price found. This can cause checkout mistakes or missed revenue.",
+                        action: "fix_price",
+                        itemId: itemId
+                    });
+                    return;
+                }
+
+                if (!name || name.toLowerCase() === "new clover item") {
+                    actions.push({
+                        priority: 5,
+                        label: "Clean Name",
+                        title: name || "Unnamed Product",
+                        message: "Product name looks unfinished. A clean name makes search, CSV export, and merchant review easier.",
+                        action: "fix_name",
+                        itemId: itemId
+                    });
+                    return;
+                }
+
+                if (duplicateCount > 1) {
+                    actions.push({
+                        priority: 6,
+                        label: "Duplicate",
+                        title: name || "Unnamed Product",
+                        message: "Similar product name appears " + duplicateCount + " times. Review duplicates before editing prices.",
+                        action: "review",
+                        itemId: itemId
+                    });
+                    return;
+                }
+
+                if (!sku) {
+                    actions.push({
+                        priority: 7,
+                        label: "Missing SKU",
+                        title: name || "Unnamed Product",
+                        message: "No SKU/code detected. This is not urgent, but cleanup improves audit and CSV workflows.",
+                        action: "review",
+                        itemId: itemId
+                    });
+                }
+            });
+
+            return actions.sort(function (a, b) {
+                if (a.priority !== b.priority) return a.priority - b.priority;
+                return String(a.title || "").localeCompare(String(b.title || ""));
+            });
+        }
+
+        function showMerchantActionPlan() {
+            var actions = getMerchantActionPlanItems();
+            var rows = actions.slice(0, 30).map(function (entry) {
+                var buttonText = entry.action === "fix_cost" ? "Enter Cost" : (entry.action === "fix_price" ? "Stage Price" : (entry.action === "fix_name" ? "Clean Name" : "Review"));
+                return "<div><strong>" + escapeHtml(entry.title || "Unnamed Product") + "</strong><span><span class='severity-pill " + (entry.priority <= 2 ? "severity-critical" : (entry.priority <= 4 ? "severity-warning" : "severity-suggestion")) + "'>" + escapeHtml(entry.label) + "</span>" + escapeHtml(entry.message) + "</span></div><div><button type='button' class='insight-fix-btn' onclick=\"handleInsightFixAction('" + escapeHtml(entry.action) + "','" + escapeHtml(entry.itemId) + "')\">" + escapeHtml(buttonText) + "</button></div>";
+            });
+
+            if (!rows.length) {
+                rows = ["<div><strong>No urgent action needed</strong><span>Loaded products look healthy. Keep using Export CSV before major edits and refresh Clover regularly.</span></div><div><span>Healthy</span></div>"];
+            }
+
+            openFeatureModal(
+                "Merchant Action Plan",
+                actions.length ? (actions.length + " prioritized item(s) found. Start at the top: stop loss, fix low margins, add missing costs, then clean names/SKUs.") : "No urgent inventory cleanup actions found.",
+                rows
+            );
+            logActivity("Action Plan", actions.length + " prioritized action(s) reviewed.", "Viewed");
+            showToast("Action Plan opened.", actions.length ? "info" : "success");
+        }
+
         function handleInsightFixAction(action, itemId) {
             var item = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
             if (!item) { showToast("Product not found. Refresh inventory and try again.", "error"); return; }
@@ -5265,6 +5390,7 @@ function renderDashboard(options = {}) {
             var rows = [
                 "<div><strong>Fast Cost Entry</strong><span>Click any Cost cell, type the true cost, then press Enter. Margin updates after save.</span></div><div><span>Active</span></div>",
                 "<div><strong>Profit Alert Filter</strong><span>Click Profit Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
+                "<div><strong>Action Plan</strong><span>Open Action Plan to see the prioritized fix list: stop loss, low margins, missing costs, missing prices, and cleanup issues.</span></div><div><span>New</span></div>",
                 "<div><strong>Cleanup Check</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
                 "<div><strong>Export for Backup</strong><span>Use Export CSV before major edits so the merchant has a safe product snapshot.</span></div><div><span>Active</span></div>",
                 "<div><strong>Safe Launch Rule</strong><span>No smart tool automatically changes Clover pricing without merchant confirmation.</span></div><div><span>Safe</span></div>"
@@ -6371,6 +6497,7 @@ function renderDashboard(options = {}) {
         bind("btnOpenPriceHistory", "click", showFullPriceHistory);
         bind("btnPriceRules", "click", showSmartPricing);
         bind("btnProfitAlerts", "click", showProfitAlerts);
+        bind("btnActionPlan", "click", showMerchantActionPlan);
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
         bind("btnProfitIntelligence", "click", showProfitIntelligence);
