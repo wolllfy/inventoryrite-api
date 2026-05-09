@@ -4659,12 +4659,16 @@ function renderDashboard(options = {}) {
             var costInputs = body.querySelectorAll("input[data-cost-for]");
             costInputs.forEach(function (input) {
                 input.addEventListener("blur", function (e) {
+                    var nextTarget = e.relatedTarget || null;
+                    if (nextTarget && nextTarget.getAttribute && nextTarget.getAttribute("data-action") === "save") {
+                        return;
+                    }
                     saveItemCost(e.target.getAttribute("data-cost-for"), e.target.value);
                 });
                 input.addEventListener("keydown", function (e) {
                     if (e.key === "Enter") {
                         e.preventDefault();
-                        e.target.blur();
+                        updateItem(e.target.getAttribute("data-cost-for"));
                     }
                 });
             });
@@ -4935,11 +4939,14 @@ function renderDashboard(options = {}) {
 
                 var nameBox = document.querySelector("[data-name-for='" + itemId + "']");
                 var priceBox = document.querySelector("[data-price-for='" + itemId + "']");
+                var costBox = document.querySelector("[data-cost-for='" + itemId + "']");
 
                 var name = nameBox && nameBox.value ? nameBox.value.trim() : "";
                 var priceCents = priceToCentsFromDollarsString(priceBox && priceBox.value ? priceBox.value : "0");
+                var costCents = priceToCentsFromDollarsString(costBox && costBox.value ? costBox.value : "0");
                 var existingItem = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
                 var oldPriceCents = existingItem ? Number(existingItem.price || 0) : 0;
+                var oldCostCents = getCostCents(itemId);
 
                 if (!name) {
                     showToast("Product name cannot be empty.", "error");
@@ -4948,6 +4955,11 @@ function renderDashboard(options = {}) {
 
                 if (priceCents === null) {
                     showToast("Price must be a valid dollar amount.", "error");
+                    return;
+                }
+
+                if (costCents === null) {
+                    showToast("Cost must be a valid dollar amount.", "error");
                     return;
                 }
 
@@ -4962,10 +4974,28 @@ function renderDashboard(options = {}) {
                     }
                 );
 
+                var savedCost = await fetchJson(
+                    "/item-cost/" + encodeURIComponent(itemId),
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ costCents: costCents })
+                    }
+                );
+
+                itemCosts[itemId] = costCents;
+
+                if (existingItem) {
+                    existingItem.name = name;
+                    existingItem.price = priceCents;
+                    existingItem.cost = costCents;
+                }
+
                 lastUpdatedItemId = itemId;
-                recordPriceChange({ id: itemId, name: name }, oldPriceCents, priceCents, "Manual Price Save");
-                showToast("Product updated.", "success");
-                logActivity("Product Updated", name + " was updated.", "Success");
+                markSavedNow();
+                recordPriceChange({ id: itemId, name: name }, oldPriceCents, priceCents, "Manual Row Save");
+                logActivity("Product Saved", name + " price and cost were saved to Clover.", "Success");
+                showToast(savedCost && savedCost.cloverCostSynced ? "Product price and cost saved to Clover." : "Product updated. Cost saved locally.", "success");
 
                 stopBusy();
                 await loadItems();
