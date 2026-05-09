@@ -5088,6 +5088,35 @@ function renderDashboard(options = {}) {
             }
         }
 
+
+
+        /* Clean status strip: removed redundant Ready text because sync status appears below. */
+        .clean-status-strip {
+            justify-content: flex-start !important;
+            padding: 7px 10px !important;
+            margin-bottom: 8px !important;
+        }
+
+        .clean-status-pills {
+            width: 100% !important;
+            justify-content: flex-start !important;
+        }
+
+        @media (max-width: 768px) {
+            .clean-status-strip {
+                padding: 7px 9px !important;
+                margin-bottom: 8px !important;
+            }
+
+            .clean-status-pills {
+                gap: 7px !important;
+            }
+
+            .clean-status-pills .summary-pill {
+                font-size: 11px !important;
+                padding: 5px 8px !important;
+            }
+        }
 </style>
 </head>
 <body>
@@ -5127,12 +5156,8 @@ function renderDashboard(options = {}) {
         
 <section class="card inventory-card">
 
-            <div class="operations-summary-strip simple-status-strip">
-                <div class="operations-summary-main">
-                    <strong>Ready</strong>
-                    <span>Search, add products, refresh Clover, or open tools when needed.</span>
-                </div>
-                <div class="operations-summary-pills">
+            <div class="operations-summary-strip simple-status-strip clean-status-strip">
+                <div class="operations-summary-pills clean-status-pills">
                     <div class="summary-pill" id="marginHealthStatus">Connected</div>
                     <div class="summary-pill">Live Clover Sync</div>
                 </div>
