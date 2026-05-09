@@ -790,14 +790,21 @@ function renderDashboard(options = {}) {
         .topbar {
             background: rgba(255,255,255,0.94);
             border-bottom: 1px solid var(--line);
-            padding: 16px 28px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 11px 24px;
             position: sticky;
             top: 0;
             z-index: 20;
             backdrop-filter: blur(12px);
+        }
+
+        .topbar-inner {
+            width: 100%;
+            max-width: 1460px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
         }
 
         .brand { display: flex; align-items: center; gap: 12px; }
@@ -2667,16 +2674,18 @@ function renderDashboard(options = {}) {
 <body>
 
     <div class="topbar">
-        <div class="brand">
-            <div class="logo">IR</div>
-            <div>
-                <h1>InventoryRite</h1>
-                <p>Clover inventory, pricing, CSV import, and product tools</p>
+        <div class="topbar-inner">
+            <div class="brand">
+                <div class="logo">IR</div>
+                <div>
+                    <h1>InventoryRite</h1>
+                    <p>Clover inventory, pricing, CSV import, and product tools</p>
+                </div>
             </div>
-        </div>
 
-        <div class="badge ${connected ? "connected" : "disconnected"}" id="topBadge">
-            ${connected ? "Connected" : "Connection Required"}
+            <div class="badge ${connected ? "connected" : "disconnected"}" id="topBadge">
+                ${connected ? "Connected" : "Connection Required"}
+            </div>
         </div>
     </div>
 
