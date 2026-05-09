@@ -16,12 +16,11 @@ const app = express();
 
 app.use(cors());
 app.use(express.json({
-    limit: "1mb",
     verify: (req, res, buf) => {
         req.rawBody = buf ? buf.toString("utf8") : "";
     }
 }));
-app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 const PORT = process.env.PORT || 3000;
 
@@ -745,10 +744,6 @@ function renderDashboard(options = {}) {
     <meta name="clover-app-id" content="${safe(CLOVER_APP_ID)}" />
     <meta name="clover-app-name" content="${safe(CLOVER_APP_NAME)}" />
     <link rel="clover-webhook-config" href="/.well-known/clover.json" />
-    <meta name="theme-color" content="#15803d" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="InventoryRite" />
-    <link rel="manifest" href="/manifest.webmanifest" />
     <title>InventoryRite Clover Tools</title>
     <style>
         :root {
@@ -4573,95 +4568,6 @@ function renderDashboard(options = {}) {
             }
         }
 
-
-        /* ----------------------------------------------------------------
-        | APP MARKET QUICK WIN PACK - FEEDBACK, PWA, SCANNER, ACCESSIBILITY
-        ---------------------------------------------------------------- */
-
-        .feedback-fab {
-            position: fixed;
-            right: 18px;
-            bottom: 18px;
-            z-index: 140;
-            border: 0;
-            border-radius: 999px;
-            background: #111827;
-            color: #ffffff;
-            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.24);
-            padding: 12px 15px;
-            font-size: 13px;
-            font-weight: 900;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .feedback-fab:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.05);
-        }
-
-        .feedback-textarea {
-            width: 100%;
-            min-height: 118px;
-            resize: vertical;
-            border: 1px solid #d1d5db;
-            border-radius: 14px;
-            padding: 12px 13px;
-            font-size: 14px;
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.45;
-            outline: none;
-            margin-top: 14px;
-        }
-
-        .feedback-textarea:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
-        }
-
-        .feedback-debug {
-            margin-top: 10px;
-            padding: 10px 12px;
-            border-radius: 13px;
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            color: #475569;
-            font-size: 12px;
-            line-height: 1.45;
-            font-weight: 800;
-        }
-
-        .scanner-ready-chip {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 8px;
-            padding: 4px 8px;
-            border-radius: 999px;
-            background: #ecfdf5;
-            border: 1px solid #bbf7d0;
-            color: #166534;
-            font-size: 11px;
-            font-weight: 900;
-            white-space: nowrap;
-        }
-
-        @media (max-width: 768px) {
-            .feedback-fab {
-                right: 12px;
-                bottom: 12px;
-                padding: 11px 13px;
-                font-size: 12px;
-            }
-
-            .scanner-ready-chip {
-                display: none;
-            }
-        }
-
 </style>
 </head>
 <body>
@@ -5001,22 +4907,6 @@ function renderDashboard(options = {}) {
 
     <div class="toast-wrap" id="toastWrap"></div>
 
-    <button id="feedbackFab" type="button" class="feedback-fab" title="Send feedback or report an issue">Feedback</button>
-
-    <div class="modal-backdrop" id="feedbackModal">
-        <div class="modal modal-wide">
-            <h3>Help Improve InventoryRite</h3>
-            <p>Send a quick note about what would make this app better, or report something that looks wrong.</p>
-            <textarea id="feedbackText" class="feedback-textarea" placeholder="Example: Add a reorder button for low stock items, or this screen looks cramped on Clover Flex..."></textarea>
-            <div class="feedback-debug" id="feedbackDebug">This includes safe app context only: merchant id, product count, active view, browser size, and current page. No Clover token is included.</div>
-            <div class="modal-actions">
-                <button id="feedbackCancel" type="button" class="btn btn-light">Cancel</button>
-                <button id="feedbackCopy" type="button" class="btn btn-secondary">Copy Report</button>
-                <button id="feedbackSend" type="button" class="btn btn-primary">Email Report</button>
-            </div>
-        </div>
-    </div>
-
     <div class="modal-backdrop" id="confirmModal">
         <div class="modal">
             <h3 id="confirmTitle">Confirm Action</h3>
@@ -5142,137 +5032,6 @@ function renderDashboard(options = {}) {
                     toast.parentNode.removeChild(toast);
                 }
             }, 4200);
-        }
-
-
-
-        function debounce(fn, delay) {
-            var timer = null;
-            return function () {
-                var args = arguments;
-                clearTimeout(timer);
-                timer = setTimeout(function () {
-                    fn.apply(null, args);
-                }, delay || 180);
-            };
-        }
-
-        function buildFeedbackReport() {
-            var searchBox = byId("inventorySearch");
-            var messageBox = byId("feedbackText");
-            var message = messageBox ? messageBox.value.trim() : "";
-            var report = [
-                "InventoryRite Feedback",
-                "----------------------",
-                "Message: " + (message || "No message entered."),
-                "Merchant: " + (embeddedConnection.merchant_id || "unknown"),
-                "Employee: " + (embeddedConnection.employee_id || "unknown"),
-                "Loaded products: " + ((loadedItems || []).length),
-                "Selected rows: " + (selectedItemIds ? selectedItemIds.size : 0),
-                "Active view: " + (activeViewMode || "all"),
-                "Search text: " + (searchBox && searchBox.value ? searchBox.value : ""),
-                "Screen: " + window.innerWidth + "x" + window.innerHeight,
-                "Page: " + window.location.href,
-                "Time: " + new Date().toISOString()
-            ];
-            return report.join("\n");
-        }
-
-        function openFeedbackModal() {
-            var modal = byId("feedbackModal");
-            var debug = byId("feedbackDebug");
-            if (debug) {
-                debug.textContent = "Safe context: " + ((loadedItems || []).length) + " products loaded, " + (selectedItemIds ? selectedItemIds.size : 0) + " selected, view: " + (activeViewMode || "all") + ". No Clover token is included.";
-            }
-            if (modal) modal.classList.add("show");
-            setTimeout(function () {
-                var box = byId("feedbackText");
-                if (box) box.focus();
-            }, 80);
-        }
-
-        function closeFeedbackModal() {
-            var modal = byId("feedbackModal");
-            if (modal) modal.classList.remove("show");
-        }
-
-        function copyFeedbackReport() {
-            var report = buildFeedbackReport();
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(report).then(function () {
-                    showToast("Feedback report copied. Paste it into your support message.", "success");
-                }).catch(function () {
-                    showToast("Copy failed. You can email the report instead.", "error");
-                });
-            } else {
-                showToast("Clipboard is not available in this browser. Use Email Report instead.", "info");
-            }
-        }
-
-        function emailFeedbackReport() {
-            var subject = encodeURIComponent("InventoryRite Feedback / App Market Improvement");
-            var body = encodeURIComponent(buildFeedbackReport());
-            window.location.href = "mailto:muheisenone@outlook.com?subject=" + subject + "&body=" + body;
-            showToast("Opening your email app with the feedback report.", "info");
-        }
-
-        var scannerBuffer = "";
-        var scannerLastKeyAt = 0;
-
-        function handleScannerKey(event) {
-            var target = event.target || {};
-            var tag = String(target.tagName || "").toLowerCase();
-            var isTypingField = tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
-
-            if (isTypingField) return;
-            if (event.ctrlKey || event.metaKey || event.altKey) return;
-
-            var now = Date.now();
-            if (now - scannerLastKeyAt > 90) scannerBuffer = "";
-            scannerLastKeyAt = now;
-
-            if (event.key === "Enter") {
-                var code = scannerBuffer.trim();
-                scannerBuffer = "";
-                if (code.length >= 3) {
-                    var searchBox = byId("inventorySearch");
-                    if (searchBox) {
-                        searchBox.value = code;
-                        renderItems(loadedItems);
-                        searchBox.focus();
-                        showToast("Scanned/searching: " + code, "success");
-                    }
-                }
-                return;
-            }
-
-            if (event.key && event.key.length === 1) {
-                scannerBuffer += event.key;
-                if (scannerBuffer.length > 80) scannerBuffer = scannerBuffer.slice(-80);
-            }
-        }
-
-        function installKeyboardShortcuts() {
-            document.addEventListener("keydown", function (event) {
-                var target = event.target || {};
-                var tag = String(target.tagName || "").toLowerCase();
-                var isTypingField = tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
-
-                if (!isTypingField && event.key === "/") {
-                    event.preventDefault();
-                    var searchBox = byId("inventorySearch");
-                    if (searchBox) searchBox.focus();
-                    return;
-                }
-
-                if ((event.ctrlKey || event.metaKey) && String(event.key || "").toLowerCase() === "b") {
-                    event.preventDefault();
-                    toggleBulkPanel();
-                    return;
-                }
-
-                handleScannerKey(event);
-            });
         }
 
         function logActivity(title, message, status) {
@@ -7579,26 +7338,7 @@ function renderDashboard(options = {}) {
                     }
                 });
 
-        
-
-        bind("feedbackFab", "click", openFeedbackModal);
-        bind("feedbackCancel", "click", closeFeedbackModal);
-        bind("feedbackCopy", "click", copyFeedbackReport);
-        bind("feedbackSend", "click", emailFeedbackReport);
-        var feedbackModal = byId("feedbackModal");
-        if (feedbackModal) {
-            feedbackModal.addEventListener("click", function (event) {
-                if (event.target === feedbackModal) closeFeedbackModal();
-            });
-        }
-
-        installKeyboardShortcuts();
-
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/service-worker.js").catch(function () {});
-        }
-
-        loadStoredHistory();
+                loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
                 showToast("Inventory loaded: " + loadedItems.length + " product(s).", "success");
@@ -7848,8 +7588,7 @@ function renderDashboard(options = {}) {
         bind("btnToggleBulkTop", "click", toggleBulkPanel);
         bind("btnToggleBulk", "click", toggleBulkPanel);
         bind("btnCreateItem", "click", createItem);
-        var debouncedInventorySearch = debounce(function () { renderItems(loadedItems); }, 160);
-        bind("inventorySearch", "input", debouncedInventorySearch);
+        bind("inventorySearch", "input", function () { renderItems(loadedItems); });
 
         bind("confirmCancel", "click", closeConfirm);
         bind("confirmYes", "click", function () {
@@ -7954,39 +7693,6 @@ function renderDashboard(options = {}) {
 </body>
 </html>`;
 }
-
-
-
-/*
-|--------------------------------------------------------------------------
-| PWA ROUTES - APP MARKET QUICK WIN
-|--------------------------------------------------------------------------
-| Lets merchants save InventoryRite to Clover/phone home screens and gives
-| the app a more native feel. This is safe and does not cache Clover tokens.
-|--------------------------------------------------------------------------
-*/
-
-app.get("/manifest.webmanifest", (req, res) => {
-    res.setHeader("Content-Type", "application/manifest+json");
-    res.json({
-        name: "InventoryRite Clover Tools",
-        short_name: "InventoryRite",
-        start_url: "/",
-        scope: "/",
-        display: "standalone",
-        background_color: "#f8fafc",
-        theme_color: "#15803d",
-        description: "Clover inventory, pricing, cost, margin, CSV, and cleanup tools for merchants.",
-        icons: []
-    });
-});
-
-app.get("/service-worker.js", (req, res) => {
-    res.setHeader("Content-Type", "application/javascript");
-    res.send(`self.addEventListener('install', function(event) { self.skipWaiting(); });
-self.addEventListener('activate', function(event) { event.waitUntil(self.clients.claim()); });
-self.addEventListener('fetch', function(event) { return; });`);
-});
 
 /*
 |--------------------------------------------------------------------------
