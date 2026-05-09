@@ -2657,9 +2657,86 @@ function renderDashboard(options = {}) {
             font-size: 11px !important;
         }
 
+        .merchant-control-bar {
+            display: block !important;
+            padding: 14px !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+        }
+
+        .operations-tools-header {
+            width: 100% !important;
+            min-width: 0 !important;
+            flex: none !important;
+            margin-bottom: 10px !important;
+        }
+
+        .operations-tools-header .merchant-control-title {
+            font-size: 14px !important;
+            color: #0f172a !important;
+            letter-spacing: -0.01em !important;
+        }
+
+        .operations-tools-header .merchant-control-subtitle {
+            font-size: 11px !important;
+            color: #64748b !important;
+            margin-top: 3px !important;
+        }
+
+        .operations-tools-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+            width: 100% !important;
+            flex: none !important;
+        }
+
+        .tool-section {
+            display: grid !important;
+            grid-template-columns: 132px 1fr !important;
+            align-items: center !important;
+            gap: 10px !important;
+        }
+
+        .tool-section-title {
+            color: #475569 !important;
+            font-size: 10px !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            letter-spacing: .055em !important;
+            white-space: nowrap !important;
+        }
+
+        .tool-button-grid {
+            display: grid !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+
+        .tool-grid-primary,
+        .tool-grid-secondary {
+            grid-template-columns: repeat(4, minmax(118px, 1fr)) !important;
+        }
+
+        .tool-grid-health {
+            grid-template-columns: repeat(5, minmax(104px, 1fr)) !important;
+        }
+
+        .control-dark {
+            background: #111827 !important;
+            color: #ffffff !important;
+            border: 1px solid #111827 !important;
+        }
+
+        .control-dark:hover {
+            background: #0f172a !important;
+            border-color: #0f172a !important;
+        }
+
         @media (max-width: 980px) {
             .merchant-control-left { flex: 1 1 100% !important; }
-            .merchant-control-actions { grid-template-columns: repeat(2, minmax(120px, 1fr)) !important; }
+            .merchant-control-actions { grid-template-columns: 1fr !important; }
+            .tool-section { grid-template-columns: 1fr !important; align-items: stretch !important; gap: 6px !important; }
+            .tool-button-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)) !important; }
             .productivity-hub { grid-template-columns: repeat(2, minmax(150px, 1fr)) !important; }
         }
 
@@ -2667,6 +2744,7 @@ function renderDashboard(options = {}) {
             .command-search-actions .search-input { flex-basis: 100% !important; }
             .command-search-actions .btn { flex: 1 1 120px !important; }
             .merchant-control-actions { grid-template-columns: 1fr !important; }
+            .tool-button-grid { grid-template-columns: 1fr !important; }
             .productivity-hub { grid-template-columns: 1fr !important; }
         }
 </style>
@@ -2819,24 +2897,41 @@ function renderDashboard(options = {}) {
 
 
             <div class="merchant-control-bar" id="merchantControlBar">
-                <div class="merchant-control-left">
-                    <div class="merchant-control-title">Reports & Tools</div>
-                    <div class="merchant-control-subtitle">Import/export, filters, pricing checks, cleanup, and history.</div>
+                <div class="merchant-control-left operations-tools-header">
+                    <div class="merchant-control-title">Operations Tools</div>
+                    <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
                 </div>
-                <div class="merchant-control-actions">
-                    <button id="btnShowAllProducts" type="button" class="control-btn control-neutral">All Products</button>
-                    <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
-                    <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
-                    <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
-                    <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
-                    <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
-                    <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
-                    <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
-                    <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
-                    <button id="btnPriceRules" type="button" class="control-btn control-neutral">Pricing Tools</button>
-                    <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
-                    <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Cleanup Check</button>
-                    <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
+                <div class="merchant-control-actions operations-tools-grid">
+                    <div class="tool-section tool-section-primary">
+                        <div class="tool-section-title">Primary Actions</div>
+                        <div class="tool-button-grid tool-grid-primary">
+                            <button id="btnShowAllProducts" type="button" class="control-btn control-neutral">All Products</button>
+                            <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
+                            <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
+                            <button id="btnPriceRules" type="button" class="control-btn control-dark">Pricing Tools</button>
+                        </div>
+                    </div>
+
+                    <div class="tool-section tool-section-health">
+                        <div class="tool-section-title">Inventory Health</div>
+                        <div class="tool-button-grid tool-grid-health">
+                            <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
+                            <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
+                            <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
+                            <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
+                            <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Cleanup Check</button>
+                        </div>
+                    </div>
+
+                    <div class="tool-section tool-section-secondary">
+                        <div class="tool-section-title">Advanced Tools</div>
+                        <div class="tool-button-grid tool-grid-secondary">
+                            <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
+                            <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
+                            <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
+                            <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="view-filter-note" id="viewFilterNote"></div>
