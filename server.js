@@ -5522,7 +5522,7 @@ function renderDashboard(options = {}) {
         }
 
         .inventory-card {
-            padding: 16px !important;
+            padding: 14px !important;
         }
 
         .table-top {
@@ -5731,12 +5731,14 @@ function renderDashboard(options = {}) {
         ---------------------------------------------------------------- */
 
         .primary-stats-row {
-            display: grid !important;
-            grid-template-columns: repeat(4, minmax(170px, 190px)) !important;
+            display: inline-grid !important;
+            grid-template-columns: repeat(4, 165px) !important;
             justify-content: flex-start !important;
-            gap: 9px !important;
-            margin: 9px 0 10px !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+            margin: 8px 0 8px !important;
             width: auto !important;
+            max-width: max-content !important;
         }
 
         .primary-stats-row .stat-box {
