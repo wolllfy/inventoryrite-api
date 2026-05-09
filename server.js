@@ -5302,6 +5302,23 @@ function renderDashboard(options = {}) {
             min-height: 82px;
         }
 
+        .premium-profit-card.actionable {
+            cursor: pointer;
+            transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
+        }
+
+        .premium-profit-card.actionable:hover {
+            transform: translateY(-2px);
+            border-color: #86efac;
+            box-shadow: 0 12px 26px rgba(21, 128, 61, 0.12);
+            background: #fbfffd;
+        }
+
+        .premium-profit-card.actionable.active {
+            border-color: #15803d;
+            box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.12);
+        }
+
         .premium-profit-label {
             color: #64748b;
             font-size: 10px;
@@ -5592,22 +5609,22 @@ function renderDashboard(options = {}) {
                 </div>
 
                 <div class="premium-profit-grid">
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="highestPrice" title="Click to sort by highest selling price">
                         <div class="premium-profit-label">Total Menu Value</div>
                         <div class="premium-profit-value" id="premiumTotalRevenue">$0.00</div>
                         <div class="premium-profit-help">Sum of current Clover sell prices.</div>
                     </div>
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="highestCost" title="Click to sort by highest cost">
                         <div class="premium-profit-label">Estimated Cost</div>
                         <div class="premium-profit-value" id="premiumTotalCost">$0.00</div>
                         <div class="premium-profit-help">Based on costs entered in InventoryRite.</div>
                     </div>
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="topProfit" title="Click to sort by highest estimated profit">
                         <div class="premium-profit-label">Estimated Gross Profit</div>
                         <div class="premium-profit-value" id="premiumGrossProfit">$0.00</div>
                         <div class="premium-profit-help">Price minus cost across costed products.</div>
                     </div>
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="lowestMargin" title="Click to show weakest margins first">
                         <div class="premium-profit-label">Average Margin</div>
                         <div class="premium-profit-value" id="premiumAvgMargin">--</div>
                         <div class="premium-profit-help">Average across products with price and cost.</div>
@@ -5615,22 +5632,22 @@ function renderDashboard(options = {}) {
                 </div>
 
                 <div class="premium-profit-grid">
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="belowCost" title="Click to show only below-cost products">
                         <div class="premium-profit-label">Below Cost</div>
                         <div class="premium-profit-value" id="premiumBelowCost">0</div>
                         <div class="premium-profit-help">Products losing money per sale.</div>
                     </div>
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="lowMargin" title="Click to show products under 20% margin">
                         <div class="premium-profit-label">Low Margin</div>
                         <div class="premium-profit-value" id="premiumLowMargin">0</div>
                         <div class="premium-profit-help">Products under 20% margin.</div>
                     </div>
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="missingCost" title="Click to show products missing cost">
                         <div class="premium-profit-label">Missing Cost</div>
                         <div class="premium-profit-value" id="premiumMissingCost">0</div>
                         <div class="premium-profit-help">Needs cost entered for true profit.</div>
                     </div>
-                    <div class="premium-profit-card">
+                    <div class="premium-profit-card actionable" data-premium-filter="marginOpportunity" title="Click to show products fixable to 35% margin">
                         <div class="premium-profit-label">35% Margin Opportunity</div>
                         <div class="premium-profit-value" id="premiumOpportunity">$0.00</div>
                         <div class="premium-profit-help">Potential per-sale lift from fixing weak margins.</div>
@@ -6461,6 +6478,27 @@ function renderDashboard(options = {}) {
                 } else if (activeViewMode === "profitAlerts") {
                     note.textContent = "Showing Profit Alerts view. Low-margin and below-cost items are highlighted here.";
                     note.classList.add("show");
+                } else if (activeViewMode === "belowCost") {
+                    note.textContent = "Showing Below Cost view. These products may be losing money every time they sell.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "lowMargin") {
+                    note.textContent = "Showing Low Margin view. These products are under 20% margin and may need pricing review.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "marginOpportunity") {
+                    note.textContent = "Showing 35% Margin Opportunity view. These products can be improved with the one-click margin fix.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "topProfit") {
+                    note.textContent = "Showing Top Profit view. Costed products are sorted by highest estimated gross profit.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "lowestMargin") {
+                    note.textContent = "Showing Lowest Margin view. Costed products are sorted from weakest margin to strongest.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "highestCost") {
+                    note.textContent = "Showing Highest Cost view. Products with saved costs are sorted from highest cost to lowest.";
+                    note.classList.add("show");
+                } else if (activeViewMode === "highestPrice") {
+                    note.textContent = "Showing Highest Price view. Products are sorted by current Clover sell price.";
+                    note.classList.add("show");
                 } else if (activeViewMode === "cleanup") {
                     note.textContent = "Showing Cleanup Check view. Products with missing price, missing cost, duplicate names, bad names, missing SKU, or below-cost risk appear here.";
                     note.classList.add("show");
@@ -6475,6 +6513,7 @@ function renderDashboard(options = {}) {
                     note.classList.remove("show");
                 }
             }
+            updatePremiumProfitCardStates();
             renderItems(loadedItems);
         }
 
@@ -7867,6 +7906,28 @@ function renderDashboard(options = {}) {
                     var marginForAlert = calculateMargin(priceForAlert, costForAlert);
                     if (!(priceForAlert > 0 && costForAlert > 0 && (priceForAlert < costForAlert || (marginForAlert !== null && marginForAlert < 30)))) return false;
                 }
+                if (activeViewMode === "belowCost") {
+                    var priceBelow = Number(item.price || 0);
+                    var costBelow = getCostCents(item.id || "");
+                    if (!(priceBelow > 0 && costBelow > 0 && priceBelow < costBelow)) return false;
+                }
+                if (activeViewMode === "lowMargin") {
+                    var priceLow = Number(item.price || 0);
+                    var costLow = getCostCents(item.id || "");
+                    var marginLow = calculateMargin(priceLow, costLow);
+                    if (!(priceLow > 0 && costLow > 0 && marginLow !== null && marginLow < 20)) return false;
+                }
+                if (activeViewMode === "marginOpportunity") {
+                    var priceOpportunity = Number(item.price || 0);
+                    var costOpportunity = getCostCents(item.id || "");
+                    var targetOpportunity = getTargetPriceForMargin(costOpportunity, 35);
+                    if (!(priceOpportunity > 0 && costOpportunity > 0 && targetOpportunity > priceOpportunity)) return false;
+                }
+                if (activeViewMode === "topProfit" || activeViewMode === "lowestMargin" || activeViewMode === "highestCost") {
+                    var priceCosted = Number(item.price || 0);
+                    var costCosted = getCostCents(item.id || "");
+                    if (!(priceCosted > 0 && costCosted > 0)) return false;
+                }
                 if (activeViewMode === "cleanup") {
                     var cleanupIssues = getCleanupIssues();
                     var cleanupIds = cleanupIssues.map(function (issue) { return issue.item.id || ""; });
@@ -7888,6 +7949,25 @@ function renderDashboard(options = {}) {
                 var haystack = [item.name || "", sku, item.id || ""].join(" ").toLowerCase();
                 return haystack.indexOf(search) >= 0;
             }).sort(function (a, b) {
+                if (activeViewMode === "topProfit") {
+                    return ((Number(b.price || 0) - getCostCents(b.id || "")) - (Number(a.price || 0) - getCostCents(a.id || "")));
+                }
+                if (activeViewMode === "lowestMargin") {
+                    var marginA = calculateMargin(Number(a.price || 0), getCostCents(a.id || ""));
+                    var marginB = calculateMargin(Number(b.price || 0), getCostCents(b.id || ""));
+                    return (marginA === null ? 9999 : marginA) - (marginB === null ? 9999 : marginB);
+                }
+                if (activeViewMode === "highestCost") {
+                    return getCostCents(b.id || "") - getCostCents(a.id || "");
+                }
+                if (activeViewMode === "highestPrice") {
+                    return Number(b.price || 0) - Number(a.price || 0);
+                }
+                if (activeViewMode === "marginOpportunity") {
+                    var oppA = Math.max(0, getTargetPriceForMargin(getCostCents(a.id || ""), 35) - Number(a.price || 0));
+                    var oppB = Math.max(0, getTargetPriceForMargin(getCostCents(b.id || ""), 35) - Number(b.price || 0));
+                    return oppB - oppA;
+                }
                 return String(a.name || "").localeCompare(String(b.name || ""));
             });
 
@@ -8499,6 +8579,40 @@ function renderDashboard(options = {}) {
             };
         }
 
+        function updatePremiumProfitCardStates() {
+            var cards = document.querySelectorAll ? document.querySelectorAll("[data-premium-filter]") : [];
+            for (var i = 0; i < cards.length; i++) {
+                var mode = cards[i].getAttribute("data-premium-filter") || "";
+                if (mode && mode === activeViewMode) cards[i].classList.add("active");
+                else cards[i].classList.remove("active");
+            }
+        }
+
+        function activatePremiumProfitCard(mode) {
+            if (!mode) return;
+            setViewMode(mode);
+            updatePremiumProfitCardStates();
+
+            var labels = {
+                highestPrice: "Sorted by highest selling price.",
+                highestCost: "Sorted by highest saved cost.",
+                topProfit: "Sorted by highest estimated profit.",
+                lowestMargin: "Showing weakest margins first.",
+                belowCost: "Showing only below-cost products.",
+                lowMargin: "Showing products under 20% margin.",
+                missingCost: "Showing products missing cost.",
+                marginOpportunity: "Showing products fixable to a 35% margin."
+            };
+
+            var table = byId("itemsBody");
+            if (table && table.scrollIntoView) {
+                try { table.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { table.scrollIntoView(); }
+            }
+
+            showToast(labels[mode] || "Profit view applied.", "info");
+            logActivity("Profit Dashboard Click", labels[mode] || ("View mode: " + mode), "Viewed");
+        }
+
         function updatePremiumProfitDashboard() {
             var data = getPremiumProfitDashboardData();
 
@@ -8543,6 +8657,8 @@ function renderDashboard(options = {}) {
                 fixButton.disabled = data.fixableItems.length === 0 || isBusy;
                 fixButton.textContent = data.fixableItems.length ? ("Fix " + data.fixableItems.length + " to 35% Margin") : "No Margin Fix Needed";
             }
+
+            updatePremiumProfitCardStates();
         }
 
         function openPremiumProfitReview() {
@@ -8704,6 +8820,21 @@ function renderDashboard(options = {}) {
         bind("btnProfitAlerts", "click", showProfitAlerts);
         bind("btnOpenPremiumProfitReview", "click", openPremiumProfitReview);
         bind("btnFixMargins35", "click", confirmFixLowMargins35);
+
+        var premiumProfitCards = document.querySelectorAll ? document.querySelectorAll("[data-premium-filter]") : [];
+        for (var premiumCardIndex = 0; premiumCardIndex < premiumProfitCards.length; premiumCardIndex++) {
+            premiumProfitCards[premiumCardIndex].addEventListener("click", function () {
+                activatePremiumProfitCard(this.getAttribute("data-premium-filter") || "");
+            });
+            premiumProfitCards[premiumCardIndex].addEventListener("keydown", function (event) {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    activatePremiumProfitCard(this.getAttribute("data-premium-filter") || "");
+                }
+            });
+            premiumProfitCards[premiumCardIndex].setAttribute("tabindex", "0");
+            premiumProfitCards[premiumCardIndex].setAttribute("role", "button");
+        }
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
         bind("btnProfitIntelligence", "click", showProfitIntelligence);
