@@ -2747,6 +2747,456 @@ function renderDashboard(options = {}) {
             .tool-button-grid { grid-template-columns: 1fr !important; }
             .productivity-hub { grid-template-columns: 1fr !important; }
         }
+
+
+        /* ----------------------------------------------------------------
+        | CLOVER FLEX / MINI / DUO / PHONE RESPONSIVE OPTIMIZATION
+        | Safe CSS-only pass. No Clover logic, imports, exports, or button IDs changed.
+        ---------------------------------------------------------------- */
+
+        @media (max-width: 1180px) {
+            .wrap {
+                max-width: 100% !important;
+                padding-left: 14px !important;
+                padding-right: 14px !important;
+            }
+
+            .simple-hero,
+            .inventory-card {
+                border-radius: 16px !important;
+            }
+
+            .command-center-top,
+            .table-top {
+                align-items: stretch !important;
+            }
+
+            .command-search-actions {
+                width: 100% !important;
+                justify-content: stretch !important;
+            }
+
+            .command-search-actions .search-input {
+                min-width: 100% !important;
+                flex-basis: 100% !important;
+            }
+
+            .command-search-actions .btn {
+                flex: 1 1 140px !important;
+            }
+
+            .tool-section {
+                grid-template-columns: 1fr !important;
+                align-items: stretch !important;
+            }
+
+            .tool-section-title {
+                white-space: normal !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                background: #f8fafc !important;
+            }
+
+            .topbar {
+                padding: 10px 14px !important;
+            }
+
+            .topbar-inner {
+                align-items: flex-start !important;
+                gap: 10px !important;
+            }
+
+            .brand {
+                min-width: 0 !important;
+            }
+
+            .brand h1 {
+                font-size: 18px !important;
+            }
+
+            .brand p {
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+            }
+
+            .logo {
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 11px !important;
+                flex: 0 0 36px !important;
+            }
+
+            .badge {
+                padding: 7px 10px !important;
+                font-size: 12px !important;
+                white-space: nowrap !important;
+            }
+
+            .wrap {
+                margin-top: 10px !important;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .simple-hero {
+                padding: 14px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .simple-hero h2 {
+                font-size: 22px !important;
+            }
+
+            .simple-hero p {
+                font-size: 12px !important;
+            }
+
+            .simple-hero-actions,
+            .hero-actions {
+                width: 100% !important;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+
+            .simple-hero-actions .btn,
+            .hero-actions .btn {
+                width: 100% !important;
+                min-height: 44px !important;
+                padding: 10px 10px !important;
+            }
+
+            .inventory-card {
+                padding: 12px !important;
+                border-radius: 16px !important;
+            }
+
+            .table-top h3 {
+                font-size: 19px !important;
+            }
+
+            .inventory-command-center {
+                padding: 10px !important;
+                border-radius: 14px !important;
+            }
+
+            .command-copy {
+                min-width: 0 !important;
+                width: 100% !important;
+            }
+
+            .command-title {
+                font-size: 13px !important;
+            }
+
+            .command-subtitle {
+                font-size: 11px !important;
+            }
+
+            input,
+            .name-input,
+            .small-input {
+                min-height: 44px !important;
+                font-size: 16px !important; /* prevents iPhone zoom */
+            }
+
+            .btn,
+            .control-btn,
+            .preset-btn {
+                min-height: 44px !important;
+            }
+
+            .stats-row,
+            .risk-score-row,
+            .intelligence-strip,
+            .productivity-hub {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+
+            .stat-box,
+            .intelligence-box,
+            .risk-score-box,
+            .productivity-card {
+                border-radius: 14px !important;
+                padding: 10px !important;
+            }
+
+            .stat-value,
+            .intelligence-value,
+            .risk-score-value {
+                font-size: 18px !important;
+            }
+
+            .merchant-control-bar {
+                padding: 11px !important;
+                border-radius: 14px !important;
+            }
+
+            .operations-tools-header {
+                margin-bottom: 8px !important;
+            }
+
+            .tool-button-grid,
+            .tool-grid-primary,
+            .tool-grid-health,
+            .tool-grid-secondary,
+            .value-tools-row {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+
+            .control-btn {
+                font-size: 12px !important;
+                padding: 9px 8px !important;
+            }
+
+            .bulk-toolbar,
+            .bulk-panel-header,
+            .bulk-controls,
+            .margin-preset-row,
+            .operations-summary-strip,
+            .last-action-strip {
+                align-items: stretch !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            html,
+            body {
+                overflow-x: hidden !important;
+            }
+
+            .topbar-inner {
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+
+            .brand p {
+                max-width: 210px !important;
+            }
+
+            .wrap {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+                padding-bottom: 76px !important;
+            }
+
+            .simple-hero,
+            .inventory-card,
+            .inventory-command-center,
+            .merchant-control-bar,
+            .bulk-panel,
+            .bulk-toolbar,
+            .recent-sidebar,
+            .operations-summary-strip,
+            .last-action-strip {
+                border-radius: 13px !important;
+            }
+
+            .simple-hero-actions,
+            .hero-actions,
+            .command-search-actions,
+            .product-action-row,
+            .toolbar,
+            .modal-actions,
+            .bulk-toolbar-right,
+            .margin-preset-actions {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                width: 100% !important;
+                gap: 8px !important;
+            }
+
+            .command-search-actions .btn,
+            .product-action-row .btn,
+            .toolbar .btn,
+            .modal-actions .btn,
+            .bulk-toolbar-right .btn,
+            .margin-preset-actions .preset-btn {
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+
+            .stats-row,
+            .risk-score-row,
+            .intelligence-strip,
+            .productivity-hub,
+            .tool-button-grid,
+            .tool-grid-primary,
+            .tool-grid-health,
+            .tool-grid-secondary,
+            .value-tools-row,
+            .recent-list {
+                grid-template-columns: 1fr !important;
+            }
+
+            .table-wrap {
+                border: 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+
+            .table-wrap table,
+            .table-wrap thead,
+            .table-wrap tbody,
+            .table-wrap tr,
+            .table-wrap th,
+            .table-wrap td {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .table-wrap colgroup,
+            .table-wrap thead {
+                display: none !important;
+            }
+
+            #itemsBody tr {
+                background: #ffffff !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 15px !important;
+                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055) !important;
+                margin: 0 0 11px !important;
+                padding: 10px !important;
+                overflow: hidden !important;
+            }
+
+            #itemsBody tr.row-selected {
+                border-color: #86efac !important;
+                box-shadow: 0 10px 22px rgba(21, 128, 61, 0.13) !important;
+            }
+
+            #itemsBody tr.row-below-cost {
+                border-color: #fecaca !important;
+            }
+
+            #itemsBody tr.row-missing-cost {
+                border-color: #fde68a !important;
+            }
+
+            #itemsBody td {
+                height: auto !important;
+                min-height: 0 !important;
+                border-bottom: 0 !important;
+                padding: 6px 0 !important;
+                background: transparent !important;
+            }
+
+            #itemsBody td.col-check {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                padding-bottom: 2px !important;
+            }
+
+            #itemsBody td.col-check:before {
+                content: "Select product";
+                margin-right: auto;
+                color: #64748b;
+                font-size: 11px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+            }
+
+            #itemsBody td:nth-child(2):before,
+            #itemsBody td:nth-child(3):before,
+            #itemsBody td:nth-child(4):before,
+            #itemsBody td:nth-child(5):before,
+            #itemsBody td:nth-child(6):before {
+                display: block;
+                color: #64748b;
+                font-size: 10px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: .055em;
+                margin: 0 0 5px;
+            }
+
+            #itemsBody td:nth-child(2):before { content: "Product"; }
+            #itemsBody td:nth-child(3):before { content: "Price"; }
+            #itemsBody td:nth-child(4):before { content: "Cost"; }
+            #itemsBody td:nth-child(5):before { content: "Margin"; }
+            #itemsBody td:nth-child(6):before { content: "Actions"; }
+
+            #itemsBody .row-actions {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr 1fr !important;
+                gap: 8px !important;
+                justify-content: stretch !important;
+            }
+
+            #itemsBody .row-actions .btn-small,
+            #itemsBody .row-actions .icon-action {
+                width: 100% !important;
+                flex: none !important;
+                min-height: 44px !important;
+                font-size: 15px !important;
+            }
+
+            #itemsBody .empty {
+                background: #ffffff !important;
+                border-radius: 15px !important;
+                padding: 22px 16px !important;
+            }
+
+            .modal-backdrop {
+                padding: 10px !important;
+                align-items: flex-end !important;
+            }
+
+            .modal {
+                max-width: 100% !important;
+                border-radius: 18px 18px 10px 10px !important;
+                padding: 18px !important;
+                max-height: 88vh !important;
+                overflow-y: auto !important;
+            }
+
+            .toast-wrap {
+                left: 10px !important;
+                right: 10px !important;
+                bottom: 10px !important;
+            }
+
+            .toast {
+                max-width: none !important;
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .brand h1 {
+                font-size: 17px !important;
+            }
+
+            .brand p {
+                display: none !important;
+            }
+
+            .badge {
+                font-size: 11px !important;
+                padding: 6px 8px !important;
+            }
+
+            .simple-hero h2 {
+                font-size: 20px !important;
+            }
+
+            .eyebrow {
+                font-size: 10px !important;
+            }
+
+            .inventory-card {
+                padding: 10px !important;
+            }
+        }
+
 </style>
 </head>
 <body>
