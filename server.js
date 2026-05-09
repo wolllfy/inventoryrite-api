@@ -628,6 +628,15 @@ function isValidMoneyCents(value) {
     return !Number.isNaN(numberValue) && numberValue >= 0 && Number.isFinite(numberValue);
 }
 
+function parseOptionalBoolean(value, fallback) {
+    if (value === undefined || value === null || value === "") return fallback;
+    if (typeof value === "boolean") return value;
+    const text = String(value).trim().toLowerCase();
+    if (["true", "1", "yes", "y", "available", "visible", "active", "enabled"].includes(text)) return true;
+    if (["false", "0", "no", "n", "unavailable", "hidden", "inactive", "disabled"].includes(text)) return false;
+    return fallback;
+}
+
 
 
 function getSuggestedPrice(costCents) {
@@ -3118,10 +3127,31 @@ function renderDashboard(options = {}) {
         }
 
         function priceToCentsFromDollarsString(value) {
-            var clean = String(value || "0").replace("$", "").replace(",", "").trim();
+            var clean = String(value || "0")
+                .replace(/[^0-9.\-]/g, "")
+                .trim();
+            if (!clean) return null;
             var dollars = Number(clean);
-            if (Number.isNaN(dollars) || dollars < 0) return null;
+            if (Number.isNaN(dollars) || dollars < 0 || !Number.isFinite(dollars)) return null;
             return Math.round(dollars * 100);
+        }
+
+        function csvValue(row, keys) {
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") {
+                    return String(row[key]).trim();
+                }
+            }
+            return "";
+        }
+
+        function normalizeCsvBoolean(value) {
+            var text = String(value === undefined || value === null ? "" : value).trim().toLowerCase();
+            if (!text) return "";
+            if (["yes", "y", "true", "1", "available", "visible", "active", "enabled"].indexOf(text) >= 0) return "true";
+            if (["no", "n", "false", "0", "hidden", "inactive", "disabled", "unavailable"].indexOf(text) >= 0) return "false";
+            return "";
         }
 
         function getCostCents(itemId) {
@@ -3472,27 +3502,53 @@ function renderDashboard(options = {}) {
             }
 
             var rows = [];
-            rows.push(["Clover ID", "Product Name", "SKU", "Price", "Cost", "Margin %", "Profit Per Unit", "Available", "Hidden"].join(","));
+
+            // Merchant-friendly Clover export.
+            // First four columns are the safe import core. Extra fields help merchants audit the file.
+            rows.push([
+                "Clover ID",
+                "Product Name",
+                "Price",
+                "Cost",
+                "SKU",
+                "Barcode",
+                "Category",
+                "Quantity",
+                "Reorder Level",
+                "Available",
+                "Hidden",
+                "Margin %",
+                "Profit Per Unit"
+            ].join(","));
 
             loadedItems.forEach(function (item) {
                 var price = Number(item.price || 0);
                 var cost = getCostCents(item.id || "");
                 var margin = calculateMargin(price, cost);
                 var profit = price - cost;
+                var quantity = getItemQuantity(item);
+                var category = item.category || item.categoryName || item.categories?.elements?.[0]?.name || "";
+                var barcode = getItemBarcode(item);
+                var reorderLevel = item.reorderLevel || item.reorder_level || item.reorderPoint || "";
+
                 rows.push([
                     csvEscape(item.id || ""),
                     csvEscape(item.name || ""),
-                    csvEscape(getItemSku(item)),
                     csvEscape((price / 100).toFixed(2)),
                     csvEscape((cost / 100).toFixed(2)),
-                    csvEscape(margin === null ? "" : margin.toFixed(1)),
-                    csvEscape((profit / 100).toFixed(2)),
+                    csvEscape(getItemSku(item)),
+                    csvEscape(barcode),
+                    csvEscape(category),
+                    csvEscape(quantity === null ? "" : quantity),
+                    csvEscape(reorderLevel),
                     csvEscape(item.available === false ? "No" : "Yes"),
-                    csvEscape(item.hidden ? "Yes" : "No")
+                    csvEscape(item.hidden ? "Yes" : "No"),
+                    csvEscape(margin === null ? "" : margin.toFixed(1)),
+                    csvEscape((profit / 100).toFixed(2))
                 ].join(","));
             });
 
-            var blob = new Blob([rows.join("\\n")], { type: "text/csv;charset=utf-8;" });
+            var blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
             var url = URL.createObjectURL(blob);
             var link = document.createElement("a");
             link.href = url;
@@ -3501,8 +3557,8 @@ function renderDashboard(options = {}) {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            showToast("CSV exported successfully.", "success");
-            logActivity("CSV Exported", loadedItems.length + " product(s) exported.", "Success");
+            showToast("CSV exported successfully with Clover ID, name, price, cost, SKU, barcode, availability, and audit fields.", "success");
+            logActivity("CSV Exported", loadedItems.length + " product(s) exported with merchant-ready Clover fields.", "Success");
         }
 
         function openFeatureModal(title, message, rows) {
@@ -4536,7 +4592,7 @@ function renderDashboard(options = {}) {
                         "<strong>Safe CSV import preview</strong><br>" +
                         "This will update matching Clover products only when a Clover ID is present.<br><br>" +
                         previewHtml +
-                        "<br><strong>Supported editable columns:</strong> Product Name/Name, Price, and Cost.<br>" +
+                        "<br><strong>Supported editable columns:</strong> Product Name/Name, Price, Cost, SKU/Item Code, Barcode/UPC, Available, and Hidden.<br>" +
                         "Rows without changes will be skipped. This will not create new products." +
                     "</div>",
                     async function () {
@@ -4562,7 +4618,7 @@ function renderDashboard(options = {}) {
         }
 
         function parseCSV(csvText) {
-            var lines = String(csvText || "").split(/\\r?\\n/).filter(function (line) {
+            var lines = String(csvText || "").split(/\r?\n/).filter(function (line) {
                 return line.trim();
             });
 
@@ -4573,19 +4629,32 @@ function renderDashboard(options = {}) {
 
             for (var i = 1; i < lines.length; i++) {
                 var values = parseCSVRow(lines[i]);
-                var row = {};
+                var rawRow = {};
 
                 headers.forEach(function (header, index) {
-                    if (header) row[header] = values[index] || "";
+                    if (header) rawRow[header] = values[index] || "";
                 });
 
-                var itemId = row.clover_id || row.id || row.item_id || row.product_id;
+                var itemId = csvValue(rawRow, [
+                    "clover_id", "id", "item_id", "product_id", "clover_item_id", "item_uuid"
+                ]);
+
                 if (!itemId) continue;
 
-                row.id = String(itemId || "").trim();
-                row.name = row.product_name || row.name || row.item_name || row.title || "";
-                row.price = row.price || row.price_dollars || row.sale_price || "";
-                row.cost = row.cost || row.cost_dollars || row.unit_cost || "";
+                var row = {
+                    id: itemId,
+                    name: csvValue(rawRow, ["product_name", "name", "item_name", "title"]),
+                    price: csvValue(rawRow, ["price", "price_dollars", "sale_price", "menu_price", "selling_price"]),
+                    cost: csvValue(rawRow, ["cost", "cost_dollars", "unit_cost", "item_cost", "product_cost"]),
+                    sku: csvValue(rawRow, ["sku", "item_code", "code", "product_code"]),
+                    barcode: csvValue(rawRow, ["barcode", "bar_code", "upc", "ean", "gtin", "scan_code"]),
+                    category: csvValue(rawRow, ["category", "category_name", "categories"]),
+                    quantity: csvValue(rawRow, ["quantity", "qty", "stock", "stock_count", "inventory_count", "available_quantity"]),
+                    reorderLevel: csvValue(rawRow, ["reorder_level", "reorder", "reorder_point", "low_stock", "low_stock_level"]),
+                    available: normalizeCsvBoolean(csvValue(rawRow, ["available", "is_available", "enabled", "active"])),
+                    hidden: normalizeCsvBoolean(csvValue(rawRow, ["hidden", "is_hidden", "visible", "visibility"]))
+                };
+
                 rows.push(row);
             }
 
@@ -4629,7 +4698,7 @@ function renderDashboard(options = {}) {
         function buildCsvPreviewHtml(rows) {
             if (!rows.length) return "<div>No preview rows found.</div>";
 
-            var headers = ["id", "name", "price", "cost"];
+            var headers = ["id", "name", "price", "cost", "sku", "barcode", "available", "hidden"];
             var html = "<div style='max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;'>";
             html += "<table style='width:100%;font-size:12px;border-collapse:collapse;background:white;'>";
             html += "<tr>" + headers.map(function (header) {
@@ -4675,11 +4744,20 @@ function renderDashboard(options = {}) {
                     continue;
                 }
 
+                var currentSku = getItemSku(existingItem);
+                var currentBarcode = getItemBarcode(existingItem);
+                var oldAvailable = existingItem.available === false ? "false" : "true";
+                var oldHidden = existingItem.hidden ? "true" : "false";
+
                 var newName = row.name ? String(row.name).trim() : (existingItem.name || "");
                 var oldPriceCents = Number(existingItem.price || 0);
                 var oldCostCents = getCostCents(itemId);
                 var newPriceCents = row.price ? priceToCentsFromDollarsString(row.price) : oldPriceCents;
                 var newCostCents = row.cost ? priceToCentsFromDollarsString(row.cost) : oldCostCents;
+                var newSku = row.sku ? String(row.sku).trim() : currentSku;
+                var newBarcode = row.barcode ? String(row.barcode).trim() : currentBarcode;
+                var newAvailable = row.available ? row.available : oldAvailable;
+                var newHidden = row.hidden ? row.hidden : oldHidden;
 
                 if (!newName || newPriceCents === null || newCostCents === null) {
                     skippedCount++;
@@ -4689,20 +4767,31 @@ function renderDashboard(options = {}) {
                 var nameChanged = newName !== (existingItem.name || "");
                 var priceChanged = newPriceCents !== oldPriceCents;
                 var costChanged = newCostCents !== oldCostCents;
+                var skuChanged = newSku !== currentSku;
+                var barcodeChanged = newBarcode !== currentBarcode;
+                var availableChanged = newAvailable !== oldAvailable;
+                var hiddenChanged = newHidden !== oldHidden;
 
-                if (!nameChanged && !priceChanged && !costChanged) {
+                if (!nameChanged && !priceChanged && !costChanged && !skuChanged && !barcodeChanged && !availableChanged && !hiddenChanged) {
                     skippedCount++;
                     continue;
                 }
 
                 try {
-                    if (nameChanged || priceChanged) {
+                    if (nameChanged || priceChanged || skuChanged || barcodeChanged || availableChanged || hiddenChanged) {
                         await fetchJson(
                             "/clover-update-item/" + encodeURIComponent(itemId),
                             {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ name: newName, price: newPriceCents })
+                                body: JSON.stringify({
+                                    name: newName,
+                                    price: newPriceCents,
+                                    sku: newSku,
+                                    barcode: newBarcode,
+                                    available: newAvailable === "true",
+                                    hidden: newHidden === "true"
+                                })
                             }
                         );
                     }
@@ -4722,6 +4811,10 @@ function renderDashboard(options = {}) {
                     existingItem.name = newName;
                     existingItem.price = newPriceCents;
                     existingItem.cost = newCostCents;
+                    existingItem.sku = newSku;
+                    existingItem.code = newBarcode || newSku || existingItem.code;
+                    existingItem.available = newAvailable === "true";
+                    existingItem.hidden = newHidden === "true";
 
                     if (priceChanged) {
                         recordPriceChange({ id: itemId, name: newName }, oldPriceCents, newPriceCents, "CSV Import");
@@ -5905,16 +5998,32 @@ app.post("/clover-update-item/:itemId", async (req, res) => {
             });
         }
 
+        const skuOrCode = String(req.body.sku || req.body.itemCode || req.body.code || "").trim();
+        const barcode = String(req.body.barcode || req.body.upc || req.body.ean || "").trim();
+        const available = parseOptionalBoolean(req.body.available, true);
+        const hidden = parseOptionalBoolean(req.body.hidden, false);
+
+        const updatePayload = {
+            name: itemName,
+            price: itemPrice,
+            priceType: "FIXED",
+            available,
+            hidden,
+            isRevenue: true
+        };
+
+        // Clover commonly exposes item code/SKU as "code" on the Item object.
+        // We keep this conservative: update code only when the merchant provides a value.
+        // If both SKU and barcode exist, SKU wins for the code field and barcode is kept in our CSV/UI.
+        if (skuOrCode) {
+            updatePayload.code = skuOrCode;
+        } else if (barcode) {
+            updatePayload.code = barcode;
+        }
+
         const updateResponse = await cloverApi.post(
             `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
-            {
-                name: itemName,
-                price: itemPrice,
-                priceType: "FIXED",
-                available: true,
-                hidden: false,
-                isRevenue: true
-            },
+            updatePayload,
             { headers: cloverHeaders(accessToken) }
         );
 
