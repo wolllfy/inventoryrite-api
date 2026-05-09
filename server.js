@@ -5117,7 +5117,283 @@ function renderDashboard(options = {}) {
                 padding: 5px 8px !important;
             }
         }
-</style>
+
+
+        /* ----------------------------------------------------------------
+        | PREMIUM DENSITY CLEANUP - TABLE-FIRST MERCHANT WORKSPACE
+        ---------------------------------------------------------------- */
+
+        .hero {
+            min-height: 82px !important;
+            padding: 13px 20px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .hero h2 {
+            font-size: 23px !important;
+        }
+
+        .hero p {
+            margin-top: 5px !important;
+            font-size: 12px !important;
+        }
+
+        .inventory-card {
+            padding: 18px !important;
+        }
+
+        .table-top {
+            margin-bottom: 10px !important;
+        }
+
+        .table-top h3 {
+            font-size: 17px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .table-top p {
+            font-size: 12px !important;
+        }
+
+        .sync-note {
+            margin-top: 5px !important;
+            font-size: 12px !important;
+        }
+
+        .inventory-command-center {
+            padding: 12px !important;
+            margin-bottom: 10px !important;
+            border-radius: 16px !important;
+        }
+
+        .command-title {
+            font-size: 13px !important;
+        }
+
+        .command-subtitle {
+            font-size: 11px !important;
+        }
+
+        .operations-collapsible {
+            display: block !important;
+            padding: 0 !important;
+            margin-bottom: 10px !important;
+            overflow: hidden !important;
+            background: #ffffff !important;
+            border-radius: 16px !important;
+        }
+
+        .operations-tools-summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            user-select: none;
+        }
+
+        .operations-tools-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .operations-toggle-label {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .operations-collapsible[open] .operations-toggle-label::before {
+            content: "Hide ";
+        }
+
+        .operations-collapsible:not([open]) .operations-toggle-label {
+            color: #15803d;
+            border-color: #bbf7d0;
+            background: #ecfdf5;
+        }
+
+        .operations-collapsible:not([open]) .operations-toggle-label::before {
+            content: "";
+        }
+
+        .operations-collapsible[open] .operations-toggle-label {
+            font-size: 0;
+        }
+
+        .operations-collapsible[open] .operations-toggle-label::before {
+            font-size: 11px;
+            content: "Hide Tools";
+        }
+
+        .operations-collapsible .operations-tools-grid {
+            padding: 0 14px 14px !important;
+        }
+
+        .productivity-hub {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .productivity-card {
+            min-height: 62px !important;
+            padding: 9px 10px !important;
+            border-radius: 13px !important;
+            box-shadow: none !important;
+        }
+
+        .productivity-kicker {
+            font-size: 9px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .productivity-title {
+            font-size: 12px !important;
+            margin-bottom: 2px !important;
+        }
+
+        .productivity-copy {
+            font-size: 10px !important;
+            line-height: 1.25 !important;
+        }
+
+        .operations-summary-strip,
+        .last-action-strip {
+            padding: 8px 10px !important;
+            margin-bottom: 8px !important;
+            border-radius: 13px !important;
+        }
+
+        .operations-summary-main,
+        .last-action-strip {
+            font-size: 12px !important;
+        }
+
+        .recent-sidebar {
+            padding: 10px 12px !important;
+            margin-bottom: 9px !important;
+            border-radius: 14px !important;
+        }
+
+        .recent-sidebar-subtitle {
+            display: none !important;
+        }
+
+        .recent-sidebar-top {
+            margin-bottom: 7px !important;
+        }
+
+        .recent-list {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 0 !important;
+        }
+
+        .recent-list > *:nth-child(n+2) {
+            display: none !important;
+        }
+
+        .recent-item,
+        .recent-change-item {
+            padding: 8px 10px !important;
+            min-height: auto !important;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+            margin: 8px 0 !important;
+        }
+
+        .stat-hide-premium {
+            display: none !important;
+        }
+
+        .stat-box {
+            padding: 10px 11px !important;
+            border-radius: 13px !important;
+        }
+
+        .stat-label {
+            font-size: 10px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .stat-value {
+            font-size: 18px !important;
+        }
+
+        #marginStatsRow {
+            margin-top: -2px !important;
+        }
+
+        .merchant-hint {
+            padding: 8px 10px !important;
+            margin-bottom: 9px !important;
+            font-size: 12px !important;
+            border-radius: 13px !important;
+        }
+
+        .table-wrap {
+            margin-top: 0 !important;
+        }
+
+        th {
+            height: 38px !important;
+            font-size: 11px !important;
+        }
+
+        tbody td {
+            height: 52px !important;
+            padding-top: 9px !important;
+            padding-bottom: 9px !important;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 34px !important;
+        }
+
+        @media (max-width: 900px) {
+            .productivity-hub {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 12px 14px !important;
+            }
+
+            .productivity-hub {
+                grid-template-columns: 1fr !important;
+            }
+
+            .productivity-copy {
+                display: none !important;
+            }
+
+            .operations-tools-summary {
+                align-items: flex-start;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr 1fr !important;
+            }
+        }
+
+    </style>
 </head>
 <body>
 
@@ -5254,11 +5530,14 @@ function renderDashboard(options = {}) {
 
 
 
-            <div class="merchant-control-bar" id="merchantControlBar">
-                <div class="merchant-control-left operations-tools-header">
-                    <div class="merchant-control-title">Operations Tools</div>
-                    <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
-                </div>
+            <details class="merchant-control-bar operations-collapsible" id="merchantControlBar">
+                <summary class="operations-tools-summary">
+                    <div class="merchant-control-left operations-tools-header">
+                        <div class="merchant-control-title">Operations Tools</div>
+                        <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
+                    </div>
+                    <span class="operations-toggle-label">Open Tools</span>
+                </summary>
                 <div class="merchant-control-actions operations-tools-grid">
                     <div class="tool-section tool-section-primary">
                         <div class="tool-section-title">Primary Actions</div>
@@ -5291,7 +5570,7 @@ function renderDashboard(options = {}) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
             <div class="view-filter-note" id="viewFilterNote"></div>
             <div class="productivity-hub" id="productivityHub">
                 <button id="btnProfitIntelligence" type="button" class="productivity-card">
@@ -5358,11 +5637,11 @@ function renderDashboard(options = {}) {
                     <div class="stat-label">Loaded Products</div>
                     <div class="stat-value" id="statLoaded">0</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Visible Products</div>
                     <div class="stat-value" id="statVisible">0</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Available Products</div>
                     <div class="stat-value" id="statAvailable">0</div>
                 </div>
@@ -5377,11 +5656,11 @@ function renderDashboard(options = {}) {
                     <div class="stat-label">Average Margin</div>
                     <div class="stat-value" id="statAvgMargin">&mdash;</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Best Margin Item</div>
                     <div class="stat-value" id="statBestMargin">&mdash;</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box stat-secondary stat-hide-premium">
                     <div class="stat-label">Lowest Margin Item</div>
                     <div class="stat-value" id="statLowestMargin">&mdash;</div>
                 </div>
