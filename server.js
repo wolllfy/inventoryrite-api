@@ -744,7 +744,7 @@ function renderDashboard(options = {}) {
     <meta name="clover-app-id" content="${safe(CLOVER_APP_ID)}" />
     <meta name="clover-app-name" content="${safe(CLOVER_APP_NAME)}" />
     <link rel="clover-webhook-config" href="/.well-known/clover.json" />
-    <title>InventoryRite Profit Tools</title>
+    <title>InventoryRite Clover Tools</title>
     <style>
         :root {
             --bg: #f5f7fb;
@@ -2458,7 +2458,211 @@ function renderDashboard(options = {}) {
             }
         }
 
-    </style>
+    
+
+        /* ----------------------------------------------------------------
+        | READY TO ROCK UI POLISH - CLEANER CLOVER MERCHANT WORKSPACE
+        | Keeps all button IDs and existing functionality intact.
+        ---------------------------------------------------------------- */
+
+        .wrap {
+            max-width: 1380px !important;
+            margin-top: 14px !important;
+        }
+
+        .simple-hero {
+            padding: 16px 20px !important;
+            border-radius: 18px !important;
+            margin-bottom: 14px !important;
+        }
+
+        .simple-hero h2 {
+            font-size: 25px !important;
+            letter-spacing: -0.025em !important;
+        }
+
+        .simple-hero p {
+            margin-top: 6px !important;
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+        }
+
+        .inventory-card {
+            padding: 18px !important;
+            border-radius: 18px !important;
+        }
+
+        .simple-status-strip {
+            padding: 8px 11px !important;
+            margin-bottom: 10px !important;
+            border-radius: 13px !important;
+        }
+
+        .table-top {
+            margin-bottom: 10px !important;
+        }
+
+        .table-top h3 {
+            font-size: 21px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .table-top p,
+        .sync-note {
+            font-size: 12px !important;
+        }
+
+        .inventory-command-center {
+            padding: 12px !important;
+            margin-bottom: 12px !important;
+            border-radius: 16px !important;
+        }
+
+        .command-copy {
+            min-width: 190px !important;
+        }
+
+        .command-title {
+            font-size: 13px !important;
+        }
+
+        .command-subtitle {
+            font-size: 11px !important;
+            margin-top: 3px !important;
+        }
+
+        .command-search-actions {
+            gap: 8px !important;
+            min-width: 0 !important;
+        }
+
+        .command-search-actions .search-input {
+            flex: 1 1 420px !important;
+            min-width: 260px !important;
+        }
+
+        .command-search-actions .btn {
+            min-width: 104px !important;
+            min-height: 39px !important;
+            padding: 10px 13px !important;
+        }
+
+        #btnToggleAdvancedTop,
+        #btnHeroAdvanced {
+            background: #111827 !important;
+            color: #ffffff !important;
+            border-color: #111827 !important;
+        }
+
+        body.show-advanced #btnToggleAdvancedTop,
+        body.show-advanced #btnHeroAdvanced {
+            background: #f8fafc !important;
+            color: #111827 !important;
+            border: 1px solid #d1d5db !important;
+        }
+
+        .merchant-control-bar {
+            align-items: flex-start !important;
+            gap: 10px !important;
+            padding: 13px !important;
+            border-radius: 16px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .merchant-control-left {
+            flex: 0 0 190px !important;
+            min-width: 180px !important;
+        }
+
+        .merchant-control-title {
+            font-size: 13px !important;
+        }
+
+        .merchant-control-subtitle {
+            font-size: 11px !important;
+            line-height: 1.25 !important;
+        }
+
+        .merchant-control-actions {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(118px, 1fr)) !important;
+            gap: 8px !important;
+            width: 100% !important;
+            flex: 1 1 700px !important;
+        }
+
+        .control-btn {
+            min-height: 34px !important;
+            padding: 8px 10px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+        }
+
+        .control-export {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+            border: 1px solid #bfdbfe !important;
+        }
+
+        .control-import {
+            background: #15803d !important;
+            color: #ffffff !important;
+            border: 1px solid #166534 !important;
+        }
+
+        .control-profit {
+            background: #fee2e2 !important;
+            color: #991b1b !important;
+            border: 1px solid #fecaca !important;
+        }
+
+        .productivity-hub {
+            grid-template-columns: repeat(4, minmax(150px, 1fr)) !important;
+            gap: 10px !important;
+            margin-bottom: 12px !important;
+        }
+
+        #btnSmartPricingHub {
+            display: none !important;
+        }
+
+        .productivity-card {
+            min-height: 86px !important;
+            padding-top: 11px !important;
+            padding-bottom: 11px !important;
+            border-radius: 15px !important;
+        }
+
+        .operations-summary-strip,
+        .last-action-strip {
+            padding: 8px 11px !important;
+            margin-bottom: 10px !important;
+            border-radius: 13px !important;
+        }
+
+        .operations-summary-main {
+            font-size: 12px !important;
+        }
+
+        .summary-pill,
+        .last-saved-status {
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+        }
+
+        @media (max-width: 980px) {
+            .merchant-control-left { flex: 1 1 100% !important; }
+            .merchant-control-actions { grid-template-columns: repeat(2, minmax(120px, 1fr)) !important; }
+            .productivity-hub { grid-template-columns: repeat(2, minmax(150px, 1fr)) !important; }
+        }
+
+        @media (max-width: 620px) {
+            .command-search-actions .search-input { flex-basis: 100% !important; }
+            .command-search-actions .btn { flex: 1 1 120px !important; }
+            .merchant-control-actions { grid-template-columns: 1fr !important; }
+            .productivity-hub { grid-template-columns: 1fr !important; }
+        }
+</style>
 </head>
 <body>
 
@@ -2467,7 +2671,7 @@ function renderDashboard(options = {}) {
             <div class="logo">IR</div>
             <div>
                 <h1>InventoryRite</h1>
-                <p>Simple Clover inventory, pricing, and product updates</p>
+                <p>Clover inventory, pricing, CSV import, and product tools</p>
             </div>
         </div>
 
@@ -2482,13 +2686,13 @@ function renderDashboard(options = {}) {
         <section class="hero simple-hero">
             <div class="simple-hero-copy">
                 <div class="eyebrow">Clover Inventory</div>
-                <h2>Manage products without the clutter.</h2>
-                <p>Search, edit prices, add products, and sync Clover from one clean inventory screen. Advanced tools are still here when you need them.</p>
+                <h2>Manage Clover inventory faster.</h2>
+                <p>Search, edit, import/export CSV, and review pricing tools from one clean workspace.</p>
             </div>
             <div class="simple-hero-actions">
                 <button id="btnHeroAdd" type="button" class="btn btn-primary">Add Product</button>
                 <button id="btnHeroSync" type="button" class="btn btn-light">Sync Clover</button>
-                <button id="btnHeroAdvanced" type="button" class="btn btn-light">Advanced Tools</button>
+                <button id="btnHeroAdvanced" type="button" class="btn btn-light">Tools</button>
             </div>
         </section>
 
@@ -2497,8 +2701,8 @@ function renderDashboard(options = {}) {
 
             <div class="operations-summary-strip simple-status-strip">
                 <div class="operations-summary-main">
-                    <strong>Ready to work</strong>
-                    <span>Start with search, add product, or sync Clover. Extra review tools are tucked under Advanced Tools.</span>
+                    <strong>Ready</strong>
+                    <span>Search, add products, refresh Clover, or open tools when needed.</span>
                 </div>
                 <div class="operations-summary-pills">
                     <div class="summary-pill" id="marginHealthStatus">Connected</div>
@@ -2509,7 +2713,7 @@ function renderDashboard(options = {}) {
             <div class="table-top">
                 <div>
                     <h3>Products</h3>
-                    <p>Your Clover products appear below. Search, edit, save, or select rows for bulk updates.</p>
+                    <p>Search, edit, save, or select rows for bulk updates.</p>
                     <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
@@ -2517,16 +2721,16 @@ function renderDashboard(options = {}) {
             <div class="inventory-command-center">
                 <div class="command-center-top">
                     <div class="command-copy">
-                        <div class="command-title">Start Here</div>
-                        <div class="command-subtitle">Search first. Use Advanced Tools only when you need more options.</div>
+                        <div class="command-title">Product Controls</div>
+                        <div class="command-subtitle">Search first, then add, refresh, or bulk update.</div>
                     </div>
 
                     <div class="command-search-actions">
                         <input id="inventorySearch" class="search-input" type="text" placeholder="Search products..." />
-                        <button id="btnRefreshInventoryTop" type="button" class="btn btn-light">Sync Clover</button>
+                        <button id="btnRefreshInventoryTop" type="button" class="btn btn-light">Refresh</button>
                         <button id="btnToggleAddTop" type="button" class="btn btn-primary">Add Product</button>
                         <button id="btnToggleBulkTop" type="button" class="btn btn-light">Bulk Update</button>
-                        <button id="btnToggleAdvancedTop" type="button" class="btn btn-light">Advanced Tools</button>
+                        <button id="btnToggleAdvancedTop" type="button" class="btn btn-light">Tools</button>
                     </div>
                 </div>
             </div>
@@ -2607,22 +2811,22 @@ function renderDashboard(options = {}) {
 
             <div class="merchant-control-bar" id="merchantControlBar">
                 <div class="merchant-control-left">
-                    <div class="merchant-control-title">Merchant Tools</div>
-                    <div class="merchant-control-subtitle">Filters, reorder planning, safety backup export, price checks, cleanup, and action history in one place.</div>
+                    <div class="merchant-control-title">Reports & Tools</div>
+                    <div class="merchant-control-subtitle">Import/export, filters, pricing checks, cleanup, and history.</div>
                 </div>
                 <div class="merchant-control-actions">
                     <button id="btnShowAllProducts" type="button" class="control-btn control-neutral">All Products</button>
                     <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
                     <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
-                    <button id="btnExportCsv" type="button" class="control-btn control-neutral">Export Safety Backup</button>
+                    <button id="btnExportCsv" type="button" class="control-btn control-export">Export CSV</button>
                     <button id="btnImportCsv" type="button" class="control-btn control-import">Import CSV</button>
                     <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
                     <button id="btnMissingCostLock" type="button" class="control-btn control-neutral">Missing Costs</button>
-                    <button id="btnSmart99" type="button" class="control-btn control-neutral">Smart .99</button>
+                    <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
                     <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
                     <button id="btnPriceRules" type="button" class="control-btn control-neutral">Pricing Tools</button>
-                    <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Margin Alerts</button>
-                    <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Inventory Cleanup</button>
+                    <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
+                    <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Cleanup Check</button>
                     <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
                 </div>
             </div>
@@ -2640,12 +2844,12 @@ function renderDashboard(options = {}) {
                 </button>
                 <button id="btnSmartPricingHub" type="button" class="productivity-card" data-icon="%">
                     <div class="productivity-kicker">Pricing</div>
-                    <div class="productivity-title">Pricing Tools</div>
-                    <div class="productivity-copy">Pricing reviews, margin checks, and faster menu price updates.</div>
+                    <div class="productivity-title">Pricing Review</div>
+                    <div class="productivity-copy">Margin checks and faster menu price reviews.</div>
                 </button>
                 <button id="btnCleanupToolsHub" type="button" class="productivity-card" data-icon="✓">
                     <div class="productivity-kicker">Cleanup</div>
-                    <div class="productivity-title">Inventory Cleanup</div>
+                    <div class="productivity-title">Cleanup Check</div>
                     <div class="productivity-copy">Review missing prices, duplicate products, weak costs, and inventory issues.</div>
                 </button>
                 <button id="btnShortcutHub" type="button" class="productivity-card" data-icon="⚡">
@@ -2657,8 +2861,8 @@ function renderDashboard(options = {}) {
 
             <div class="operations-summary-strip" id="operationsSummaryStrip">
                 <div class="operations-summary-main">
-                    <strong>Inventory Snapshot</strong>
-                    <span id="operationsSummaryText">Refresh Clover inventory to review pricing, costs, margins, and cleanup items.</span>
+                    <strong>Snapshot</strong>
+                    <span id="operationsSummaryText">Refresh inventory to review pricing, costs, margins, and alerts.</span>
                 </div>
                 <div class="operations-summary-pills">
                     <span class="summary-pill" id="summaryAlertPill">0 alerts</span>
@@ -3468,10 +3672,10 @@ function renderDashboard(options = {}) {
                     note.textContent = "Showing Low Stock view. Products with quantity 5 or less appear here when Clover sends quantity data.";
                     note.classList.add("show");
                 } else if (activeViewMode === "profitAlerts") {
-                    note.textContent = "Showing Margin Alerts view. Low-margin and below-cost items are highlighted here.";
+                    note.textContent = "Showing Profit Alerts view. Low-margin and below-cost items are highlighted here.";
                     note.classList.add("show");
                 } else if (activeViewMode === "cleanup") {
-                    note.textContent = "Showing Inventory Cleanup view. Products with missing price, missing cost, duplicate names, bad names, missing SKU, or below-cost risk appear here.";
+                    note.textContent = "Showing Cleanup Check view. Products with missing price, missing cost, duplicate names, bad names, missing SKU, or below-cost risk appear here.";
                     note.classList.add("show");
                 } else if (activeViewMode === "missingCost") {
                     note.textContent = "Showing Missing Costs view. Products with no saved cost are highlighted so margin reviews become accurate.";
@@ -3614,13 +3818,13 @@ function renderDashboard(options = {}) {
             });
 
             openFeatureModal(
-                "Margin Alerts",
+                "Profit Alerts",
                 alerts.length ? (alerts.length + " product(s) need margin review and are now shown in the table.") : "No margin alerts right now. No below-cost or low-margin products were found.",
                 rows
             );
             setViewMode("profitAlerts");
-            logActivity("Margin Alerts", alerts.length + " product(s) reviewed for margin risk.", "Viewed");
-            showToast("Margin Alerts view enabled.", alerts.length ? "info" : "success");
+            logActivity("Profit Alerts", alerts.length + " product(s) reviewed for margin risk.", "Viewed");
+            showToast("Profit Alerts view enabled.", alerts.length ? "info" : "success");
         }
 
         function showReorderPlanning() {
@@ -3641,7 +3845,7 @@ function renderDashboard(options = {}) {
         function showPriceRules() {
             var rows = [
                 "<div><strong>Round Prices</strong><span>Use Bulk Price Update, then review prices ending in .99 before saving.</span></div><div><span>Manual</span></div>",
-                "<div><strong>Protect Margin</strong><span>Use Margin Alerts to find products below 30% margin or below cost.</span></div><div><span>Active</span></div>",
+                "<div><strong>Protect Margin</strong><span>Use Profit Alerts to find products below 30% margin or below cost.</span></div><div><span>Active</span></div>",
                 "<div><strong>Bulk Percent Change</strong><span>Select rows, open Bulk Price Update, then increase or decrease by a percent.</span></div><div><span>Active</span></div>"
             ];
             openFeatureModal(
@@ -3784,7 +3988,7 @@ function renderDashboard(options = {}) {
             var rows = [
                 "<div><strong>Bulk Price Update</strong><span>Select products in the table, open Bulk Update, then increase or decrease selected items by a percentage.</span></div><div><span>Active</span></div>",
                 "<div><strong>CSV Export</strong><span>Export the full product list with price, cost, margin, profit, availability, and hidden status.</span></div><div><span>Active</span></div>",
-                "<div><strong>Filtered Views</strong><span>Use Low Stock or Margin Alerts before selecting rows so bulk actions are safer.</span></div><div><span>Active</span></div>",
+                "<div><strong>Filtered Views</strong><span>Use Low Stock or Profit Alerts before selecting rows so bulk actions are safer.</span></div><div><span>Active</span></div>",
                 "<div><strong>Selection Count</strong><span>Selected products: " + escapeHtml(selectedItemIds.size) + ".</span></div><div><span>Ready</span></div>"
             ];
             openFeatureModal("Bulk Tools", "These are the fast merchant workflows that make this more than Clover's default inventory screen.", rows);
@@ -3845,12 +4049,12 @@ function renderDashboard(options = {}) {
             }
 
             openFeatureModal(
-                "Inventory Cleanup",
+                "Cleanup Check",
                 issues.length ? (issues.length + " cleanup issue(s) found. This is the merchant-friendly audit Clover should make easier.") : "No cleanup issues were found in the loaded product list.",
                 rows
             );
             setViewMode("cleanup");
-            logActivity("Inventory Cleanup", issues.length + " cleanup issue(s) reviewed.", "Viewed");
+            logActivity("Cleanup Check", issues.length + " cleanup issue(s) reviewed.", "Viewed");
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
@@ -4132,7 +4336,7 @@ function renderDashboard(options = {}) {
             if (summaryText) {
                 summaryText.textContent = (loadedItems || []).length
                     ? "Pricing, cost, margin, and cleanup summary for the currently loaded Clover products."
-                    : "Refresh Clover inventory to review pricing, costs, margins, and cleanup items.";
+                    : "Refresh inventory to review pricing, costs, margins, and alerts.";
             }
             if (alertPill) alertPill.textContent = totalAlerts + " alert" + (totalAlerts === 1 ? "" : "s");
             if (belowCostPill) belowCostPill.textContent = belowCostCount + " below cost";
@@ -4283,9 +4487,9 @@ function renderDashboard(options = {}) {
             rows.push("<div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
             issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
             if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
-            openFeatureModal("Inventory Cleanup", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
+            openFeatureModal("Cleanup Check", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
             setViewMode("cleanup");
-            logActivity("Inventory Cleanup", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
+            logActivity("Cleanup Check", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
@@ -4332,8 +4536,8 @@ function renderDashboard(options = {}) {
         function showOperationalShortcuts() {
             var rows = [
                 "<div><strong>Fast Cost Entry</strong><span>Click any Cost cell, type the true cost, then press Enter. Margin updates after save.</span></div><div><span>Active</span></div>",
-                "<div><strong>Profit Alert Filter</strong><span>Click Margin Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
-                "<div><strong>Inventory Cleanup</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
+                "<div><strong>Profit Alert Filter</strong><span>Click Profit Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
+                "<div><strong>Cleanup Check</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
                 "<div><strong>Export for Backup</strong><span>Use Export CSV before major edits so the merchant has a safe product snapshot.</span></div><div><span>Active</span></div>",
                 "<div><strong>Safe Launch Rule</strong><span>No smart tool automatically changes Clover pricing without merchant confirmation.</span></div><div><span>Safe</span></div>"
             ];
@@ -4464,10 +4668,10 @@ function renderDashboard(options = {}) {
             }
 
             openConfirm(
-                "Apply Smart .99 Rounding?",
+                "Apply Round Prices Rounding?",
                 "This will round " + ready.length + " price(s) to clean retail .99 endings. Select rows first to limit the action, or run it on the visible inventory.",
                 async function () {
-                    await executeDirectPriceUpdates(connection, ready, "Smart .99 Rounding");
+                    await executeDirectPriceUpdates(connection, ready, "Round Prices Rounding");
                 }
             );
         }
@@ -5401,7 +5605,7 @@ function renderDashboard(options = {}) {
             document.body.classList.toggle("show-advanced");
 
             var isOpen = document.body.classList.contains("show-advanced");
-            var label = isOpen ? "Hide Advanced" : "Advanced Tools";
+            var label = isOpen ? "Hide Tools" : "Tools";
 
             var topButton = byId("btnToggleAdvancedTop");
             if (topButton) topButton.textContent = label;
@@ -5409,7 +5613,7 @@ function renderDashboard(options = {}) {
             var heroButton = byId("btnHeroAdvanced");
             if (heroButton) heroButton.textContent = label;
 
-            showToast(isOpen ? "Advanced tools are now visible." : "Advanced tools are hidden for a cleaner view.", "info");
+            showToast(isOpen ? "Tools are now visible." : "Tools are hidden for a cleaner view.", "info");
         }
 
         /*
