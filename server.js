@@ -3705,6 +3705,366 @@ function renderDashboard(options = {}) {
                 overflow: visible !important;
             }
         }
+        /* ----------------------------------------------------------------
+        | FINAL PREMIUM CLOVER APP POLISH - CHATGPT SAFE OVERRIDES
+        ---------------------------------------------------------------- */
+
+        body {
+            background:
+                radial-gradient(circle at 8% 0%, rgba(22, 163, 74, 0.12), transparent 30%),
+                radial-gradient(circle at 92% 12%, rgba(37, 99, 235, 0.055), transparent 26%),
+                linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        }
+
+        .topbar {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+
+        .topbar-inner {
+            gap: 12px !important;
+        }
+
+        .logo {
+            width: 34px !important;
+            height: 34px !important;
+            border-radius: 11px !important;
+            font-size: 13px !important;
+        }
+
+        .brand {
+            gap: 10px !important;
+        }
+
+        .brand h1 {
+            font-size: 17px !important;
+            line-height: 1.05 !important;
+        }
+
+        .brand p {
+            font-size: 11px !important;
+            margin-top: 2px !important;
+        }
+
+        .badge {
+            padding: 6px 10px !important;
+            font-size: 11px !important;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        .wrap {
+            margin-top: 12px !important;
+        }
+
+        .hero {
+            min-height: 82px !important;
+            padding: 12px 18px !important;
+            margin-bottom: 12px !important;
+            border-radius: 18px !important;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055) !important;
+        }
+
+        .hero:after {
+            width: 150px !important;
+            height: 150px !important;
+            right: -74px !important;
+            top: -76px !important;
+        }
+
+        .eyebrow {
+            font-size: 10px !important;
+            margin-bottom: 4px !important;
+        }
+
+        .hero h2 {
+            font-size: 22px !important;
+            line-height: 1.05 !important;
+        }
+
+        .hero p {
+            font-size: 12px !important;
+            margin-top: 5px !important;
+            line-height: 1.35 !important;
+        }
+
+        .simple-hero-actions,
+        .hero-actions {
+            gap: 8px !important;
+        }
+
+        .btn {
+            min-height: 38px !important;
+            padding: 10px 13px !important;
+            border-radius: 12px !important;
+        }
+
+        .inventory-card {
+            padding: 18px !important;
+            border-radius: 18px !important;
+        }
+
+        .table-top {
+            margin-bottom: 10px !important;
+        }
+
+        .table-top h3 {
+            font-size: 20px !important;
+            margin-bottom: 4px !important;
+        }
+
+        .table-top p,
+        .sync-note {
+            font-size: 12px !important;
+        }
+
+        .inventory-command-center,
+        .merchant-control-bar,
+        .operations-summary-strip,
+        .bulk-panel,
+        .recent-sidebar {
+            border-radius: 15px !important;
+            box-shadow: 0 7px 20px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        .inventory-command-center,
+        .merchant-control-bar {
+            padding: 12px 14px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .bulk-panel {
+            padding: 13px 14px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .bulk-panel-header {
+            margin-bottom: 10px !important;
+        }
+
+        .protected-pricing-note {
+            margin-top: 9px !important;
+            padding: 8px 10px !important;
+            font-size: 11px !important;
+        }
+
+        .stats-row {
+            gap: 9px !important;
+            margin-top: 9px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .stat-box {
+            padding: 10px 11px !important;
+            border-radius: 12px !important;
+        }
+
+        .stat-label {
+            font-size: 10px !important;
+            margin-bottom: 3px !important;
+        }
+
+        .stat-value {
+            font-size: 17px !important;
+        }
+
+        .table-wrap {
+            border-radius: 14px !important;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04) !important;
+        }
+
+        th {
+            height: 38px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            font-size: 11px !important;
+            letter-spacing: .04em !important;
+        }
+
+        td,
+        tbody td {
+            height: 54px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 36px !important;
+            padding-top: 7px !important;
+            padding-bottom: 7px !important;
+            border-radius: 9px !important;
+            box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+        }
+
+        .pill {
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+        }
+
+        .row-actions {
+            gap: 5px !important;
+            justify-content: center !important;
+        }
+
+        .row-actions .btn-small,
+        .icon-action {
+            min-height: 32px !important;
+            height: 32px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            font-weight: 900 !important;
+            box-shadow: 0 3px 8px rgba(15, 23, 42, 0.035);
+        }
+
+        .icon-action {
+            width: 34px !important;
+            flex: 0 0 34px !important;
+        }
+
+        .btn-secondary.icon-action {
+            background: #eef2ff !important;
+            color: #1d4ed8 !important;
+            border: 1px solid #dbeafe !important;
+        }
+
+        .btn-light.icon-action {
+            background: #ffffff !important;
+            color: #334155 !important;
+            border: 1px solid #dbe4ee !important;
+        }
+
+        .btn-danger.icon-action {
+            background: #fff1f2 !important;
+            color: #be123c !important;
+            border: 1px solid #fecdd3 !important;
+        }
+
+        .icon-action:hover {
+            transform: translateY(-1px) !important;
+            filter: brightness(1.02);
+        }
+
+        .productivity-card,
+        .intelligence-box,
+        .risk-score-box {
+            border-radius: 14px !important;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.035) !important;
+        }
+
+        @media (max-width: 1180px) and (min-width: 761px) {
+            .hero {
+                min-height: 76px !important;
+                padding: 11px 16px !important;
+            }
+
+            .hero h2 {
+                font-size: 21px !important;
+            }
+
+            .inventory-card {
+                padding: 15px !important;
+            }
+
+            td,
+            tbody td {
+                height: 50px !important;
+                padding-top: 7px !important;
+                padding-bottom: 7px !important;
+            }
+
+            .name-input,
+            .small-input {
+                min-height: 34px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 8px 10px !important;
+            }
+
+            .wrap {
+                margin-top: 8px !important;
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            .hero {
+                padding: 12px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .hero h2 {
+                font-size: 20px !important;
+            }
+
+            .hero p {
+                font-size: 12px !important;
+            }
+
+            .inventory-card {
+                padding: 11px !important;
+            }
+
+            .inventory-command-center,
+            .merchant-control-bar,
+            .bulk-panel {
+                padding: 11px !important;
+            }
+
+            .stats-row {
+                gap: 8px !important;
+            }
+
+            .stat-box {
+                padding: 9px 10px !important;
+            }
+
+            th,
+            td,
+            tbody td {
+                font-size: 11px !important;
+            }
+
+            td,
+            tbody td {
+                height: 50px !important;
+                padding-top: 7px !important;
+                padding-bottom: 7px !important;
+            }
+
+            .name-input,
+            .small-input {
+                min-height: 34px !important;
+                font-size: 12px !important;
+                padding: 7px 6px !important;
+            }
+
+            .row-actions .btn-small,
+            .icon-action {
+                min-height: 30px !important;
+                height: 30px !important;
+                width: 30px !important;
+                flex-basis: 30px !important;
+                font-size: 11px !important;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .hero h2 {
+                font-size: 19px !important;
+            }
+
+            .bulk-controls .btn {
+                min-height: 42px !important;
+            }
+
+            .bulk-pct-input {
+                height: 42px !important;
+            }
+        }
+        /* END FINAL PREMIUM CLOVER APP POLISH */
+
 </style>
 </head>
 <body>
