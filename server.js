@@ -2199,6 +2199,188 @@ function renderDashboard(options = {}) {
             .detail-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
+
+        /* Compact professional product detail modal - keeps the editor inside the screen */
+        #detailsModal {
+            align-items: center;
+            justify-content: center;
+        }
+        #detailsModal .modal {
+            width: min(920px, calc(100vw - 28px));
+            max-width: 920px;
+            max-height: min(82vh, 760px);
+            padding: 18px 18px 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+        }
+        #detailsModal .modal h3 {
+            font-size: 21px;
+            margin: 0 0 3px;
+            letter-spacing: -0.02em;
+        }
+        #detailsModal .modal > p {
+            font-size: 12px;
+            line-height: 1.35;
+            margin: 0 0 10px;
+            color: #64748b;
+        }
+        #detailsModal .detail-grid {
+            margin-top: 0;
+            overflow-y: auto;
+            padding: 0 2px 12px;
+            max-height: calc(82vh - 118px);
+        }
+        #detailsModal .modal-actions {
+            position: sticky;
+            bottom: 0;
+            margin: 0 -18px;
+            padding: 12px 18px;
+            background: rgba(255,255,255,0.96);
+            border-top: 1px solid #e5e7eb;
+            backdrop-filter: blur(8px);
+        }
+        .detail-compact-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+            gap: 12px;
+            align-items: start;
+        }
+        .detail-panel.compact-panel {
+            padding: 12px;
+            border-radius: 15px;
+        }
+        .detail-section-title.compact-title {
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        .detail-field-row {
+            display: grid;
+            grid-template-columns: 105px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 8px 0;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .detail-field-row:last-child { border-bottom: 0; }
+        .detail-field-row .detail-label {
+            font-size: 12px;
+            padding-top: 8px;
+        }
+        .detail-control-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+        .detail-control-line {
+            display: flex;
+            gap: 7px;
+            align-items: center;
+            min-width: 0;
+        }
+        #detailsModal .detail-input {
+            min-width: 0;
+            width: 100%;
+            flex: 1 1 auto;
+            padding: 8px 10px;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+        #detailsModal .insight-fix-btn {
+            min-height: 32px;
+            padding: 7px 10px;
+            border-radius: 10px;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        .detail-hint {
+            font-size: 11px;
+            line-height: 1.35;
+            color: #64748b;
+            font-weight: 800;
+        }
+        .detail-right-stack {
+            display: grid;
+            gap: 12px;
+        }
+        .detail-stat-row.compact-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .detail-stat-row.compact-stats .detail-stat {
+            padding: 9px;
+            border-radius: 12px;
+        }
+        .detail-stat-row.compact-stats .detail-stat span {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+        .detail-stat-row.compact-stats .detail-stat strong {
+            font-size: 15px;
+        }
+        .detail-status-grid {
+            display: grid;
+            gap: 7px;
+        }
+        .detail-status-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 12px;
+            padding-bottom: 7px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .detail-status-line:last-child { border-bottom: 0; padding-bottom: 0; }
+        .detail-status-line span:first-child {
+            color: #64748b;
+            font-weight: 900;
+        }
+        .detail-status-line span:last-child {
+            color: #0f172a;
+            font-weight: 900;
+            text-align: right;
+            word-break: break-word;
+        }
+        .detail-target-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 9px;
+            border-radius: 12px;
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 900;
+            color: #334155;
+        }
+        .detail-target-line strong { color:#0f172a; }
+        .detail-action-note {
+            margin-top: 8px;
+            padding: 8px 9px;
+            border-radius: 12px;
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+        @media (max-width: 860px) {
+            #detailsModal .modal {
+                max-height: 88vh;
+                width: calc(100vw - 18px);
+                padding: 15px 15px 0;
+            }
+            #detailsModal .detail-grid { max-height: calc(88vh - 112px); }
+            .detail-compact-layout { grid-template-columns: 1fr; }
+            .detail-field-row { grid-template-columns: 1fr; gap: 5px; }
+            .detail-field-row .detail-label { padding-top: 0; }
+            .detail-control-line { flex-wrap: wrap; }
+            #detailsModal .modal-actions { margin: 0 -15px; padding: 11px 15px; }
+        }
+
         tr.row-updated { animation: rowFlash 1.4s ease; }
 
         @keyframes rowFlash {
@@ -10041,50 +10223,70 @@ function renderDashboard(options = {}) {
             if (title) title.textContent = item.name || "Product Details";
             if (grid) {
                 grid.innerHTML =
-                    "<div class='detail-panel'>" +
-                        "<div class='detail-section-title'>Product Identity</div>" +
-                        "<div class='detail-grid-inner'>" +
-                            "<div class='detail-label'>SKU / Code</div><div class='detail-value detail-edit-box'>" +
-                                "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
-                                "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
-                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save SKU</button>" +
-                            "</div>" +
-                            "<div class='detail-help'>" + escapeHtml(sku ? "SKU/code is editable here. Change it only if the merchant wants a cleaner code." : "Missing SKU can be fixed here using the generated code or the merchant's own SKU.") + "</div>" +
-                            "<div class='detail-label'>Barcode / UPC</div><div class='detail-value detail-edit-box'>" +
-                                "<input class='detail-input' data-detail-barcode-for='" + escapeHtml(item.id || "") + "' data-modal-barcode-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(barcode) + "' placeholder='Scan or type barcode' />" +
-                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_barcode' data-fix-id='" + escapeHtml(item.id || "") + "'>Save Barcode</button>" +
-                            "</div>" +
-                            "<div class='detail-help'>InventoryRite stores this for scanning, cleanup, CSV export, and audits. Clover may not expose barcode as a clean separate item field.</div>" +
-                            "<div class='detail-label'>Category</div><div class='detail-value detail-edit-box'>" +
-                                "<input class='detail-input' data-detail-category-for='" + escapeHtml(item.id || "") + "' data-modal-category-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(category === "Uncategorized" ? "" : category) + "' placeholder='Example: Drinks, Grocery, Retail' />" +
-                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_category' data-fix-id='" + escapeHtml(item.id || "") + "'>Save Category</button>" +
-                            "</div>" +
-                            "<div class='detail-help'>Categories help margin review, cleanup, reporting, and reorder organization.</div>" +
-                            "<div class='detail-label'>Clover ID</div><div class='detail-value mono-value'>" + escapeHtml(item.id || "-") + "</div>" +
-                        "</div>" +
-                    "</div>" +
+                    "<div class='detail-compact-layout'>" +
+                        "<div class='detail-panel compact-panel'>" +
+                            "<div class='detail-section-title compact-title'>Product Identity</div>" +
 
-                    "<div class='detail-panel'>" +
-                        "<div class='detail-section-title'>Pricing Intelligence</div>" +
-                        "<div class='detail-stat-row'>" +
-                            "<div class='detail-stat'><span>Price</span><strong>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</strong></div>" +
-                            "<div class='detail-stat'><span>Cost</span><strong>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</strong></div>" +
-                            "<div class='detail-stat'><span>Profit / Unit</span><strong>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</strong></div>" +
-                            "<div class='detail-stat'><span>Margin</span><strong class='margin-badge " + marginClass + "'>" + escapeHtml(marginLabel) + "</strong></div>" +
-                        "</div>" +
-                        "<div class='detail-grid-inner compact'>" +
-                            "<div class='detail-label'>40% Target Price</div><div class='detail-value'>" + escapeHtml(suggestedTarget > 0 ? formatCurrencyFromCents(suggestedTarget) : "Add cost first") + "</div>" +
-                        "</div>" +
-                    "</div>" +
+                            "<div class='detail-field-row'>" +
+                                "<div class='detail-label'>SKU / Code</div>" +
+                                "<div class='detail-control-stack'>" +
+                                    "<div class='detail-control-line'>" +
+                                        "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
+                                        "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
+                                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save</button>" +
+                                    "</div>" +
+                                    "<div class='detail-hint'>" + escapeHtml(sku ? "Editable item code. Use only when the merchant wants a cleaner code." : "Missing SKU can be fixed here with the generated code or merchant SKU.") + "</div>" +
+                                "</div>" +
+                            "</div>" +
 
-                    "<div class='detail-panel'>" +
-                        "<div class='detail-section-title'>Inventory Status</div>" +
-                        "<div class='detail-grid-inner compact'>" +
-                            "<div class='detail-label'>Quantity</div><div class='detail-value'>" + escapeHtml(qty === null ? "Unknown" : qty) + "</div>" +
-                            "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
-                            "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
-                            "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
-                            "<div class='detail-label'>Modified</div><div class='detail-value'>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</div>" +
+                            "<div class='detail-field-row'>" +
+                                "<div class='detail-label'>Barcode / UPC</div>" +
+                                "<div class='detail-control-stack'>" +
+                                    "<div class='detail-control-line'>" +
+                                        "<input class='detail-input' data-detail-barcode-for='" + escapeHtml(item.id || "") + "' data-modal-barcode-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(barcode) + "' placeholder='Scan or type barcode' />" +
+                                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_barcode' data-fix-id='" + escapeHtml(item.id || "") + "'>Save</button>" +
+                                    "</div>" +
+                                    "<div class='detail-hint'>Stored by InventoryRite for scanning, cleanup, CSV exports, and audits.</div>" +
+                                "</div>" +
+                            "</div>" +
+
+                            "<div class='detail-field-row'>" +
+                                "<div class='detail-label'>Category</div>" +
+                                "<div class='detail-control-stack'>" +
+                                    "<div class='detail-control-line'>" +
+                                        "<input class='detail-input' data-detail-category-for='" + escapeHtml(item.id || "") + "' data-modal-category-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(category === "Uncategorized" ? "" : category) + "' placeholder='Example: Drinks, Grocery, Retail' />" +
+                                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_category' data-fix-id='" + escapeHtml(item.id || "") + "'>Save</button>" +
+                                    "</div>" +
+                                    "<div class='detail-hint'>Used for cleanup, reporting, reorder review, and margin grouping.</div>" +
+                                "</div>" +
+                            "</div>" +
+
+                            "<div class='detail-action-note'>Fast edit panel: keep the main table clean, but let the merchant repair Clover data in one place.</div>" +
+                        "</div>" +
+
+                        "<div class='detail-right-stack'>" +
+                            "<div class='detail-panel compact-panel'>" +
+                                "<div class='detail-section-title compact-title'>Pricing</div>" +
+                                "<div class='detail-stat-row compact-stats'>" +
+                                    "<div class='detail-stat'><span>Price</span><strong>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</strong></div>" +
+                                    "<div class='detail-stat'><span>Cost</span><strong>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</strong></div>" +
+                                    "<div class='detail-stat'><span>Profit</span><strong>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</strong></div>" +
+                                    "<div class='detail-stat'><span>Margin</span><strong class='margin-badge " + marginClass + "'>" + escapeHtml(marginLabel) + "</strong></div>" +
+                                "</div>" +
+                                "<div class='detail-target-line'><span>40% target price</span><strong>" + escapeHtml(suggestedTarget > 0 ? formatCurrencyFromCents(suggestedTarget) : "Add cost first") + "</strong></div>" +
+                            "</div>" +
+
+                            "<div class='detail-panel compact-panel'>" +
+                                "<div class='detail-section-title compact-title'>Status</div>" +
+                                "<div class='detail-status-grid'>" +
+                                    "<div class='detail-status-line'><span>Qty</span><span>" + escapeHtml(qty === null ? "Unknown" : qty) + "</span></div>" +
+                                    "<div class='detail-status-line'><span>Available</span><span>" + escapeHtml(available) + "</span></div>" +
+                                    "<div class='detail-status-line'><span>Hidden</span><span>" + escapeHtml(hidden) + "</span></div>" +
+                                    "<div class='detail-status-line'><span>Revenue</span><span>" + escapeHtml(revenue) + "</span></div>" +
+                                    "<div class='detail-status-line'><span>Modified</span><span>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</span></div>" +
+                                    "<div class='detail-status-line'><span>Clover ID</span><span class='mono-value'>" + escapeHtml(item.id || "-") + "</span></div>" +
+                                "</div>" +
+                            "</div>" +
                         "</div>" +
                     "</div>";
             }
