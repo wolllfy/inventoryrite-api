@@ -267,6 +267,7 @@ let latestCloverConnection = {
 };
 
 const fallbackItemCosts = {};
+const fallbackAlertSettings = {};
 
 
 async function initDatabase() {
@@ -304,9 +305,36 @@ async function initDatabase() {
         );
     `);
 
+
+    await dbPool.query(`
+        CREATE TABLE IF NOT EXISTS merchant_alert_settings (
+            merchant_id TEXT PRIMARY KEY,
+            report_email TEXT,
+            weekly_reports_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            low_stock_alerts_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+            reorder_suggestions_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            weekly_report_day TEXT NOT NULL DEFAULT 'Monday',
+            weekly_report_time TEXT NOT NULL DEFAULT '7:00 AM',
+            low_stock_threshold INTEGER NOT NULL DEFAULT 5,
+            timezone TEXT NOT NULL DEFAULT 'America/New_York',
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS report_email TEXT;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS weekly_reports_enabled BOOLEAN NOT NULL DEFAULT FALSE;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS low_stock_alerts_enabled BOOLEAN NOT NULL DEFAULT FALSE;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS reorder_suggestions_enabled BOOLEAN NOT NULL DEFAULT TRUE;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS weekly_report_day TEXT NOT NULL DEFAULT 'Monday';`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS weekly_report_time TEXT NOT NULL DEFAULT '7:00 AM';`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS low_stock_threshold INTEGER NOT NULL DEFAULT 5;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS timezone TEXT NOT NULL DEFAULT 'America/New_York';`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);
+
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_merchant_connections_updated_at ON merchant_connections(updated_at);`);
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_costs_merchant_id ON item_costs(merchant_id);`);
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_costs_updated_at ON item_costs(updated_at);`);
+    await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_merchant_alert_settings_updated_at ON merchant_alert_settings(updated_at);`);
 
     const lastConnection = await dbPool.query(`
         SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
@@ -416,6 +444,225 @@ async function saveItemCostForMerchant(merchantId, itemId, costCents) {
     );
 
     return normalizedCost;
+}
+
+
+function defaultAlertSettings(merchantId = "") {
+    return {
+        merchant_id: merchantId,
+        report_email: "",
+        weekly_reports_enabled: false,
+        low_stock_alerts_enabled: false,
+        reorder_suggestions_enabled: true,
+        weekly_report_day: "Monday",
+        weekly_report_time: "7:00 AM",
+        low_stock_threshold: 5,
+        timezone: "America/New_York"
+    };
+}
+
+function normalizeAlertSettings(input = {}, merchantId = "") {
+    const defaults = defaultAlertSettings(merchantId);
+    const email = String(input.report_email || input.email || "").trim();
+    const threshold = Math.max(1, Math.min(999, Math.round(Number(input.low_stock_threshold || input.lowStockThreshold || defaults.low_stock_threshold))));
+    return {
+        merchant_id: merchantId || input.merchant_id || input.merchantId || "",
+        report_email: email,
+        weekly_reports_enabled: parseOptionalBoolean(input.weekly_reports_enabled ?? input.weeklyReportsEnabled, defaults.weekly_reports_enabled),
+        low_stock_alerts_enabled: parseOptionalBoolean(input.low_stock_alerts_enabled ?? input.lowStockAlertsEnabled, defaults.low_stock_alerts_enabled),
+        reorder_suggestions_enabled: parseOptionalBoolean(input.reorder_suggestions_enabled ?? input.reorderSuggestionsEnabled, defaults.reorder_suggestions_enabled),
+        weekly_report_day: String(input.weekly_report_day || input.weeklyReportDay || defaults.weekly_report_day).trim() || defaults.weekly_report_day,
+        weekly_report_time: String(input.weekly_report_time || input.weeklyReportTime || defaults.weekly_report_time).trim() || defaults.weekly_report_time,
+        low_stock_threshold: threshold,
+        timezone: String(input.timezone || defaults.timezone).trim() || defaults.timezone
+    };
+}
+
+async function getAlertSettingsForMerchant(merchantId) {
+    if (!merchantId) return defaultAlertSettings("");
+
+    if (!USE_DATABASE || !dbPool) {
+        return fallbackAlertSettings[merchantId] || defaultAlertSettings(merchantId);
+    }
+
+    const result = await dbPool.query(
+        `SELECT merchant_id, report_email, weekly_reports_enabled, low_stock_alerts_enabled,
+                reorder_suggestions_enabled, weekly_report_day, weekly_report_time,
+                low_stock_threshold, timezone
+         FROM merchant_alert_settings
+         WHERE merchant_id = $1
+         LIMIT 1;`,
+        [merchantId]
+    );
+
+    if (!result.rows.length) return defaultAlertSettings(merchantId);
+
+    const row = result.rows[0];
+    return normalizeAlertSettings(row, merchantId);
+}
+
+async function saveAlertSettingsForMerchant(merchantId, settingsInput) {
+    if (!merchantId) throw new Error("Missing merchantId.");
+
+    const settings = normalizeAlertSettings(settingsInput, merchantId);
+
+    if (!USE_DATABASE || !dbPool) {
+        fallbackAlertSettings[merchantId] = settings;
+        return settings;
+    }
+
+    await dbPool.query(
+        `INSERT INTO merchant_alert_settings (
+            merchant_id, report_email, weekly_reports_enabled, low_stock_alerts_enabled,
+            reorder_suggestions_enabled, weekly_report_day, weekly_report_time,
+            low_stock_threshold, timezone, updated_at
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+        ON CONFLICT (merchant_id)
+        DO UPDATE SET
+            report_email = EXCLUDED.report_email,
+            weekly_reports_enabled = EXCLUDED.weekly_reports_enabled,
+            low_stock_alerts_enabled = EXCLUDED.low_stock_alerts_enabled,
+            reorder_suggestions_enabled = EXCLUDED.reorder_suggestions_enabled,
+            weekly_report_day = EXCLUDED.weekly_report_day,
+            weekly_report_time = EXCLUDED.weekly_report_time,
+            low_stock_threshold = EXCLUDED.low_stock_threshold,
+            timezone = EXCLUDED.timezone,
+            updated_at = NOW();`,
+        [
+            merchantId,
+            settings.report_email,
+            settings.weekly_reports_enabled,
+            settings.low_stock_alerts_enabled,
+            settings.reorder_suggestions_enabled,
+            settings.weekly_report_day,
+            settings.weekly_report_time,
+            settings.low_stock_threshold,
+            settings.timezone
+        ]
+    );
+
+    return settings;
+}
+
+function getItemQuantityServer(item) {
+    const candidates = [item.stockCount, item.quantity, item.qty, item.inventoryCount, item.availableQuantity];
+    for (const value of candidates) {
+        if (value !== undefined && value !== null && value !== "") {
+            const numberValue = Number(value);
+            if (!Number.isNaN(numberValue) && Number.isFinite(numberValue)) return numberValue;
+        }
+    }
+    return null;
+}
+
+function calculateMarginServer(priceCents, costCents) {
+    const price = Number(priceCents || 0);
+    const cost = Number(costCents || 0);
+    if (price <= 0 || cost < 0) return null;
+    return ((price - cost) / price) * 100;
+}
+
+function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
+    const threshold = Number(settings.low_stock_threshold || 5);
+    const lowStock = (items || []).filter((item) => {
+        const qty = getItemQuantityServer(item);
+        return qty !== null && qty <= threshold;
+    });
+
+    const profitAlerts = (items || []).filter((item) => {
+        const price = Number(item.price || 0);
+        const cost = Number(costs[item.id] || item.cost || 0);
+        const margin = calculateMarginServer(price, cost);
+        return price > 0 && cost > 0 && (price < cost || (margin !== null && margin < 30));
+    });
+
+    const rows = lowStock.slice(0, 20).map((item) => {
+        const qty = getItemQuantityServer(item);
+        const suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
+        return `<tr>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name || "Unnamed Product")}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(qty === null ? "Unknown" : qty)}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(suggested)}</td>
+        </tr>`;
+    }).join("");
+
+    return {
+        subject: `InventoryRite Weekly Report - ${lowStock.length} Low Stock Item(s)`,
+        html: `
+            <div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:24px;color:#111827;">
+                <div style="max-width:720px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#15803d,#0f172a);color:white;padding:22px;">
+                        <h1 style="margin:0;font-size:24px;">InventoryRite Weekly Profit & Inventory Report</h1>
+                        <p style="margin:8px 0 0;color:#dcfce7;">Inventory Intelligence for Clover Merchants</p>
+                    </div>
+                    <div style="padding:22px;">
+                        <h2 style="margin:0 0 12px;font-size:18px;">Summary</h2>
+                        <p style="margin:0 0 16px;line-height:1.5;">
+                            Merchant ID: <strong>${safe(merchantId)}</strong><br/>
+                            Low stock threshold: <strong>${safe(threshold)}</strong><br/>
+                            Low stock items: <strong>${safe(lowStock.length)}</strong><br/>
+                            Margin alerts: <strong>${safe(profitAlerts.length)}</strong>
+                        </p>
+
+                        <h2 style="margin:20px 0 10px;font-size:18px;">Reorder Suggestions</h2>
+                        ${lowStock.length ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+                                <thead>
+                                    <tr style="background:#f0fdf4;">
+                                        <th style="padding:10px;text-align:left;">Product</th>
+                                        <th style="padding:10px;text-align:center;">Current Stock</th>
+                                        <th style="padding:10px;text-align:center;">Suggested Reorder</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        ` : `<p style="color:#166534;font-weight:bold;">No low-stock products found right now.</p>`}
+
+                        <p style="margin:22px 0 0;color:#64748b;font-size:13px;line-height:1.5;">
+                            This email was generated from InventoryRite based on your saved alert settings.
+                            You can turn reports on or off inside InventoryRite.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `
+    };
+}
+
+async function sendInventoryEmail({ to, subject, html }) {
+    const apiKey = process.env.RESEND_API_KEY?.trim() || "";
+    const fromEmail = process.env.REPORT_FROM_EMAIL?.trim() || "InventoryRite <onboarding@resend.dev>";
+
+    if (!apiKey) {
+        return {
+            sent: false,
+            skipped: true,
+            message: "Email preview generated. Add RESEND_API_KEY and REPORT_FROM_EMAIL in Render to send real emails."
+        };
+    }
+
+    const response = await cloverApi.post(
+        "https://api.resend.com/emails",
+        {
+            from: fromEmail,
+            to,
+            subject,
+            html
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            }
+        }
+    );
+
+    return {
+        sent: true,
+        provider: "resend",
+        id: response.data?.id || ""
+    };
 }
 
 /*
@@ -5672,6 +5919,28 @@ function renderDashboard(options = {}) {
             }
         }
 
+
+        select.small-input,
+        select {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 13px;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            font-weight: 800;
+        }
+
+        #featureList label {
+            margin: 6px 0;
+        }
+
+        #featureList input[type="checkbox"] {
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
 </style>
 </head>
 <body>
@@ -5831,6 +6100,7 @@ function renderDashboard(options = {}) {
                             <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
                             <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
                             <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
+                            <button id="btnAlertSettings" type="button" class="control-btn control-neutral">Email Alerts</button>
                         </div>
                     </div>
                 </div>
@@ -6124,6 +6394,16 @@ function renderDashboard(options = {}) {
         var priceChangeHistory = [];
         var lastBulkUndoSnapshot = null;
         var lastSavedAt = null;
+        var alertSettings = {
+            report_email: "",
+            weekly_reports_enabled: false,
+            low_stock_alerts_enabled: false,
+            reorder_suggestions_enabled: true,
+            weekly_report_day: "Monday",
+            weekly_report_time: "7:00 AM",
+            low_stock_threshold: 5,
+            timezone: "America/New_York"
+        };
         var currentUserLabel = embeddedConnection.employee_id ? ("Employee " + embeddedConnection.employee_id) : "Current Clover user";
         var MERCHANT_STORAGE_ID = embeddedConnection.merchant_id || "demo";
         var HISTORY_STORAGE_KEY = "inventoryrite_price_history_" + MERCHANT_STORAGE_ID;
@@ -6736,10 +7016,17 @@ function renderDashboard(options = {}) {
             return null;
         }
 
+        function getLowStockThreshold() {
+            var value = Number(alertSettings && alertSettings.low_stock_threshold ? alertSettings.low_stock_threshold : 5);
+            if (Number.isNaN(value) || !Number.isFinite(value) || value <= 0) return 5;
+            return value;
+        }
+
         function getLowStockItems() {
+            var threshold = getLowStockThreshold();
             return (loadedItems || []).filter(function (item) {
                 var qty = getItemQuantity(item);
-                return qty !== null && qty <= 5;
+                return qty !== null && qty <= threshold;
             });
         }
 
@@ -6902,14 +7189,16 @@ function renderDashboard(options = {}) {
 
         function showLowStock() {
             var lowItems = getLowStockItems();
+            var threshold = getLowStockThreshold();
             var rows = lowItems.slice(0, 25).map(function (item) {
                 var qty = getItemQuantity(item);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + "</span></div><div><span>Low Stock</span></div>";
+                var suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested reorder: " + escapeHtml(suggested) + " units - Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + "</span></div><div><span>Low Stock</span></div>";
             });
 
             openFeatureModal(
-                "Low Stock",
-                lowItems.length ? (lowItems.length + " low-stock item(s) found and shown in the table.") : "No low-stock items were found. Clover may not be sending quantity data for these products yet.",
+                "Low Stock Alerts",
+                lowItems.length ? (lowItems.length + " product(s) are at or below your low-stock threshold of " + threshold + ".") : "No low-stock items were found. Clover may not be sending quantity data for these products yet.",
                 rows
             );
             setViewMode("lowStock");
@@ -6939,17 +7228,151 @@ function renderDashboard(options = {}) {
 
         function showReorderPlanning() {
             var lowItems = getLowStockItems();
+            var threshold = getLowStockThreshold();
             var rows = lowItems.slice(0, 25).map(function (item) {
                 var qty = getItemQuantity(item);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested action: reorder or confirm stock count</span></div><div><span>Plan</span></div>";
+                var price = Number(item.price || 0);
+                var suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
+                var risk = suggested * price;
+                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current stock: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested reorder: " + escapeHtml(suggested) + " units - Potential stocked value: " + escapeHtml(formatCurrencyFromCents(risk)) + "</span></div><div><span>Reorder</span></div>";
             });
             openFeatureModal(
-                "Reorder Planning",
-                lowItems.length ? "Reorder planning is based on products with quantity 5 or less." : "No reorder suggestions yet. This becomes stronger when Clover sends quantity data.",
+                "Reorder Intelligence",
+                lowItems.length ? "Reorder suggestions are based on your low-stock threshold of " + threshold + " and current Clover quantity data." : "No reorder suggestions yet. This becomes stronger when Clover sends quantity data.",
                 rows
             );
             logActivity("Reorder Planning", lowItems.length + " item(s) checked for reorder planning.", "Viewed");
-            showToast("Reorder planning opened.", "info");
+            showToast("Reorder intelligence opened.", "info");
+        }
+
+        async function loadAlertSettings() {
+            try {
+                var connection = requireConnection();
+                if (!connection) return;
+
+                var requestHeaders = {};
+                if (connection.merchantId) requestHeaders["X-Merchant-Id"] = connection.merchantId;
+
+                var data = await fetchJson("/alert-settings", { headers: requestHeaders });
+                if (data && data.settings) {
+                    alertSettings = data.settings;
+                }
+            } catch (error) {
+                console.warn("Unable to load alert settings:", error && error.message ? error.message : error);
+            }
+        }
+
+        async function saveAlertSettingsFromModal(sendTestAfterSave) {
+            try {
+                var connection = requireConnection();
+                if (!connection) return;
+
+                var emailBox = byId("alertEmail");
+                var weeklyBox = byId("alertWeeklyEnabled");
+                var lowBox = byId("alertLowStockEnabled");
+                var reorderBox = byId("alertReorderEnabled");
+                var dayBox = byId("alertReportDay");
+                var timeBox = byId("alertReportTime");
+                var thresholdBox = byId("alertLowStockThreshold");
+
+                var email = emailBox && emailBox.value ? emailBox.value.trim() : "";
+                if ((weeklyBox && weeklyBox.checked) || (lowBox && lowBox.checked)) {
+                    if (!email || email.indexOf("@") < 1) {
+                        showToast("Enter a valid email before enabling reports.", "error");
+                        return;
+                    }
+                }
+
+                var payload = {
+                    report_email: email,
+                    weekly_reports_enabled: !!(weeklyBox && weeklyBox.checked),
+                    low_stock_alerts_enabled: !!(lowBox && lowBox.checked),
+                    reorder_suggestions_enabled: !!(reorderBox && reorderBox.checked),
+                    weekly_report_day: dayBox && dayBox.value ? dayBox.value : "Monday",
+                    weekly_report_time: timeBox && timeBox.value ? timeBox.value : "7:00 AM",
+                    low_stock_threshold: thresholdBox && thresholdBox.value ? Number(thresholdBox.value) : 5,
+                    timezone: "America/New_York"
+                };
+
+                var requestHeaders = { "Content-Type": "application/json" };
+                if (connection.merchantId) requestHeaders["X-Merchant-Id"] = connection.merchantId;
+
+                var data = await fetchJson("/alert-settings", {
+                    method: "POST",
+                    headers: requestHeaders,
+                    body: JSON.stringify(payload)
+                });
+
+                if (data && data.settings) alertSettings = data.settings;
+                showToast("Alert settings saved.", "success");
+                logActivity("Alert Settings Saved", "Email reports and low-stock alert settings were updated.", "Success");
+
+                if (sendTestAfterSave) {
+                    await sendTestReport();
+                }
+
+                renderItems(loadedItems);
+            } catch (error) {
+                showToast(error && error.message ? error.message : "Unable to save alert settings.", "error");
+            }
+        }
+
+        async function sendTestReport() {
+            try {
+                var connection = requireConnection();
+                if (!connection) return;
+
+                var requestHeaders = { "Content-Type": "application/json" };
+                if (connection.merchantId) requestHeaders["X-Merchant-Id"] = connection.merchantId;
+
+                var data = await fetchJson("/send-test-report", {
+                    method: "POST",
+                    headers: requestHeaders,
+                    body: JSON.stringify({})
+                });
+
+                showToast(data && data.message ? data.message : "Test report generated.", data && data.sent ? "success" : "info");
+                logActivity("Test Email Report", data && data.sent ? "A test report email was sent." : "A test report preview was generated.", data && data.sent ? "Success" : "Info");
+            } catch (error) {
+                showToast(error && error.message ? error.message : "Unable to send test report.", "error");
+            }
+        }
+
+        function showAlertSettings() {
+            var s = alertSettings || {};
+            var rows = [
+                "<div style='display:block;width:100%;'>" +
+                    "<label>Email Address</label>" +
+                    "<input id='alertEmail' type='email' placeholder='owner@store.com' value='" + escapeHtml(s.report_email || "") + "' />" +
+                    "<div class='sync-note'>Reports go to this email. The merchant controls this setting.</div>" +
+                "</div>",
+                "<div style='display:block;width:100%;'>" +
+                    "<label><input id='alertWeeklyEnabled' type='checkbox' " + (s.weekly_reports_enabled ? "checked" : "") + " /> Weekly Profit Report</label>" +
+                    "<label><input id='alertLowStockEnabled' type='checkbox' " + (s.low_stock_alerts_enabled ? "checked" : "") + " /> Low Stock Alerts</label>" +
+                    "<label><input id='alertReorderEnabled' type='checkbox' " + (s.reorder_suggestions_enabled !== false ? "checked" : "") + " /> Include Reorder Suggestions</label>" +
+                "</div>",
+                "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;'>" +
+                    "<div><label>Weekly Day</label><select id='alertReportDay' class='small-input'><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>" +
+                    "<div><label>Time</label><select id='alertReportTime' class='small-input'><option>7:00 AM</option><option>8:00 AM</option><option>9:00 AM</option><option>10:00 AM</option><option>5:00 PM</option></select></div>" +
+                    "<div><label>Low Stock Threshold</label><input id='alertLowStockThreshold' type='number' min='1' max='999' value='" + escapeHtml(s.low_stock_threshold || 5) + "' /></div>" +
+                "</div>",
+                "<div style='display:flex;gap:10px;flex-wrap:wrap;width:100%;'>" +
+                    "<button id='btnSaveAlertSettings' type='button' class='btn btn-primary'>Save Alert Settings</button>" +
+                    "<button id='btnSendTestReport' type='button' class='btn btn-light'>Send Test Email</button>" +
+                "</div>"
+            ];
+
+            openFeatureModal("Email Reports & Alerts", "Let the merchant control reports, low-stock alerts, reorder suggestions, and test emails.", rows);
+
+            setTimeout(function () {
+                var dayBox = byId("alertReportDay");
+                var timeBox = byId("alertReportTime");
+                if (dayBox) dayBox.value = s.weekly_report_day || "Monday";
+                if (timeBox) timeBox.value = s.weekly_report_time || "7:00 AM";
+
+                bind("btnSaveAlertSettings", "click", function () { saveAlertSettingsFromModal(false); });
+                bind("btnSendTestReport", "click", function () { saveAlertSettingsFromModal(true); });
+            }, 50);
         }
 
         function showPriceRules() {
@@ -8597,6 +9020,8 @@ function renderDashboard(options = {}) {
                     requestHeaders["X-Merchant-Id"] = connection.merchantId;
                 }
 
+                await loadAlertSettings();
+
                 var data = await fetchJson(
                     "/clover-items",
                     { headers: requestHeaders }
@@ -9174,6 +9599,7 @@ function renderDashboard(options = {}) {
         }
         bind("btnCleanupScan", "click", showCleanupTools);
         bind("btnActivityLog", "click", showActivityLog);
+        bind("btnAlertSettings", "click", showAlertSettings);
         bind("btnProfitIntelligence", "click", showProfitIntelligence);
         bind("btnBulkOperationsHub", "click", showBulkOperationsHub);
         bind("btnSmartPricingHub", "click", showSmartPricing);
@@ -10756,6 +11182,124 @@ app.get("/app-status", (req, res) => {
     });
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| ALERT SETTINGS + EMAIL REPORTS
+|--------------------------------------------------------------------------
+*/
+
+app.get("/alert-settings", async (req, res) => {
+    try {
+        const { merchantId } = await getConnectionFromRequest(req);
+
+        if (!merchantId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing merchantId."
+            });
+        }
+
+        const settings = await getAlertSettingsForMerchant(merchantId);
+
+        res.json({
+            success: true,
+            databaseEnabled: USE_DATABASE,
+            settings
+        });
+    } catch (error) {
+        console.error("Alert Settings Load Error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to load alert settings.",
+            error: error.message
+        });
+    }
+});
+
+app.post("/alert-settings", async (req, res) => {
+    try {
+        const { merchantId } = await getConnectionFromRequest(req);
+
+        if (!merchantId) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing merchantId."
+            });
+        }
+
+        const settings = await saveAlertSettingsForMerchant(merchantId, req.body || {});
+
+        res.json({
+            success: true,
+            message: "Alert settings saved.",
+            databaseEnabled: USE_DATABASE,
+            settings
+        });
+    } catch (error) {
+        console.error("Alert Settings Save Error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to save alert settings.",
+            error: error.message
+        });
+    }
+});
+
+app.post("/send-test-report", async (req, res) => {
+    try {
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
+
+        if (!merchantId || !accessToken) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing Clover connection."
+            });
+        }
+
+        const settings = await getAlertSettingsForMerchant(merchantId);
+
+        if (!settings.report_email) {
+            return res.status(400).json({
+                success: false,
+                message: "Add an email address in Alert Settings first."
+            });
+        }
+
+        const itemData = await fetchAllCloverItems(accessToken, merchantId);
+        const costs = await getItemCostsForMerchant(merchantId);
+        const report = buildInventoryReportHtml({
+            merchantId,
+            items: itemData.elements || [],
+            costs,
+            settings
+        });
+
+        const emailResult = await sendInventoryEmail({
+            to: settings.report_email,
+            subject: report.subject,
+            html: report.html
+        });
+
+        res.json({
+            success: true,
+            sent: !!emailResult.sent,
+            message: emailResult.sent
+                ? `Test report sent to ${settings.report_email}.`
+                : emailResult.message,
+            provider: emailResult.provider || "",
+            previewSubject: report.subject
+        });
+    } catch (error) {
+        console.error("Send Test Report Error:", error.response?.data || error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to send test report.",
+            error: error.response?.data || error.message
+        });
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | 404
@@ -10769,6 +11313,62 @@ app.use((req, res) => {
         path: req.originalUrl
     });
 });
+
+
+async function runDueAlertReports() {
+    if (!USE_DATABASE || !dbPool) return;
+
+    if (!process.env.RESEND_API_KEY) {
+        console.log("Alert scheduler skipped: RESEND_API_KEY is not set.");
+        return;
+    }
+
+    try {
+        const result = await dbPool.query(`
+            SELECT merchant_id
+            FROM merchant_alert_settings
+            WHERE report_email IS NOT NULL
+              AND report_email <> ''
+              AND (weekly_reports_enabled = TRUE OR low_stock_alerts_enabled = TRUE)
+            LIMIT 50;
+        `);
+
+        for (const row of result.rows) {
+            const merchantId = row.merchant_id;
+            const fakeReq = {
+                headers: { "x-merchant-id": merchantId },
+                body: {},
+                query: {}
+            };
+
+            const { accessToken } = await getConnectionFromRequest(fakeReq);
+            if (!accessToken) continue;
+
+            const settings = await getAlertSettingsForMerchant(merchantId);
+            if (!settings.report_email) continue;
+
+            const itemData = await fetchAllCloverItems(accessToken, merchantId);
+            const costs = await getItemCostsForMerchant(merchantId);
+            const report = buildInventoryReportHtml({
+                merchantId,
+                items: itemData.elements || [],
+                costs,
+                settings
+            });
+
+            await sendInventoryEmail({
+                to: settings.report_email,
+                subject: report.subject,
+                html: report.html
+            });
+
+            console.log(`Alert report sent for merchant ${merchantId}`);
+        }
+    } catch (error) {
+        console.error("Alert scheduler error:", error.message);
+    }
+}
+
 
 process.on("SIGTERM", async () => {
     console.log("SIGTERM received. Closing server resources...");
@@ -10790,5 +11390,9 @@ initDatabase()
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Database mode: ${USE_DATABASE ? "PostgreSQL" : "Demo memory only"}`);
+
+            // V1 alert scheduler: checks every 24 hours.
+            // Merchants can still send immediate test emails from the UI.
+            setInterval(runDueAlertReports, Number(process.env.ALERT_SCHEDULER_INTERVAL_MS || 24 * 60 * 60 * 1000));
         });
     });
