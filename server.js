@@ -757,7 +757,7 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
                     <div style="background:linear-gradient(135deg,#15803d,#0f172a);color:white;padding:24px;">
                         <div style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#bbf7d0;">InventoryRite</div>
                         <h1 style="margin:7px 0 0;font-size:25px;line-height:1.2;">Weekly Profit & Inventory Intelligence Report</h1>
-                        <p style="margin:8px 0 0;color:#dcfce7;line-height:1.5;">Actionable Clover inventory, margin, reorder, and cleanup insights.</p>
+                        <p style="margin:8px 0 0;color:#d1fae5;line-height:1.5;">Actionable Clover inventory, margin, reorder, and cleanup insights.</p>
                     </div>
 
                     <div style="padding:22px;background:#ffffff;">
