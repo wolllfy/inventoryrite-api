@@ -5500,6 +5500,9 @@ function renderDashboard(options = {}) {
                             <button id="btnBulkDecrease" type="button" class="btn btn-small btn-bulk-decrease">
                                 &#9660; Decrease by %
                             </button>
+                            <button id="btnUndoBulk" type="button" class="btn btn-small btn-amber">
+                                Undo Bulk
+                            </button>
                             <button id="btnBulkClearPanel" type="button" class="btn btn-small btn-light">
                                 Clear Selection
                             </button>
@@ -5517,7 +5520,7 @@ function renderDashboard(options = {}) {
             <div class="merchant-control-bar" id="merchantControlBar">
                 <div class="merchant-control-left operations-tools-header">
                     <div class="merchant-control-title">Operations Tools</div>
-                    <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and bulk history.</div>
+                    <div class="merchant-control-subtitle">Import, export, pricing, inventory health, cleanup, and activity history.</div>
                 </div>
                 <div class="merchant-control-actions operations-tools-grid">
                     <div class="tool-section tool-section-primary">
@@ -5545,7 +5548,6 @@ function renderDashboard(options = {}) {
                         <div class="tool-button-grid tool-grid-secondary">
                             <button id="btnDuplicateReview" type="button" class="control-btn control-neutral">Duplicate Review</button>
                             <button id="btnSmart99" type="button" class="control-btn control-neutral">Round Prices</button>
-                            <button id="btnUndoBulk" type="button" class="control-btn control-neutral">Undo Bulk</button>
                             <button id="btnActivityLog" type="button" class="control-btn control-neutral">Activity Log</button>
                         </div>
                     </div>
