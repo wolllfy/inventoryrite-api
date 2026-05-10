@@ -8573,7 +8573,7 @@ function renderDashboard(options = {}) {
             var nextName = values.name !== undefined ? String(values.name || "").trim() : String(item.name || "").trim();
             var nextPrice = values.priceCents !== undefined ? Number(values.priceCents || 0) : Number(item.price || 0);
             var nextCost = values.costCents !== undefined ? Number(values.costCents || 0) : getCostCents(itemId);
-            var nextSku = values.sku !== undefined ? String(values.sku || "").trim() : getItemSkuCode(item);
+            var nextSku = values.sku !== undefined ? String(values.sku || "").trim() : getItemSku(item);
             var oldPrice = Number(item.price || 0);
             var oldCost = getCostCents(itemId);
 
@@ -9388,7 +9388,7 @@ function renderDashboard(options = {}) {
 
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
-                var sku = getItemSkuCode(item);
+                var sku = getItemSku(item);
             var suggestedSku = sku || suggestSkuForItem(item);
                 var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
@@ -9612,7 +9612,7 @@ function renderDashboard(options = {}) {
             var item = loadedItems.find(function (it) { return it.id === itemId; });
             if (!item) return;
 
-            var sku = getItemSkuCode(item);
+            var sku = getItemSku(item);
             var suggestedSku = sku || suggestSkuForItem(item);
             var available = item.available === false ? "No" : "Yes";
             var hidden = item.hidden ? "Hidden" : "Visible";
