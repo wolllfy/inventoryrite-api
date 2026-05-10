@@ -267,6 +267,7 @@ let latestCloverConnection = {
 };
 
 const fallbackItemCosts = {};
+const fallbackItemMetadata = {};
 const fallbackAlertSettings = {};
 
 
@@ -305,6 +306,22 @@ async function initDatabase() {
         );
     `);
 
+    await dbPool.query(`
+        CREATE TABLE IF NOT EXISTS item_metadata (
+            merchant_id TEXT NOT NULL,
+            item_id TEXT NOT NULL,
+            sku_code TEXT,
+            barcode TEXT,
+            category TEXT,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (merchant_id, item_id)
+        );
+    `);
+
+    await dbPool.query(`ALTER TABLE item_metadata ADD COLUMN IF NOT EXISTS sku_code TEXT;`);
+    await dbPool.query(`ALTER TABLE item_metadata ADD COLUMN IF NOT EXISTS barcode TEXT;`);
+    await dbPool.query(`ALTER TABLE item_metadata ADD COLUMN IF NOT EXISTS category TEXT;`);
+    await dbPool.query(`ALTER TABLE item_metadata ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);
 
     await dbPool.query(`
         CREATE TABLE IF NOT EXISTS merchant_alert_settings (
@@ -334,6 +351,8 @@ async function initDatabase() {
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_merchant_connections_updated_at ON merchant_connections(updated_at);`);
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_costs_merchant_id ON item_costs(merchant_id);`);
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_costs_updated_at ON item_costs(updated_at);`);
+    await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_metadata_merchant_id ON item_metadata(merchant_id);`);
+    await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_metadata_updated_at ON item_metadata(updated_at);`);
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_merchant_alert_settings_updated_at ON merchant_alert_settings(updated_at);`);
 
     const lastConnection = await dbPool.query(`
@@ -444,6 +463,96 @@ async function saveItemCostForMerchant(merchantId, itemId, costCents) {
     );
 
     return normalizedCost;
+}
+
+function normalizeItemMetadataInput(input = {}) {
+    return {
+        sku_code: String(input.sku_code || input.sku || input.code || "").trim(),
+        barcode: String(input.barcode || input.upc || input.ean || input.gtin || "").trim(),
+        category: String(input.category || input.categoryName || "").trim()
+    };
+}
+
+async function getItemMetadataForMerchant(merchantId) {
+    if (!merchantId) return {};
+
+    if (!USE_DATABASE || !dbPool) {
+        return fallbackItemMetadata[merchantId] || {};
+    }
+
+    const result = await dbPool.query(
+        `SELECT item_id, sku_code, barcode, category FROM item_metadata WHERE merchant_id = $1;`,
+        [merchantId]
+    );
+
+    const metadata = {};
+    result.rows.forEach((row) => {
+        metadata[row.item_id] = {
+            sku_code: row.sku_code || "",
+            barcode: row.barcode || "",
+            category: row.category || ""
+        };
+    });
+
+    return metadata;
+}
+
+async function saveItemMetadataForMerchant(merchantId, itemId, metadataInput) {
+    if (!merchantId || !itemId) {
+        throw new Error("Missing merchantId or itemId.");
+    }
+
+    const incoming = normalizeItemMetadataInput(metadataInput);
+    const existingMap = await getItemMetadataForMerchant(merchantId);
+    const existing = existingMap[itemId] || {};
+    const next = {
+        sku_code: incoming.sku_code || existing.sku_code || "",
+        barcode: incoming.barcode || existing.barcode || "",
+        category: incoming.category || existing.category || ""
+    };
+
+    if (!USE_DATABASE || !dbPool) {
+        if (!fallbackItemMetadata[merchantId]) fallbackItemMetadata[merchantId] = {};
+        fallbackItemMetadata[merchantId][itemId] = next;
+        return next;
+    }
+
+    await dbPool.query(
+        `INSERT INTO item_metadata (merchant_id, item_id, sku_code, barcode, category, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())
+         ON CONFLICT (merchant_id, item_id)
+         DO UPDATE SET
+            sku_code = COALESCE(NULLIF(EXCLUDED.sku_code, ''), item_metadata.sku_code),
+            barcode = COALESCE(NULLIF(EXCLUDED.barcode, ''), item_metadata.barcode),
+            category = COALESCE(NULLIF(EXCLUDED.category, ''), item_metadata.category),
+            updated_at = NOW();`,
+        [merchantId, itemId, next.sku_code, next.barcode, next.category]
+    );
+
+    return next;
+}
+
+function applyMetadataToCloverItems(itemsData, metadataMap) {
+    const items = itemsData && Array.isArray(itemsData.elements) ? itemsData.elements : [];
+
+    items.forEach((item) => {
+        if (!item || !item.id) return;
+        const meta = metadataMap[item.id] || {};
+        if (meta.sku_code && !item.code && !item.sku) {
+            item.code = meta.sku_code;
+            item.sku = meta.sku_code;
+        }
+        if (meta.barcode) {
+            item.barcode = meta.barcode;
+            item.inventoryRiteBarcode = meta.barcode;
+        }
+        if (meta.category) {
+            item.inventoryRiteCategory = meta.category;
+            if (!item.category) item.category = { name: meta.category };
+        }
+    });
+
+    return itemsData;
 }
 
 
@@ -593,8 +702,9 @@ function normalizeItemForReport(item, costs = {}) {
     return {
         id,
         name: String(item?.name || item?.itemName || "Unnamed Product"),
-        sku: String(item?.sku || item?.code || item?.alternateName || ""),
-        category: String(item?.categories?.elements?.[0]?.name || item?.category || "Uncategorized"),
+        sku: String(item?.sku || item?.code || item?.alternateName || item?.inventoryRiteSku || ""),
+        barcode: String(item?.barcode || item?.upc || item?.ean || item?.gtin || item?.inventoryRiteBarcode || ""),
+        category: String(item?.inventoryRiteCategory || item?.categories?.elements?.[0]?.name || item?.category?.name || item?.category || "Uncategorized"),
         price,
         cost,
         qty,
@@ -2004,13 +2114,60 @@ function renderDashboard(options = {}) {
         .product-name-cell { min-width: 0; }
         .detail-grid {
             display: grid;
-            grid-template-columns: 140px 1fr;
-            gap: 10px 14px;
+            gap: 12px;
             margin-top: 16px;
             font-size: 14px;
         }
+        .detail-panel {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            padding: 14px;
+        }
+        .detail-section-title {
+            font-size: 12px;
+            font-weight: 950;
+            color: #15803d;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-bottom: 12px;
+        }
+        .detail-grid-inner {
+            display: grid;
+            grid-template-columns: 150px minmax(0, 1fr);
+            gap: 10px 14px;
+            align-items: center;
+        }
+        .detail-grid-inner.compact { gap: 8px 14px; }
         .detail-label { color: var(--muted); font-weight: 900; }
-        .detail-value { color: var(--text); font-weight: 700; word-break: break-word; }
+        .detail-value { color: var(--text); font-weight: 800; word-break: break-word; }
+        .mono-value { font-family: Consolas, Monaco, monospace; }
+        .detail-stat-row {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .detail-stat {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: #fff;
+            padding: 10px;
+        }
+        .detail-stat span {
+            display:block;
+            color:#64748b;
+            font-size:11px;
+            font-weight:900;
+            text-transform:uppercase;
+            letter-spacing:.04em;
+            margin-bottom:5px;
+        }
+        .detail-stat strong { font-size:16px; font-weight:950; }
+        .margin-badge.good { color:#166534; }
+        .margin-badge.watch { color:#b45309; }
+        .margin-badge.risk { color:#b91c1c; }
+        .margin-badge.warn { color:#64748b; }
         .detail-edit-box {
             display: flex;
             align-items: center;
@@ -2035,6 +2192,11 @@ function renderDashboard(options = {}) {
             font-weight: 800;
             line-height: 1.4;
             margin-top: -5px;
+        }
+        @media (max-width: 720px) {
+            .detail-grid-inner { grid-template-columns: 1fr; }
+            .detail-help { grid-column: 1; }
+            .detail-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         tr.row-updated { animation: rowFlash 1.4s ease; }
@@ -6862,6 +7024,7 @@ function renderDashboard(options = {}) {
 
         var loadedItems = [];
         var itemCosts = {};
+        var itemMetadata = {};
         var lastUpdatedItemId = "";
         var bulkUpdatedItemIds = [];
         var isBusy = false;
@@ -6894,6 +7057,7 @@ function renderDashboard(options = {}) {
                 // Clear runtime-only arrays immediately when switching merchants in the same browser tab.
                 loadedItems = [];
                 itemCosts = {};
+                itemMetadata = {};
                 activityLog = [];
                 priceChangeHistory = [];
                 lastBulkUndoSnapshot = null;
@@ -8145,6 +8309,9 @@ function renderDashboard(options = {}) {
 
         function getItemCategory(item) {
             if (!item) return "Uncategorized";
+            var metadata = itemMetadata[item.id || ""] || {};
+            if (metadata.category) return metadata.category;
+            if (item.inventoryRiteCategory) return item.inventoryRiteCategory;
             if (item.category && item.category.name) return item.category.name;
             if (item.categories && item.categories.elements && item.categories.elements.length && item.categories.elements[0].name) return item.categories.elements[0].name;
             if (item.categories && Array.isArray(item.categories) && item.categories.length && item.categories[0].name) return item.categories[0].name;
@@ -8152,7 +8319,9 @@ function renderDashboard(options = {}) {
         }
 
         function getItemBarcode(item) {
-            return item.barcode || item.upc || item.ean || item.code || "";
+            if (!item) return "";
+            var metadata = itemMetadata[item.id || ""] || {};
+            return metadata.barcode || item.inventoryRiteBarcode || item.barcode || item.upc || item.ean || item.gtin || "";
         }
 
         function getLastTouchedTime(item) {
@@ -8329,9 +8498,14 @@ function renderDashboard(options = {}) {
                     issues.push(makeIssue("missing_sku", "suggestion", item, "Missing SKU", "No SKU or code was detected. Searching, auditing, and cleanup become harder over time.", "Add a SKU/code now or use the generated suggestion so staff can search and audit products faster.", 0, "fix_sku"));
                 }
 
+                if (!barcode) {
+                    penalty += 3;
+                    issues.push(makeIssue("missing_barcode", "suggestion", item, "Missing barcode", "No barcode/UPC was detected for this product. Scanning, receiving, and cashier lookup become slower.", "Add the barcode here. InventoryRite stores it for cleanup and audit workflows even when Clover does not expose a clean barcode field.", 0, "fix_barcode"));
+                }
+
                 if (category === "Uncategorized") {
                     penalty += 4;
-                    issues.push(makeIssue("missing_category", "suggestion", item, "Missing category", "This product does not appear to have a category in the loaded Clover data.", "Assign categories so margin comparisons and cleanup insights become more useful.", 0, "review"));
+                    issues.push(makeIssue("missing_category", "suggestion", item, "Missing category", "This product does not appear to have a category in the loaded Clover data.", "Assign a category inside InventoryRite so reports, margin comparisons, and cleanup insights become more useful.", 0, "fix_category"));
                 }
 
                 if (staleDays >= 365) {
@@ -8555,6 +8729,24 @@ function renderDashboard(options = {}) {
                 "</div>";
             }
 
+            if (issue.action === "fix_barcode" || issue.type === "missing_barcode") {
+                return "<div class='smart-review-actions'>" +
+                    "<span class='smart-review-note'>Barcode / UPC</span>" +
+                    "<input class='smart-review-input smart-review-name-input' data-modal-barcode-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(getItemBarcode(item)) + "' placeholder='Scan or type barcode' />" +
+                    "<button type='button' class='insight-fix-btn success' data-fix-action='save_barcode' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Save Barcode</button>" +
+                    "<button type='button' class='insight-fix-btn light' data-fix-action='open_details' data-fix-id='" + escapeHtml(itemId) + "'>Details</button>" +
+                "</div>";
+            }
+
+            if (issue.action === "fix_category" || issue.type === "missing_category") {
+                return "<div class='smart-review-actions'>" +
+                    "<span class='smart-review-note'>Category</span>" +
+                    "<input class='smart-review-input smart-review-name-input' data-modal-category-for='" + escapeHtml(itemId) + "' value='' placeholder='Example: Drinks, Grocery, Retail' />" +
+                    "<button type='button' class='insight-fix-btn success' data-fix-action='save_category' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Save Category</button>" +
+                    "<button type='button' class='insight-fix-btn light' data-fix-action='open_details' data-fix-id='" + escapeHtml(itemId) + "'>Details</button>" +
+                "</div>";
+            }
+
             return "<div class='smart-review-actions'>" +
                 "<button type='button' class='insight-fix-btn' data-fix-action='review_row' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "'>Review Row</button>" +
                 "<button type='button' class='insight-fix-btn light' data-fix-action='mark_reviewed' data-fix-id='" + escapeHtml(itemId) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Mark Reviewed</button>" +
@@ -8741,6 +8933,8 @@ function renderDashboard(options = {}) {
             var nextPrice = values.priceCents !== undefined ? Number(values.priceCents || 0) : Number(item.price || 0);
             var nextCost = values.costCents !== undefined ? Number(values.costCents || 0) : getCostCents(itemId);
             var nextSku = values.sku !== undefined ? String(values.sku || "").trim() : getItemSku(item);
+            var nextBarcode = values.barcode !== undefined ? String(values.barcode || "").trim() : getItemBarcode(item);
+            var nextCategory = values.category !== undefined ? String(values.category || "").trim() : getItemCategory(item);
             var oldPrice = Number(item.price || 0);
             var oldCost = getCostCents(itemId);
 
@@ -8760,21 +8954,41 @@ function renderDashboard(options = {}) {
                 showToast("Enter a SKU/code first.", "error");
                 return;
             }
+            if (values.barcode !== undefined && !nextBarcode) {
+                showToast("Enter or scan a barcode first.", "error");
+                return;
+            }
+            if (values.category !== undefined && (!nextCategory || nextCategory === "Uncategorized")) {
+                showToast("Enter a category first.", "error");
+                return;
+            }
 
             try {
                 var connection = requireConnection();
                 if (!connection) return;
                 startBusy();
 
-                if (values.name !== undefined || values.priceCents !== undefined || values.sku !== undefined) {
+                if (values.name !== undefined || values.priceCents !== undefined || values.sku !== undefined || values.barcode !== undefined) {
                     await fetchJson(
                         "/clover-update-item/" + encodeURIComponent(itemId),
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ name: nextName, price: nextPrice, sku: nextSku, code: nextSku })
+                            body: JSON.stringify({ name: nextName, price: nextPrice, sku: nextSku, code: nextSku, barcode: nextBarcode })
                         }
                     );
+                }
+
+                if (values.sku !== undefined || values.barcode !== undefined || values.category !== undefined) {
+                    var metadataResult = await fetchJson(
+                        "/item-metadata/" + encodeURIComponent(itemId),
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ sku: nextSku, barcode: nextBarcode, category: nextCategory })
+                        }
+                    );
+                    itemMetadata[itemId] = metadataResult.metadata || { sku_code: nextSku, barcode: nextBarcode, category: nextCategory };
                 }
 
                 if (values.costCents !== undefined) {
@@ -8795,6 +9009,15 @@ function renderDashboard(options = {}) {
                 if (values.sku !== undefined) {
                     item.sku = nextSku;
                     item.code = nextSku;
+                    item.inventoryRiteSku = nextSku;
+                }
+                if (values.barcode !== undefined) {
+                    item.barcode = nextBarcode;
+                    item.inventoryRiteBarcode = nextBarcode;
+                }
+                if (values.category !== undefined) {
+                    item.inventoryRiteCategory = nextCategory;
+                    item.category = { name: nextCategory };
                 }
                 lastUpdatedItemId = itemId;
                 markSavedNow();
@@ -8865,6 +9088,30 @@ function renderDashboard(options = {}) {
                     return;
                 }
                 await saveSmartReviewProduct(itemId, { sku: skuValue.trim() }, "Smart Review SKU Fix", { sourceEl: sourceEl, keepModals: true });
+                return;
+            }
+
+            if (action === "save_barcode") {
+                var barcodeValue = getModalFieldValue("data-modal-barcode-for", itemId) || getModalFieldValue("data-detail-barcode-for", itemId);
+                if (!barcodeValue || !barcodeValue.trim()) {
+                    var barcodeField = getModalField("data-modal-barcode-for", itemId) || getModalField("data-detail-barcode-for", itemId);
+                    if (barcodeField) barcodeField.focus();
+                    showToast("Enter or scan a barcode first.", "error");
+                    return;
+                }
+                await saveSmartReviewProduct(itemId, { barcode: barcodeValue.trim() }, "Smart Review Barcode Fix", { sourceEl: sourceEl, keepModals: true });
+                return;
+            }
+
+            if (action === "save_category") {
+                var categoryValue = getModalFieldValue("data-modal-category-for", itemId) || getModalFieldValue("data-detail-category-for", itemId);
+                if (!categoryValue || !categoryValue.trim()) {
+                    var categoryField = getModalField("data-modal-category-for", itemId) || getModalField("data-detail-category-for", itemId);
+                    if (categoryField) categoryField.focus();
+                    showToast("Enter a category first.", "error");
+                    return;
+                }
+                await saveSmartReviewProduct(itemId, { category: categoryValue.trim() }, "Smart Review Category Fix", { sourceEl: sourceEl, keepModals: true });
                 return;
             }
 
@@ -9773,13 +10020,19 @@ function renderDashboard(options = {}) {
 
             var sku = getItemSku(item);
             var suggestedSku = sku || suggestSkuForItem(item);
+            var barcode = getItemBarcode(item);
+            var category = getItemCategory(item);
             var available = item.available === false ? "No" : "Yes";
             var hidden = item.hidden ? "Hidden" : "Visible";
             var revenue = item.isRevenue === false ? "No" : "Yes";
+            var qty = getItemQuantity(item);
             var priceCents = Number(item.price || 0);
             var costCents = getCostCents(item.id || "");
             var profitCents = priceCents - costCents;
             var margin = calculateMargin(priceCents, costCents);
+            var marginClass = margin === null ? "warn" : (margin >= 40 ? "good" : (margin >= 20 ? "watch" : "risk"));
+            var marginLabel = margin === null ? "Need cost" : (margin.toFixed(1) + "%");
+            var suggestedTarget = costCents > 0 ? getTargetPriceForMargin(costCents, 40) : 0;
 
             var title = byId("detailsTitle");
             var grid = byId("detailsGrid");
@@ -9788,21 +10041,52 @@ function renderDashboard(options = {}) {
             if (title) title.textContent = item.name || "Product Details";
             if (grid) {
                 grid.innerHTML =
-                    "<div class='detail-label'>SKU / Code</div><div class='detail-value detail-edit-box'>" +
-                        "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
-                        "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
-                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save SKU</button>" +
+                    "<div class='detail-panel'>" +
+                        "<div class='detail-section-title'>Product Identity</div>" +
+                        "<div class='detail-grid-inner'>" +
+                            "<div class='detail-label'>SKU / Code</div><div class='detail-value detail-edit-box'>" +
+                                "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
+                                "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
+                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save SKU</button>" +
+                            "</div>" +
+                            "<div class='detail-help'>" + escapeHtml(sku ? "SKU/code is editable here. Change it only if the merchant wants a cleaner code." : "Missing SKU can be fixed here using the generated code or the merchant's own SKU.") + "</div>" +
+                            "<div class='detail-label'>Barcode / UPC</div><div class='detail-value detail-edit-box'>" +
+                                "<input class='detail-input' data-detail-barcode-for='" + escapeHtml(item.id || "") + "' data-modal-barcode-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(barcode) + "' placeholder='Scan or type barcode' />" +
+                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_barcode' data-fix-id='" + escapeHtml(item.id || "") + "'>Save Barcode</button>" +
+                            "</div>" +
+                            "<div class='detail-help'>InventoryRite stores this for scanning, cleanup, CSV export, and audits. Clover may not expose barcode as a clean separate item field.</div>" +
+                            "<div class='detail-label'>Category</div><div class='detail-value detail-edit-box'>" +
+                                "<input class='detail-input' data-detail-category-for='" + escapeHtml(item.id || "") + "' data-modal-category-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(category === "Uncategorized" ? "" : category) + "' placeholder='Example: Drinks, Grocery, Retail' />" +
+                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_category' data-fix-id='" + escapeHtml(item.id || "") + "'>Save Category</button>" +
+                            "</div>" +
+                            "<div class='detail-help'>Categories help margin review, cleanup, reporting, and reorder organization.</div>" +
+                            "<div class='detail-label'>Clover ID</div><div class='detail-value mono-value'>" + escapeHtml(item.id || "-") + "</div>" +
+                        "</div>" +
                     "</div>" +
-                    "<div class='detail-help'>" + escapeHtml(sku ? "SKU/code is editable here. Change it only if the merchant wants a cleaner code." : "Missing SKU fixed here. Use the generated code or type the merchant's own SKU.") + "</div>" +
-                    "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "-") + "</div>" +
-                    "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
-                    "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
-                    "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
-                    "<div class='detail-label'>Modified</div><div class='detail-value'>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</div>" +
-                    "<div class='detail-label'>Price</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</div>" +
-                    "<div class='detail-label'>Cost</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</div>" +
-                    "<div class='detail-label'>Profit / Unit</div><div class='detail-value'>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</div>" +
-                    "<div class='detail-label'>Margin</div><div class='detail-value'>" + escapeHtml(margin === null ? "-" : margin.toFixed(1) + "%") + "</div>";
+
+                    "<div class='detail-panel'>" +
+                        "<div class='detail-section-title'>Pricing Intelligence</div>" +
+                        "<div class='detail-stat-row'>" +
+                            "<div class='detail-stat'><span>Price</span><strong>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</strong></div>" +
+                            "<div class='detail-stat'><span>Cost</span><strong>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</strong></div>" +
+                            "<div class='detail-stat'><span>Profit / Unit</span><strong>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</strong></div>" +
+                            "<div class='detail-stat'><span>Margin</span><strong class='margin-badge " + marginClass + "'>" + escapeHtml(marginLabel) + "</strong></div>" +
+                        "</div>" +
+                        "<div class='detail-grid-inner compact'>" +
+                            "<div class='detail-label'>40% Target Price</div><div class='detail-value'>" + escapeHtml(suggestedTarget > 0 ? formatCurrencyFromCents(suggestedTarget) : "Add cost first") + "</div>" +
+                        "</div>" +
+                    "</div>" +
+
+                    "<div class='detail-panel'>" +
+                        "<div class='detail-section-title'>Inventory Status</div>" +
+                        "<div class='detail-grid-inner compact'>" +
+                            "<div class='detail-label'>Quantity</div><div class='detail-value'>" + escapeHtml(qty === null ? "Unknown" : qty) + "</div>" +
+                            "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
+                            "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
+                            "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
+                            "<div class='detail-label'>Modified</div><div class='detail-value'>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</div>" +
+                        "</div>" +
+                    "</div>";
             }
 
             if (modal) modal.classList.add("show");
@@ -9864,6 +10148,7 @@ function renderDashboard(options = {}) {
                 // temporarily displays another merchant's old products.
                 loadedItems = [];
                 itemCosts = {};
+                itemMetadata = {};
                 selectedItemIds.clear();
                 renderItems(loadedItems);
 
@@ -9885,6 +10170,7 @@ function renderDashboard(options = {}) {
                 );
 
                 loadedItems = data.data && data.data.elements ? data.data.elements : [];
+                itemMetadata = data.metadata || {};
                 itemCosts = costData.costs || {};
 
                 loadedItems.forEach(function (item) {
@@ -10931,6 +11217,8 @@ app.get("/clover-items", async (req, res) => {
         }
 
         const itemsData = await fetchAllCloverItems(accessToken, merchantId);
+        const metadata = await getItemMetadataForMerchant(merchantId);
+        applyMetadataToCloverItems(itemsData, metadata);
 
         logApiCall("/clover-items", merchantId, "GET", 200);
 
@@ -10940,6 +11228,7 @@ app.get("/clover-items", async (req, res) => {
                 ? `Clover inventory loaded ${itemsData.totalLoaded} product(s), but stopped at the configured safety page limit.`
                 : `Clover inventory items loaded successfully: ${itemsData.totalLoaded} product(s).`,
             data: itemsData,
+            metadata,
             pagination: {
                 pageCount: itemsData.pageCount,
                 limit: itemsData.limit,
@@ -11202,6 +11491,49 @@ app.get("/clover-create-item-legacy", async (req, res) => {
     }
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| ITEM METADATA ROUTES - BARCODE + CATEGORY CLEANUP STORAGE
+|--------------------------------------------------------------------------
+| Clover does not always expose barcode/category in a clean editable field.
+| InventoryRite stores merchant cleanup fields here so smart review, CSV,
+| scanning prep, and product audit workflows can still work safely.
+|--------------------------------------------------------------------------
+*/
+
+app.get("/item-metadata", async (req, res) => {
+    try {
+        const { merchantId } = await getConnectionFromRequest(req);
+
+        if (!merchantId) {
+            return res.status(400).json({ success: false, message: "Missing merchantId." });
+        }
+
+        const metadata = await getItemMetadataForMerchant(merchantId);
+        return res.json({ success: true, databaseEnabled: USE_DATABASE, metadata });
+    } catch (error) {
+        console.error("Item Metadata Error:", error.message);
+        return res.status(500).json({ success: false, message: "Failed to load item metadata.", error: error.message });
+    }
+});
+
+app.post("/item-metadata/:itemId", async (req, res) => {
+    try {
+        const { merchantId } = await getConnectionFromRequest(req);
+        const itemId = req.params.itemId;
+
+        if (!merchantId || !itemId) {
+            return res.status(400).json({ success: false, message: "Missing merchantId or itemId." });
+        }
+
+        const metadata = await saveItemMetadataForMerchant(merchantId, itemId, req.body || {});
+        return res.json({ success: true, message: "Product cleanup fields saved.", metadata });
+    } catch (error) {
+        console.error("Save Item Metadata Error:", error.message);
+        return res.status(500).json({ success: false, message: "Failed to save product cleanup fields.", error: error.message });
+    }
+});
 
 /*
 |--------------------------------------------------------------------------
