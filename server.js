@@ -2785,102 +2785,6 @@ function renderDashboard(options = {}) {
             font-weight: 800;
         }
 
-
-        .merchant-workflow-center {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #dbe4ee;
-            border-radius: 18px;
-            padding: 16px;
-            margin: 0 0 16px;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
-        }
-
-        .workflow-center-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .workflow-center-kicker {
-            color: #15803d;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-
-        .workflow-center-title {
-            margin: 0;
-            color: #0f172a;
-            font-size: 18px;
-            font-weight: 900;
-            letter-spacing: -0.02em;
-        }
-
-        .workflow-center-subtitle {
-            margin-top: 4px;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .workflow-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .workflow-card {
-            border: 1px solid #e5e7eb;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 13px;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            min-height: 148px;
-        }
-
-        .workflow-card strong {
-            color: #0f172a;
-            font-size: 13px;
-            font-weight: 900;
-            line-height: 1.2;
-        }
-
-        .workflow-card span {
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .workflow-metric {
-            font-size: 22px !important;
-            font-weight: 900 !important;
-            color: #15803d !important;
-            line-height: 1 !important;
-        }
-
-        .workflow-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: auto;
-        }
-
-        .workflow-actions .btn {
-            min-height: 34px;
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-
         .operations-summary-pills {
             display: flex;
             align-items: center;
@@ -3997,103 +3901,7 @@ function renderDashboard(options = {}) {
                 align-items: center !important;
             }
 
-    
-        .merchant-workflow-center {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #dbe4ee;
-            border-radius: 18px;
-            padding: 16px;
-            margin: 0 0 16px;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
-        }
-
-        .workflow-center-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .workflow-center-kicker {
-            color: #15803d;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-
-        .workflow-center-title {
-            margin: 0;
-            color: #0f172a;
-            font-size: 18px;
-            font-weight: 900;
-            letter-spacing: -0.02em;
-        }
-
-        .workflow-center-subtitle {
-            margin-top: 4px;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .workflow-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .workflow-card {
-            border: 1px solid #e5e7eb;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 13px;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            min-height: 148px;
-        }
-
-        .workflow-card strong {
-            color: #0f172a;
-            font-size: 13px;
-            font-weight: 900;
-            line-height: 1.2;
-        }
-
-        .workflow-card span {
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .workflow-metric {
-            font-size: 22px !important;
-            font-weight: 900 !important;
-            color: #15803d !important;
-            line-height: 1 !important;
-        }
-
-        .workflow-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: auto;
-        }
-
-        .workflow-actions .btn {
-            min-height: 34px;
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-
-        .operations-summary-pills {
+            .operations-summary-pills {
                 gap: 6px !important;
             }
 
@@ -4211,103 +4019,7 @@ function renderDashboard(options = {}) {
                 font-size: 11px !important;
             }
 
-    
-        .merchant-workflow-center {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #dbe4ee;
-            border-radius: 18px;
-            padding: 16px;
-            margin: 0 0 16px;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
-        }
-
-        .workflow-center-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .workflow-center-kicker {
-            color: #15803d;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-
-        .workflow-center-title {
-            margin: 0;
-            color: #0f172a;
-            font-size: 18px;
-            font-weight: 900;
-            letter-spacing: -0.02em;
-        }
-
-        .workflow-center-subtitle {
-            margin-top: 4px;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .workflow-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .workflow-card {
-            border: 1px solid #e5e7eb;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 13px;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            min-height: 148px;
-        }
-
-        .workflow-card strong {
-            color: #0f172a;
-            font-size: 13px;
-            font-weight: 900;
-            line-height: 1.2;
-        }
-
-        .workflow-card span {
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .workflow-metric {
-            font-size: 22px !important;
-            font-weight: 900 !important;
-            color: #15803d !important;
-            line-height: 1 !important;
-        }
-
-        .workflow-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: auto;
-        }
-
-        .workflow-actions .btn {
-            min-height: 34px;
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-
-        .operations-summary-pills {
+            .operations-summary-pills {
                 width: 100% !important;
                 justify-content: flex-start !important;
             }
@@ -6727,56 +6439,6 @@ function renderDashboard(options = {}) {
                 </div>
             </div>
 
-            <div class="merchant-workflow-center" id="merchantWorkflowCenter">
-                <div class="workflow-center-top">
-                    <div>
-                        <div class="workflow-center-kicker">Merchant Workflows</div>
-                        <div class="workflow-center-title">Quick Fix Center</div>
-                        <div class="workflow-center-subtitle">Turn reports into action: fix prices, export reorder lists, clean inventory, and move faster.</div>
-                    </div>
-                    <button id="btnWorkflowReview" type="button" class="btn btn-light">Review Workflow</button>
-                </div>
-                <div class="workflow-grid">
-                    <div class="workflow-card">
-                        <strong>One-Click Price Fixes</strong>
-                        <span id="workflowPriceFixText">Load inventory to find products with safe suggested prices.</span>
-                        <span class="workflow-metric" id="workflowPriceFixCount">0</span>
-                        <div class="workflow-actions">
-                            <button id="btnWorkflowPreviewPriceFixes" type="button" class="btn btn-light">Preview</button>
-                            <button id="btnWorkflowApplyPriceFixes" type="button" class="btn btn-primary">Apply</button>
-                        </div>
-                    </div>
-                    <div class="workflow-card">
-                        <strong>Reorder Export</strong>
-                        <span id="workflowReorderText">Export low-stock items into a supplier-ready CSV list.</span>
-                        <span class="workflow-metric" id="workflowReorderCount">0</span>
-                        <div class="workflow-actions">
-                            <button id="btnWorkflowPreviewReorder" type="button" class="btn btn-light">Preview</button>
-                            <button id="btnWorkflowExportReorder" type="button" class="btn btn-secondary">Export CSV</button>
-                        </div>
-                    </div>
-                    <div class="workflow-card">
-                        <strong>Cleanup Workflow</strong>
-                        <span id="workflowCleanupText">Review missing costs, missing prices, duplicate names, and messy product data.</span>
-                        <span class="workflow-metric" id="workflowCleanupCount">0</span>
-                        <div class="workflow-actions">
-                            <button id="btnWorkflowCleanup" type="button" class="btn btn-light">Start Cleanup</button>
-                            <button id="btnWorkflowMissingCosts" type="button" class="btn btn-amber">Missing Costs</button>
-                        </div>
-                    </div>
-                    <div class="workflow-card">
-                        <strong>Profit Intelligence</strong>
-                        <span id="workflowProfitText">Focus the merchant on the products most likely to improve profit.</span>
-                        <span class="workflow-metric" id="workflowProfitOpportunity">$0.00</span>
-                        <div class="workflow-actions">
-                            <button id="btnWorkflowProfitReview" type="button" class="btn btn-dark">Review Profit</button>
-                            <button id="btnWorkflowRoundPrices" type="button" class="btn btn-light">Round .99</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
 
 
             <div class="premium-profit-dashboard" id="premiumProfitDashboard">
@@ -7790,183 +7452,6 @@ function renderDashboard(options = {}) {
             URL.revokeObjectURL(url);
             showToast("CSV exported successfully with Clover ID, name, price, cost, SKU, barcode, availability, and audit fields.", "success");
             logActivity("CSV Exported", loadedItems.length + " product(s) exported with merchant-ready Clover fields.", "Success");
-        }
-
-
-        function getWorkflowPriceFixCandidates(targetMarginPercent) {
-            targetMarginPercent = Number(targetMarginPercent || 35);
-            return (loadedItems || []).map(function (item) {
-                var itemId = item.id || "";
-                var price = Number(item.price || 0);
-                var cost = getCostCents(itemId);
-                var suggested = getTargetPriceForMargin(cost, targetMarginPercent);
-                var margin = calculateMargin(price, cost);
-                var monthlyGain = Math.max(0, suggested - price) * 20;
-                return {
-                    item: item,
-                    itemId: itemId,
-                    price: price,
-                    cost: cost,
-                    suggestedPrice: suggested,
-                    margin: margin,
-                    monthlyGain: monthlyGain
-                };
-            }).filter(function (record) {
-                if (!record.itemId || record.price <= 0 || record.cost <= 0) return false;
-                if (record.suggestedPrice <= record.price) return false;
-                return record.price < record.cost || record.margin === null || record.margin < targetMarginPercent;
-            }).sort(function (a, b) {
-                return b.monthlyGain - a.monthlyGain;
-            });
-        }
-
-        function getWorkflowLowStockItems() {
-            var threshold = Number((alertSettings && alertSettings.low_stock_threshold) || 5);
-            return (loadedItems || []).filter(function (item) {
-                var qty = getItemQuantity(item);
-                return qty !== null && qty <= threshold;
-            }).sort(function (a, b) {
-                return Number(getItemQuantity(a) || 0) - Number(getItemQuantity(b) || 0);
-            });
-        }
-
-        function updateMerchantWorkflowCenter() {
-            var priceFixes = getWorkflowPriceFixCandidates(35);
-            var lowStock = getWorkflowLowStockItems();
-            var cleanupIssues = getCleanupIssues();
-            var opportunity = priceFixes.reduce(function (sum, record) { return sum + Math.max(0, record.monthlyGain || 0); }, 0);
-
-            var priceCount = byId("workflowPriceFixCount");
-            var priceText = byId("workflowPriceFixText");
-            var reorderCount = byId("workflowReorderCount");
-            var reorderText = byId("workflowReorderText");
-            var cleanupCount = byId("workflowCleanupCount");
-            var cleanupText = byId("workflowCleanupText");
-            var profitOpportunity = byId("workflowProfitOpportunity");
-            var profitText = byId("workflowProfitText");
-
-            if (priceCount) priceCount.textContent = String(priceFixes.length);
-            if (priceText) priceText.textContent = priceFixes.length ? "Suggested prices are ready. Preview first, then apply with confirmation." : "No suggested price fixes needed right now.";
-            if (reorderCount) reorderCount.textContent = String(lowStock.length);
-            if (reorderText) reorderText.textContent = lowStock.length ? "Low-stock products are ready for a supplier CSV export." : "No low-stock items found at the current threshold.";
-            if (cleanupCount) cleanupCount.textContent = String(cleanupIssues.length);
-            if (cleanupText) cleanupText.textContent = cleanupIssues.length ? "Cleanup issues found across product names, prices, costs, SKU, or duplicates." : "Inventory cleanup looks good right now.";
-            if (profitOpportunity) profitOpportunity.textContent = formatCurrencyFromCents(opportunity);
-            if (profitText) profitText.textContent = opportunity > 0 ? "Estimated monthly improvement from suggested price fixes, assuming 20 sales/month." : "No major profit opportunity found from current cost and price data.";
-        }
-
-        function previewWorkflowPriceFixes() {
-            var candidates = getWorkflowPriceFixCandidates(35);
-            if (!candidates.length) {
-                openFeatureModal("One-Click Price Fixes", "No safe suggested price fixes are needed right now.", [
-                    "<div><strong>No action needed</strong><span>Products with saved costs are not currently under the 35% target margin.</span></div><div><span>Healthy</span></div>"
-                ]);
-                return;
-            }
-
-            var rows = candidates.slice(0, 35).map(function (record) {
-                return "<div><strong>" + escapeHtml(record.item.name || "Unnamed Product") + "</strong><span>Current " + escapeHtml(formatCurrencyFromCents(record.price)) + " → Suggested " + escapeHtml(formatCurrencyFromCents(record.suggestedPrice)) + " | Margin " + escapeHtml(record.margin === null ? "--" : record.margin.toFixed(1) + "%") + " | Est. monthly gain " + escapeHtml(formatCurrencyFromCents(record.monthlyGain)) + "</span></div><div><span>Ready</span></div>";
-            });
-            rows.push("<div><strong>Safety rule</strong><span>Nothing changes in Clover until you click Apply and confirm. Undo is available for this browser session after update.</span></div><div><span>Safe</span></div>");
-            openFeatureModal("One-Click Price Fixes", candidates.length + " product(s) have suggested 35% margin pricing ready for review.", rows);
-            logActivity("Price Fix Preview", candidates.length + " suggested price fix(es) reviewed.", "Viewed");
-        }
-
-        async function applyWorkflowPriceFixes() {
-            if (isBusy) return;
-            var connection = requireConnection();
-            if (!connection) return;
-
-            var candidates = getWorkflowPriceFixCandidates(35);
-            if (!candidates.length) {
-                showToast("No suggested price fixes are ready right now.", "success");
-                return;
-            }
-
-            var updates = candidates.map(function (record) {
-                return { item: record.item, oldCents: record.price, newCents: record.suggestedPrice };
-            });
-
-            var opportunity = candidates.reduce(function (sum, record) { return sum + Math.max(0, record.monthlyGain || 0); }, 0);
-            openConfirm(
-                "Apply Suggested Prices?",
-                "This will update " + updates.length + " Clover product price(s) to a safer 35% margin target. Estimated monthly improvement: " + formatCurrencyFromCents(opportunity) + ". You can undo this bulk action during this browser session.",
-                async function () {
-                    await executeDirectPriceUpdates(connection, updates, "One-Click Suggested Price Fixes");
-                }
-            );
-        }
-
-        function previewReorderWorkflow() {
-            var lowStock = getWorkflowLowStockItems();
-            var threshold = Number((alertSettings && alertSettings.low_stock_threshold) || 5);
-            if (!lowStock.length) {
-                openFeatureModal("Reorder Export", "No products are at or below the current low-stock threshold.", [
-                    "<div><strong>No reorder needed</strong><span>Current threshold: " + escapeHtml(threshold) + ". Change Email Alert settings to adjust the threshold.</span></div><div><span>Healthy</span></div>"
-                ]);
-                return;
-            }
-            var rows = lowStock.slice(0, 35).map(function (item) {
-                var qty = getItemQuantity(item);
-                var suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
-                return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current stock: " + escapeHtml(qty === null ? "Unknown" : qty) + " | Suggested reorder: " + escapeHtml(suggested) + " | SKU: " + escapeHtml(getItemSku(item) || "-") + "</span></div><div><span>Reorder</span></div>";
-            });
-            openFeatureModal("Reorder Export", lowStock.length + " low-stock product(s) are ready for supplier/export review.", rows);
-            logActivity("Reorder Preview", lowStock.length + " low-stock product(s) reviewed.", "Viewed");
-        }
-
-        function exportReorderCsv() {
-            var lowStock = getWorkflowLowStockItems();
-            var threshold = Number((alertSettings && alertSettings.low_stock_threshold) || 5);
-            if (!lowStock.length) {
-                showToast("No low-stock products to export right now.", "success");
-                return;
-            }
-
-            var rows = [];
-            rows.push(["Product Name", "Clover ID", "SKU", "Category", "Current Stock", "Low Stock Threshold", "Suggested Reorder", "Current Price", "Saved Cost"].join(","));
-            lowStock.forEach(function (item) {
-                var qty = getItemQuantity(item);
-                var suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
-                rows.push([
-                    csvEscape(item.name || ""),
-                    csvEscape(item.id || ""),
-                    csvEscape(getItemSku(item) || ""),
-                    csvEscape(getItemCategory(item) || ""),
-                    csvEscape(qty === null ? "" : qty),
-                    csvEscape(threshold),
-                    csvEscape(suggested),
-                    csvEscape((Number(item.price || 0) / 100).toFixed(2)),
-                    csvEscape((getCostCents(item.id || "") / 100).toFixed(2))
-                ].join(","));
-            });
-
-            var blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
-            var url = URL.createObjectURL(blob);
-            var link = document.createElement("a");
-            link.href = url;
-            link.download = "inventoryrite-reorder-list.csv";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            showToast("Reorder CSV exported with " + lowStock.length + " product(s).", "success");
-            logActivity("Reorder CSV Exported", lowStock.length + " low-stock product(s) exported for ordering.", "Success");
-        }
-
-        function showWorkflowReview() {
-            var candidates = getWorkflowPriceFixCandidates(35);
-            var lowStock = getWorkflowLowStockItems();
-            var cleanupIssues = getCleanupIssues();
-            var opportunity = candidates.reduce(function (sum, record) { return sum + Math.max(0, record.monthlyGain || 0); }, 0);
-            var rows = [
-                "<div><strong>One-Click Price Fixes</strong><span>" + escapeHtml(candidates.length) + " product(s) can be reviewed and safely updated after confirmation.</span></div><div><span>" + escapeHtml(formatCurrencyFromCents(opportunity)) + " est.</span></div>",
-                "<div><strong>Reorder Export</strong><span>" + escapeHtml(lowStock.length) + " product(s) are at or below the current low-stock threshold.</span></div><div><span>CSV Ready</span></div>",
-                "<div><strong>Cleanup Workflow</strong><span>" + escapeHtml(cleanupIssues.length) + " cleanup issue(s) found across costs, prices, names, SKUs, duplicates, or margin risk.</span></div><div><span>Review</span></div>",
-                "<div><strong>Profit Intelligence</strong><span>Use Profit Review to focus on margin risk, missing costs, and price opportunities.</span></div><div><span>Active</span></div>"
-            ];
-            openFeatureModal("Merchant Workflow Center", "These workflows turn InventoryRite from a report screen into an action system merchants can use daily.", rows);
-            logActivity("Workflow Center", "Merchant workflows reviewed.", "Viewed");
         }
 
         function openFeatureModal(title, message, rows) {
@@ -9030,14 +8515,11 @@ function renderDashboard(options = {}) {
                 var row = updateList[i];
                 var item = row.item;
                 try {
-                    var updateHeaders = { "Content-Type": "application/json" };
-                    if (connection && connection.merchantId) updateHeaders["X-Merchant-Id"] = connection.merchantId;
-
                     await fetchJson(
                         "/clover-update-item/" + encodeURIComponent(item.id || ""),
                         {
                             method: "POST",
-                            headers: updateHeaders,
+                            headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ name: item.name || "", price: row.newCents })
                         }
                     );
@@ -9489,7 +8971,6 @@ function renderDashboard(options = {}) {
             });
 
             updateStats(items || []);
-            updateMerchantWorkflowCenter();
 
             if (!items || !items.length) {
                 body.innerHTML =
@@ -10416,15 +9897,6 @@ function renderDashboard(options = {}) {
         bind("btnSmartPricingHub", "click", showSmartPricing);
         bind("btnCleanupToolsHub", "click", showCleanupTools);
         bind("btnShortcutHub", "click", showOperationalShortcuts);
-        bind("btnWorkflowReview", "click", showWorkflowReview);
-        bind("btnWorkflowPreviewPriceFixes", "click", previewWorkflowPriceFixes);
-        bind("btnWorkflowApplyPriceFixes", "click", applyWorkflowPriceFixes);
-        bind("btnWorkflowPreviewReorder", "click", previewReorderWorkflow);
-        bind("btnWorkflowExportReorder", "click", exportReorderCsv);
-        bind("btnWorkflowCleanup", "click", showCleanupTools);
-        bind("btnWorkflowMissingCosts", "click", showMissingCostLock);
-        bind("btnWorkflowProfitReview", "click", showProfitIntelligence);
-        bind("btnWorkflowRoundPrices", "click", applySmart99Rounding);
         bind("featureClose", "click", closeFeatureModal);
 
         bind("btnRefreshInventoryTop", "click", loadItems);
@@ -11476,14 +10948,6 @@ function renderSimplePage(title, bodyHtml) {
             .simple-hero-actions .btn {
                 flex: 1 1 140px;
             }
-        }
-
-
-        @media (max-width: 980px) {
-            .workflow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 640px) {
-            .workflow-grid { grid-template-columns: 1fr; }
         }
 
     </style>
