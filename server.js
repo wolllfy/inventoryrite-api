@@ -2442,25 +2442,43 @@ function renderDashboard(options = {}) {
             color: #92400e;
         }
 
-        .modal-wide { max-width: 680px; }
+        .modal-wide {
+            width: min(94vw, 920px);
+            max-width: 920px;
+            max-height: 86vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #featureTitle {
+            flex: 0 0 auto;
+        }
+
+        #featureMessage {
+            flex: 0 0 auto;
+        }
 
         .insight-list {
             margin-top: 14px;
             display: grid;
-            gap: 9px;
-            max-height: 360px;
+            gap: 10px;
+            max-height: min(58vh, 520px);
             overflow-y: auto;
+            overflow-x: hidden;
+            padding: 2px 6px 2px 2px;
         }
 
         .insight-row {
             border: 1px solid #e5e7eb;
             background: #f8fafc;
-            border-radius: 13px;
-            padding: 10px 12px;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
+            border-radius: 14px;
+            padding: 12px;
+            display: block;
             font-size: 13px;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .insight-row strong { display:block; color:#111827; margin-bottom:3px; }
@@ -2624,41 +2642,59 @@ function renderDashboard(options = {}) {
         .insight-fix-btn:hover { filter: brightness(1.08); }
 
         .smart-review-card {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
-            align-items: center;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 11px;
             width: 100%;
+            min-width: 0;
+        }
+
+        .smart-review-main {
+            min-width: 0;
         }
 
         .smart-review-main strong {
-            display: block;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
             color: #0f172a;
             font-size: 13px;
             line-height: 1.35;
+            word-break: break-word;
         }
 
         .smart-review-main span {
             display: block;
-            color: #64748b;
+            color: #475569;
             font-size: 12px;
             font-weight: 800;
             line-height: 1.45;
-            margin-top: 4px;
+            margin-top: 5px;
+            white-space: normal;
+            word-break: normal;
+            overflow-wrap: anywhere;
         }
 
         .smart-review-actions {
             display: flex;
             align-items: center;
-            justify-content: flex-end;
-            gap: 7px;
+            justify-content: flex-start;
+            gap: 8px;
             flex-wrap: wrap;
-            min-width: 250px;
+            min-width: 0;
+            width: 100%;
+            padding: 10px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
         }
 
         .smart-review-input {
-            width: 105px;
+            width: 120px;
             min-width: 105px;
+            flex: 0 1 130px;
             border: 1px solid #d1d5db;
             border-radius: 10px;
             padding: 8px 9px;
@@ -2668,8 +2704,9 @@ function renderDashboard(options = {}) {
         }
 
         .smart-review-name-input {
-            width: 190px;
-            min-width: 160px;
+            width: 240px;
+            min-width: 180px;
+            flex: 1 1 240px;
         }
 
         .smart-review-note {
@@ -2688,6 +2725,19 @@ function renderDashboard(options = {}) {
         .insight-fix-btn.success { background: #15803d; }
         .insight-fix-btn.warning { background: #b45309; }
         .insight-fix-btn.light { background: #f8fafc; color: #111827; border: 1px solid #e5e7eb; }
+        #featureModal .modal-actions {
+            flex: 0 0 auto;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            background: #ffffff;
+        }
+
+        #featureModal .insight-row div:last-child span {
+            max-width: 100%;
+            white-space: normal;
+        }
+
 
         @media (max-width: 760px) {
             .smart-review-card { grid-template-columns: 1fr; }
