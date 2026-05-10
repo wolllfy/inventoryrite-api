@@ -6381,7 +6381,6 @@ function renderDashboard(options = {}) {
                         <div class="tool-button-grid tool-grid-health">
                             <button id="btnLowStock" type="button" class="control-btn control-neutral">Low Stock</button>
                             <button id="btnReorder" type="button" class="control-btn control-neutral">Reorder</button>
-                            <button id="btnExportReorder" type="button" class="control-btn control-neutral">Export Reorder</button>
                             <button id="btnProfitAlerts" type="button" class="control-btn control-profit">Profit Alerts</button>
                             <button id="btnCleanupScan" type="button" class="control-btn control-neutral">Cleanup Check</button>
                         </div>
@@ -7529,9 +7528,6 @@ function renderDashboard(options = {}) {
                 var risk = suggested * price;
                 return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Current stock: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested reorder: " + escapeHtml(suggested) + " units - Potential stocked value: " + escapeHtml(formatCurrencyFromCents(risk)) + "</span></div><div><span>Reorder</span></div>";
             });
-            if (lowItems.length) {
-                rows.unshift("<div><strong>One-click reorder export</strong><span>Click Export Reorder to download a supplier-friendly CSV with product, current stock, threshold, suggested reorder, price, and estimated stocked value.</span></div><div><button type='button' class='insight-fix-btn' data-fix-action='export_reorder' data-fix-id=''>Export CSV</button></div>");
-            }
             openFeatureModal(
                 "Reorder Intelligence",
                 lowItems.length ? "Reorder suggestions are based on your low-stock threshold of " + threshold + " and current Clover quantity data." : "No reorder suggestions yet. This becomes stronger when Clover sends quantity data.",
@@ -7539,60 +7535,6 @@ function renderDashboard(options = {}) {
             );
             logActivity("Reorder Planning", lowItems.length + " item(s) checked for reorder planning.", "Viewed");
             showToast("Reorder intelligence opened.", "info");
-        }
-
-        function getReorderExportRows() {
-            var threshold = getLowStockThreshold();
-            return getLowStockItems().map(function (item) {
-                var qty = getItemQuantity(item);
-                var price = Number(item.price || 0);
-                var suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
-                return {
-                    id: item.id || "",
-                    name: item.name || "Unnamed Product",
-                    sku: getItemSku(item),
-                    currentStock: qty === null ? "Unknown" : qty,
-                    threshold: threshold,
-                    suggestedReorder: suggested,
-                    price: formatCurrencyFromCents(price),
-                    estimatedStockedValue: formatCurrencyFromCents(suggested * price)
-                };
-            });
-        }
-
-        function csvEscape(value) {
-            var text = String(value === undefined || value === null ? "" : value);
-            return '"' + text.replace(/"/g, '""') + '"';
-        }
-
-        function exportReorderCsv() {
-            var rows = getReorderExportRows();
-            if (!rows.length) {
-                showToast("No low-stock reorder items to export right now.", "success");
-                return;
-            }
-
-            var csv = [
-                ["Product", "SKU", "Current Stock", "Low Stock Threshold", "Suggested Reorder", "Price", "Estimated Stocked Value", "Clover Item ID"].map(csvEscape).join(",")
-            ];
-
-            rows.forEach(function (row) {
-                csv.push([row.name, row.sku, row.currentStock, row.threshold, row.suggestedReorder, row.price, row.estimatedStockedValue, row.id].map(csvEscape).join(","));
-            });
-
-            var blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement("a");
-            var stamp = new Date().toISOString().slice(0, 10);
-            a.href = url;
-            a.download = "InventoryRite-Reorder-List-" + stamp + ".csv";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(function () { URL.revokeObjectURL(url); }, 500);
-
-            logActivity("Reorder Export", rows.length + " low-stock item(s) exported to CSV.", "Success");
-            showToast("Reorder CSV exported: " + rows.length + " item(s).", "success");
         }
 
         async function loadAlertSettings() {
@@ -8377,11 +8319,6 @@ function renderDashboard(options = {}) {
         }
 
         function handleInsightFixAction(action, itemId) {
-            if (action === "export_reorder") {
-                exportReorderCsv();
-                return;
-            }
-
             var item = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
             if (!item) { showToast("Product not found. Refresh inventory and try again.", "error"); return; }
             if (action === "fix_cost") {
@@ -8424,7 +8361,6 @@ function renderDashboard(options = {}) {
         function showOperationalShortcuts() {
             var rows = [
                 "<div><strong>Fast Cost Entry</strong><span>Click any Cost cell, type the true cost, then press Enter. Margin updates after save.</span></div><div><span>Active</span></div>",
-                "<div><strong>One-click Suggested Price</strong><span>When the $ button appears on a row, InventoryRite can preview and apply the suggested live Clover price after confirmation.</span></div><div><span>Active</span></div>",
                 "<div><strong>Profit Alert Filter</strong><span>Click Profit Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
                 "<div><strong>Cleanup Check</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
                 "<div><strong>Export for Backup</strong><span>Use Export CSV before major edits so the merchant has a safe product snapshot.</span></div><div><span>Active</span></div>",
@@ -9072,11 +9008,6 @@ function renderDashboard(options = {}) {
                 var profitClass = profitCents < 0 ? "profit-negative" : "profit-positive";
                 var isSelected = selectedItemIds.has(itemId);
                 var isBulkUpdated = bulkUpdatedItemIds.indexOf(itemId) >= 0;
-                var smartSuggestion = getSmartPriceSuggestion(item);
-                var hasSuggestedPriceFix = smartSuggestion && Number(smartSuggestion.suggestedPrice || 0) > 0 && Number(smartSuggestion.suggestedPrice || 0) !== priceCents;
-                var suggestedPriceButton = hasSuggestedPriceFix
-                    ? "<button type='button' class='btn btn-amber btn-small icon-action' title='Preview/apply suggested price: " + escapeHtml(formatCurrencyFromCents(smartSuggestion.suggestedPrice)) + "' aria-label='Apply suggested price' data-action='applySuggestedPrice' data-id='" + escapeHtml(itemId) + "' data-suggested='" + escapeHtml(smartSuggestion.suggestedPrice) + "'>$</button>"
-                    : "";
 
                 row.setAttribute("data-row-id", itemId);
 
@@ -9105,7 +9036,6 @@ function renderDashboard(options = {}) {
                     "<td><input class='small-input' data-cost-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(costDollars) + "' title='Your cost of goods. Saves to InventoryRite and attempts to sync to Clover.' />" + (costCents <= 0 ? "<span class='cost-warning-chip'>Cost needed</span>" : "") + "</td>" +
                     "<td>" + getMarginPill(priceCents, costCents) + "</td>" +
                     "<td><div class='row-actions'>" +
-                        suggestedPriceButton +
                         "<button type='button' class='btn btn-secondary btn-small icon-action' title='Save product' aria-label='Save product' data-action='save' data-id='" + escapeHtml(itemId) + "'>&#10003;</button>" +
                         "<button type='button' class='btn btn-light btn-small icon-action' title='View details' aria-label='View details' data-action='details' data-id='" + escapeHtml(itemId) + "'>i</button>" +
                         "<button type='button' class='btn btn-danger btn-small icon-action' title='Delete product' aria-label='Delete product' data-action='delete' data-id='" + escapeHtml(itemId) + "' data-name='" + escapeHtml(itemName) + "'>&times;</button>" +
@@ -9852,38 +9782,6 @@ function renderDashboard(options = {}) {
             );
         }
 
-        function applySuggestedPriceFromRow(itemId, suggestedCents) {
-            if (isBusy) return;
-
-            var item = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
-            var newPrice = Number(suggestedCents || 0);
-
-            if (!item || !itemId || !newPrice || newPrice <= 0) {
-                showToast("Suggested price could not be found. Refresh inventory and try again.", "error");
-                return;
-            }
-
-            var oldPrice = Number(item.price || 0);
-            if (newPrice === oldPrice) {
-                showToast("This product is already at the suggested price.", "success");
-                return;
-            }
-
-            openConfirm(
-                "Apply Suggested Price?",
-                "InventoryRite will update " + (item.name || "this product") + " from " + formatCurrencyFromCents(oldPrice) + " to " + formatCurrencyFromCents(newPrice) + ". This changes the live Clover price after confirmation.",
-                function () {
-                    var priceInput = document.querySelector("[data-price-for='" + itemId + "']");
-                    if (!priceInput) {
-                        showToast("Price field is not visible. Show all products and try again.", "error");
-                        return;
-                    }
-                    priceInput.value = (newPrice / 100).toFixed(2);
-                    updateItem(itemId);
-                }
-            );
-        }
-
         async function executeMarginFix35(candidates) {
             startBusy();
             var successCount = 0;
@@ -9958,7 +9856,6 @@ function renderDashboard(options = {}) {
         bind("btnShowAllProducts", "click", function () { setViewMode("all"); logActivity("All Products", "All products view restored.", "Viewed"); showToast("Showing all products.", "info"); });
         bind("btnLowStock", "click", showLowStock);
         bind("btnReorder", "click", showReorderPlanning);
-        bind("btnExportReorder", "click", exportReorderCsv);
         bind("btnExportCsv", "click", exportProductsCsv);
         bind("btnImportCsv", "click", importCsvClicked);
 
@@ -10081,10 +9978,6 @@ function renderDashboard(options = {}) {
 
                 if (action === "save") {
                     updateItem(itemId);
-                }
-
-                if (action === "applySuggestedPrice") {
-                    applySuggestedPriceFromRow(itemId, target.getAttribute("data-suggested"));
                 }
 
                 if (action === "details") {
