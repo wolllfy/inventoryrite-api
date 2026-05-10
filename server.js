@@ -630,39 +630,71 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
     };
 }
 
+function getReportFromEmail() {
+    const configuredFrom = process.env.REPORT_FROM_EMAIL?.trim() || "";
+
+    // Now that inventoryrite.com is verified in Resend, use the verified domain
+    // instead of Resend's onboarding sender. You can override this in Render with:
+    // REPORT_FROM_EMAIL=InventoryRite <alerts@inventoryrite.com>
+    return configuredFrom || "InventoryRite <alerts@inventoryrite.com>";
+}
+
+function isEmailAddressReasonable(value) {
+    const email = String(value || "").trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 async function sendInventoryEmail({ to, subject, html }) {
     const apiKey = process.env.RESEND_API_KEY?.trim() || "";
-    const fromEmail = process.env.REPORT_FROM_EMAIL?.trim() || "InventoryRite <onboarding@resend.dev>";
+    const fromEmail = getReportFromEmail();
+    const recipient = String(to || "").trim();
+
+    if (!isEmailAddressReasonable(recipient)) {
+        return {
+            sent: false,
+            skipped: true,
+            message: "Please enter a valid report email address before sending alerts."
+        };
+    }
 
     if (!apiKey) {
         return {
             sent: false,
             skipped: true,
-            message: "Email preview generated. Add RESEND_API_KEY and REPORT_FROM_EMAIL in Render to send real emails."
+            message: "Email preview generated. Add RESEND_API_KEY in Render to send real emails.",
+            provider: "resend",
+            from: fromEmail
         };
     }
 
-    const response = await cloverApi.post(
-        "https://api.resend.com/emails",
-        {
-            from: fromEmail,
-            to,
-            subject,
-            html
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
+    try {
+        const response = await cloverApi.post(
+            "https://api.resend.com/emails",
+            {
+                from: fromEmail,
+                to: recipient,
+                subject: subject || "InventoryRite Alert Report",
+                html: html || "<p>InventoryRite report generated.</p>"
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json"
+                }
             }
-        }
-    );
+        );
 
-    return {
-        sent: true,
-        provider: "resend",
-        id: response.data?.id || ""
-    };
+        return {
+            sent: true,
+            provider: "resend",
+            id: response.data?.id || "",
+            from: fromEmail
+        };
+    } catch (error) {
+        const providerError = error.response?.data || error.message || "Unknown Resend error";
+        console.error("Resend email send failed:", providerError);
+        throw error;
+    }
 }
 
 /*
@@ -11178,7 +11210,9 @@ app.get("/app-status", (req, res) => {
         connected: latestCloverConnection.connected,
         hasMerchant: !!latestCloverConnection.merchant_id,
         connectedAt: latestCloverConnection.connected_at || null,
-        databaseEnabled: USE_DATABASE
+        databaseEnabled: USE_DATABASE,
+        emailConfigured: !!process.env.RESEND_API_KEY,
+        reportFromEmail: getReportFromEmail()
     });
 });
 
@@ -11288,6 +11322,8 @@ app.post("/send-test-report", async (req, res) => {
                 ? `Test report sent to ${settings.report_email}.`
                 : emailResult.message,
             provider: emailResult.provider || "",
+            emailId: emailResult.id || "",
+            from: emailResult.from || getReportFromEmail(),
             previewSubject: report.subject
         });
     } catch (error) {
