@@ -563,51 +563,280 @@ function calculateMarginServer(priceCents, costCents) {
     return ((price - cost) / price) * 100;
 }
 
-function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
+function centsToMoneyServer(cents) {
+    const value = Number(cents || 0) / 100;
+    return value.toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+function getTargetPriceForMarginServer(costCents, targetMarginPercent = 40) {
+    const cost = Math.max(0, Number(costCents || 0));
+    const margin = Math.max(1, Math.min(95, Number(targetMarginPercent || 40))) / 100;
+    if (cost <= 0) return 0;
+
+    const raw = cost / (1 - margin);
+    const dollars = raw / 100;
+    const roundedDollars = Math.max(0.99, Math.ceil(dollars) - 0.01);
+    return Math.max(99, Math.round(roundedDollars * 100));
+}
+
+function normalizeItemForReport(item, costs = {}) {
+    const id = String(item?.id || "");
+    const price = Number(item?.price || item?.priceCents || 0);
+    const savedCost = Number(costs[id] || 0);
+    const itemCost = Number(item?.cost || item?.costCents || 0);
+    const cost = savedCost > 0 ? savedCost : itemCost;
+    const qty = getItemQuantityServer(item || {});
+    const margin = calculateMarginServer(price, cost);
+    const suggestedPrice = cost > 0 ? getTargetPriceForMarginServer(cost, 40) : 0;
+    const potentialGainPerSale = price > 0 && suggestedPrice > price ? suggestedPrice - price : 0;
+
+    return {
+        id,
+        name: String(item?.name || item?.itemName || "Unnamed Product"),
+        sku: String(item?.sku || item?.code || item?.alternateName || ""),
+        category: String(item?.categories?.elements?.[0]?.name || item?.category || "Uncategorized"),
+        price,
+        cost,
+        qty,
+        margin,
+        suggestedPrice,
+        potentialGainPerSale
+    };
+}
+
+function analyzeInventoryReport({ items = [], costs = {}, settings = {} }) {
     const threshold = Number(settings.low_stock_threshold || 5);
-    const lowStock = (items || []).filter((item) => {
-        const qty = getItemQuantityServer(item);
-        return qty !== null && qty <= threshold;
-    });
+    const normalized = (items || []).map((item) => normalizeItemForReport(item, costs));
+    const assumedMonthlyUnits = Math.max(5, Math.min(100, Number(process.env.REPORT_ASSUMED_MONTHLY_UNITS || 20)));
 
-    const profitAlerts = (items || []).filter((item) => {
-        const price = Number(item.price || 0);
-        const cost = Number(costs[item.id] || item.cost || 0);
-        const margin = calculateMarginServer(price, cost);
-        return price > 0 && cost > 0 && (price < cost || (margin !== null && margin < 30));
-    });
+    const lowStock = normalized
+        .filter((item) => item.qty !== null && item.qty <= threshold)
+        .sort((a, b) => Number(a.qty || 0) - Number(b.qty || 0));
 
-    const rows = lowStock.slice(0, 20).map((item) => {
-        const qty = getItemQuantityServer(item);
-        const suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
+    const missingCost = normalized
+        .filter((item) => item.price > 0 && item.cost <= 0)
+        .sort((a, b) => b.price - a.price);
+
+    const missingPrice = normalized
+        .filter((item) => item.price <= 0)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    const belowCost = normalized
+        .filter((item) => item.price > 0 && item.cost > 0 && item.price < item.cost)
+        .sort((a, b) => (b.cost - b.price) - (a.cost - a.price));
+
+    const lowMargin = normalized
+        .filter((item) => item.price > 0 && item.cost > 0 && item.price >= item.cost && item.margin !== null && item.margin < 30)
+        .sort((a, b) => Number(a.margin || 0) - Number(b.margin || 0));
+
+    const pricedAndCosted = normalized.filter((item) => item.price > 0 && item.cost > 0 && item.margin !== null);
+    const avgMargin = pricedAndCosted.length
+        ? pricedAndCosted.reduce((sum, item) => sum + Number(item.margin || 0), 0) / pricedAndCosted.length
+        : null;
+
+    const totalMenuValue = normalized.reduce((sum, item) => sum + Math.max(0, Number(item.price || 0)), 0);
+    const estimatedCost = pricedAndCosted.reduce((sum, item) => sum + Math.max(0, Number(item.cost || 0)), 0);
+    const estimatedGrossProfit = pricedAndCosted.reduce((sum, item) => sum + Math.max(0, Number(item.price || 0) - Number(item.cost || 0)), 0);
+
+    const pricingOpportunities = normalized
+        .filter((item) => item.price > 0 && item.cost > 0 && item.suggestedPrice > item.price && (item.margin === null || item.margin < 40))
+        .map((item) => ({
+            ...item,
+            monthlyOpportunity: (item.suggestedPrice - item.price) * assumedMonthlyUnits
+        }))
+        .sort((a, b) => b.monthlyOpportunity - a.monthlyOpportunity);
+
+    const estimatedMonthlyLoss = belowCost.reduce((sum, item) => sum + Math.max(0, item.cost - item.price) * assumedMonthlyUnits, 0);
+    const estimatedProfitOpportunity = pricingOpportunities.reduce((sum, item) => sum + Math.max(0, item.monthlyOpportunity || 0), 0);
+
+    const nameCounts = new Map();
+    normalized.forEach((item) => {
+        const key = item.name.trim().toLowerCase();
+        if (!key) return;
+        nameCounts.set(key, (nameCounts.get(key) || 0) + 1);
+    });
+    const duplicateCount = Array.from(nameCounts.values()).filter((count) => count > 1).reduce((sum, count) => sum + count - 1, 0);
+
+    let penalty = 0;
+    penalty += belowCost.length * 10;
+    penalty += lowMargin.length * 5;
+    penalty += missingCost.length * 4;
+    penalty += missingPrice.length * 6;
+    penalty += lowStock.length * 3;
+    penalty += duplicateCount * 3;
+    const healthScore = Math.max(0, Math.min(100, Math.round(100 - penalty)));
+
+    const healthLabel = healthScore >= 85 ? "Strong" : (healthScore >= 70 ? "Good" : (healthScore >= 50 ? "Needs Review" : "High Risk"));
+
+    return {
+        threshold,
+        assumedMonthlyUnits,
+        totalItems: normalized.length,
+        totalMenuValue,
+        estimatedCost,
+        estimatedGrossProfit,
+        avgMargin,
+        healthScore,
+        healthLabel,
+        lowStock,
+        missingCost,
+        missingPrice,
+        belowCost,
+        lowMargin,
+        pricingOpportunities,
+        duplicateCount,
+        estimatedMonthlyLoss,
+        estimatedProfitOpportunity
+    };
+}
+
+function buildReportMetricCard(label, value, helpText, accent = "#15803d") {
+    return `
+        <td style="width:50%;padding:8px;vertical-align:top;">
+            <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#ffffff;min-height:96px;">
+                <div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">${safe(label)}</div>
+                <div style="font-size:22px;font-weight:900;color:${accent};margin-top:6px;">${safe(value)}</div>
+                <div style="font-size:12px;line-height:1.45;color:#64748b;margin-top:5px;">${safe(helpText)}</div>
+            </div>
+        </td>`;
+}
+
+function buildLowStockRows(items, threshold) {
+    return items.slice(0, 12).map((item) => {
+        const suggested = Math.max(threshold * 3, threshold - Number(item.qty || 0) + threshold * 2);
         return `<tr>
-            <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name || "Unnamed Product")}</td>
-            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(qty === null ? "Unknown" : qty)}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name)}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(item.qty === null ? "Unknown" : item.qty)}</td>
             <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(suggested)}</td>
         </tr>`;
     }).join("");
+}
+
+function buildPricingOpportunityRows(items) {
+    return items.slice(0, 12).map((item) => {
+        return `<tr>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name)}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(centsToMoneyServer(item.price))}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(centsToMoneyServer(item.cost))}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(item.margin === null ? "--" : item.margin.toFixed(1) + "%")}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:900;color:#166534;">${safe(centsToMoneyServer(item.suggestedPrice))}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;color:#166534;font-weight:900;">${safe(centsToMoneyServer(item.monthlyOpportunity || 0))}</td>
+        </tr>`;
+    }).join("");
+}
+
+function buildMissingCostRows(items) {
+    return items.slice(0, 12).map((item) => {
+        return `<tr>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name)}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(centsToMoneyServer(item.price))}</td>
+            <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;color:#92400e;font-weight:900;">Add cost</td>
+        </tr>`;
+    }).join("");
+}
+
+function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
+    const report = analyzeInventoryReport({ items, costs, settings });
+    const totalAlerts = report.belowCost.length + report.lowMargin.length + report.missingCost.length + report.lowStock.length;
+    const subject = totalAlerts > 0
+        ? `InventoryRite Weekly Report - ${totalAlerts} Item(s) Need Review`
+        : "InventoryRite Weekly Report - Inventory Looks Healthy";
+
+    const healthAccent = report.healthScore >= 85 ? "#15803d" : (report.healthScore >= 70 ? "#2563eb" : (report.healthScore >= 50 ? "#b45309" : "#b91c1c"));
+
+    const lowStockRows = buildLowStockRows(report.lowStock, report.threshold);
+    const opportunityRows = buildPricingOpportunityRows(report.pricingOpportunities);
+    const missingCostRows = buildMissingCostRows(report.missingCost);
+    const marginRiskRows = buildPricingOpportunityRows(report.belowCost.concat(report.lowMargin));
 
     return {
-        subject: `InventoryRite Weekly Report - ${lowStock.length} Low Stock Item(s)`,
+        subject,
         html: `
             <div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:24px;color:#111827;">
-                <div style="max-width:720px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
-                    <div style="background:linear-gradient(135deg,#15803d,#0f172a);color:white;padding:22px;">
-                        <h1 style="margin:0;font-size:24px;">InventoryRite Weekly Profit & Inventory Report</h1>
-                        <p style="margin:8px 0 0;color:#dcfce7;">Inventory Intelligence for Clover Merchants</p>
+                <div style="max-width:820px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#15803d,#0f172a);color:white;padding:24px;">
+                        <div style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#bbf7d0;">InventoryRite</div>
+                        <h1 style="margin:7px 0 0;font-size:25px;line-height:1.2;">Weekly Profit & Inventory Intelligence Report</h1>
+                        <p style="margin:8px 0 0;color:#dcfce7;line-height:1.5;">Actionable Clover inventory, margin, reorder, and cleanup insights.</p>
                     </div>
-                    <div style="padding:22px;">
-                        <h2 style="margin:0 0 12px;font-size:18px;">Summary</h2>
-                        <p style="margin:0 0 16px;line-height:1.5;">
-                            Merchant ID: <strong>${safe(merchantId)}</strong><br/>
-                            Low stock threshold: <strong>${safe(threshold)}</strong><br/>
-                            Low stock items: <strong>${safe(lowStock.length)}</strong><br/>
-                            Margin alerts: <strong>${safe(profitAlerts.length)}</strong>
-                        </p>
 
-                        <h2 style="margin:20px 0 10px;font-size:18px;">Reorder Suggestions</h2>
-                        ${lowStock.length ? `
-                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+                    <div style="padding:22px;background:#ffffff;">
+                        <div style="border:1px solid #bbf7d0;background:#f0fdf4;border-radius:15px;padding:14px;margin-bottom:16px;">
+                            <div style="font-size:13px;color:#166534;font-weight:900;">Executive Summary</div>
+                            <div style="font-size:14px;color:#14532d;line-height:1.55;margin-top:6px;">
+                                Merchant <strong>${safe(merchantId)}</strong> has <strong>${safe(report.totalItems)}</strong> product(s) loaded.
+                                Inventory health is <strong>${safe(report.healthScore + "/100 - " + report.healthLabel)}</strong>.
+                                Estimated profit opportunity is <strong>${safe(centsToMoneyServer(report.estimatedProfitOpportunity))}</strong>
+                                using a conservative ${safe(report.assumedMonthlyUnits)} sale(s)/month assumption on affected items.
+                            </div>
+                        </div>
+
+                        <table role="presentation" style="width:100%;border-collapse:collapse;margin:0 -8px 8px;">
+                            <tr>
+                                ${buildReportMetricCard("Inventory Health", report.healthScore + "/100", report.healthLabel + " based on costs, margins, low stock, missing prices, and duplicates.", healthAccent)}
+                                ${buildReportMetricCard("Profit Opportunity", centsToMoneyServer(report.estimatedProfitOpportunity), "Potential monthly improvement from suggested price fixes.", "#15803d")}
+                            </tr>
+                            <tr>
+                                ${buildReportMetricCard("Average Margin", report.avgMargin === null ? "--" : report.avgMargin.toFixed(1) + "%", "Average margin across products with both price and cost.", "#1d4ed8")}
+                                ${buildReportMetricCard("Margin Risk", String(report.belowCost.length + report.lowMargin.length), `${report.belowCost.length} below cost and ${report.lowMargin.length} low-margin product(s).`, "#b45309")}
+                            </tr>
+                            <tr>
+                                ${buildReportMetricCard("Missing Costs", String(report.missingCost.length), "Products with a selling price but no saved cost.", "#92400e")}
+                                ${buildReportMetricCard("Low Stock", String(report.lowStock.length), `Threshold: ${report.threshold}. Reorder suggestions included below.`, "#b91c1c")}
+                            </tr>
+                        </table>
+
+                        <h2 style="margin:22px 0 10px;font-size:18px;">Top Suggested Price Fixes</h2>
+                        ${report.pricingOpportunities.length ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#f0fdf4;">
+                                        <th style="padding:10px;text-align:left;">Product</th>
+                                        <th style="padding:10px;text-align:center;">Price</th>
+                                        <th style="padding:10px;text-align:center;">Cost</th>
+                                        <th style="padding:10px;text-align:center;">Margin</th>
+                                        <th style="padding:10px;text-align:center;">Suggested</th>
+                                        <th style="padding:10px;text-align:center;">Monthly Gain</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${opportunityRows}</tbody>
+                            </table>
+                        ` : `<p style="color:#166534;font-weight:bold;">No major price-fix opportunities found right now.</p>`}
+
+                        <h2 style="margin:22px 0 10px;font-size:18px;">Margin Risk Items</h2>
+                        ${report.belowCost.length || report.lowMargin.length ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#fff7ed;">
+                                        <th style="padding:10px;text-align:left;">Product</th>
+                                        <th style="padding:10px;text-align:center;">Price</th>
+                                        <th style="padding:10px;text-align:center;">Cost</th>
+                                        <th style="padding:10px;text-align:center;">Margin</th>
+                                        <th style="padding:10px;text-align:center;">Suggested</th>
+                                        <th style="padding:10px;text-align:center;">Monthly Gain</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${marginRiskRows}</tbody>
+                            </table>
+                        ` : `<p style="color:#166534;font-weight:bold;">No below-cost or low-margin products found right now.</p>`}
+
+                        <h2 style="margin:22px 0 10px;font-size:18px;">Missing Cost Cleanup</h2>
+                        ${report.missingCost.length ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#fffbeb;">
+                                        <th style="padding:10px;text-align:left;">Product</th>
+                                        <th style="padding:10px;text-align:center;">Selling Price</th>
+                                        <th style="padding:10px;text-align:center;">Next Step</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${missingCostRows}</tbody>
+                            </table>
+                        ` : `<p style="color:#166534;font-weight:bold;">No missing-cost cleanup found right now.</p>`}
+
+                        <h2 style="margin:22px 0 10px;font-size:18px;">Reorder Suggestions</h2>
+                        ${report.lowStock.length ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
                                 <thead>
                                     <tr style="background:#f0fdf4;">
                                         <th style="padding:10px;text-align:left;">Product</th>
@@ -615,21 +844,27 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
                                         <th style="padding:10px;text-align:center;">Suggested Reorder</th>
                                     </tr>
                                 </thead>
-                                <tbody>${rows}</tbody>
+                                <tbody>${lowStockRows}</tbody>
                             </table>
                         ` : `<p style="color:#166534;font-weight:bold;">No low-stock products found right now.</p>`}
 
-                        <p style="margin:22px 0 0;color:#64748b;font-size:13px;line-height:1.5;">
-                            This email was generated from InventoryRite based on your saved alert settings.
-                            You can turn reports on or off inside InventoryRite.
+                        <div style="margin-top:22px;border-top:1px solid #e5e7eb;padding-top:16px;color:#64748b;font-size:13px;line-height:1.55;">
+                            <strong style="color:#0f172a;">How to use this report:</strong>
+                            start with missing costs, then review below-cost products, then apply suggested price fixes inside InventoryRite.
+                            Estimates are directional until sales history is connected.
+                        </div>
+
+                        <p style="margin:18px 0 0;color:#64748b;font-size:12px;line-height:1.5;">
+                            This email was generated from InventoryRite based on saved alert settings.
+                            Reports can be turned on or off inside InventoryRite.
                         </p>
                     </div>
                 </div>
             </div>
-        `
+        `,
+        summary: report
     };
 }
-
 function getReportFromEmail() {
     const configuredFrom = process.env.REPORT_FROM_EMAIL?.trim() || "";
 
