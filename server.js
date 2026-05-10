@@ -7446,6 +7446,59 @@ function renderDashboard(options = {}) {
             return item.sku || item.code || item.productCode || "";
         }
 
+        function suggestSkuForItem(item) {
+            item = item || {};
+
+            var existingSku = getItemSku(item);
+            if (existingSku && String(existingSku).trim()) {
+                return String(existingSku).trim().toUpperCase();
+            }
+
+            var rawName = String(item.name || item.itemName || "ITEM").trim().toUpperCase();
+            var cleaned = rawName
+                .replace(/&/g, " AND ")
+                .replace(/[^A-Z0-9 ]/g, " ")
+                .replace(/\b(THE|A|AN|AND|OF|FOR|WITH)\b/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            var words = cleaned.split(" ").filter(Boolean);
+            var prefix = "ITEM";
+
+            if (words.length >= 2) {
+                prefix = (words[0].substring(0, 3) + words[1].substring(0, 3)).substring(0, 6);
+            } else if (words.length === 1) {
+                prefix = words[0].substring(0, 6);
+            }
+
+            prefix = (prefix || "ITEM").replace(/[^A-Z0-9]/g, "");
+            if (prefix.length < 3) prefix = (prefix + "ITEM").substring(0, 4);
+
+            var used = {};
+            (loadedItems || []).forEach(function (other) {
+                var code = getItemSku(other);
+                if (code) used[String(code).trim().toUpperCase()] = true;
+            });
+
+            var numericSeed = 1;
+            var idText = String(item.id || "");
+            if (idText) {
+                var total = 0;
+                for (var i = 0; i < idText.length; i++) total += idText.charCodeAt(i);
+                numericSeed = (total % 899) + 101;
+            } else {
+                numericSeed = ((loadedItems || []).length % 899) + 101;
+            }
+
+            for (var attempt = 0; attempt < 900; attempt++) {
+                var number = String(numericSeed + attempt).padStart(3, "0");
+                var candidate = prefix + "-" + number;
+                if (!used[candidate]) return candidate;
+            }
+
+            return prefix + "-" + Date.now().toString().slice(-4);
+        }
+
         function getItemQuantity(item) {
             var candidates = [item.stockCount, item.quantity, item.qty, item.inventoryCount, item.availableQuantity];
             for (var i = 0; i < candidates.length; i++) {
@@ -9389,7 +9442,7 @@ function renderDashboard(options = {}) {
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
                 var sku = getItemSku(item);
-            var suggestedSku = sku || suggestSkuForItem(item);
+                var suggestedSku = sku || suggestSkuForItem(item);
                 var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
