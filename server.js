@@ -2011,6 +2011,31 @@ function renderDashboard(options = {}) {
         }
         .detail-label { color: var(--muted); font-weight: 900; }
         .detail-value { color: var(--text); font-weight: 700; word-break: break-word; }
+        .detail-edit-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .detail-input {
+            width: 210px;
+            min-width: 160px;
+            flex: 1 1 210px;
+            border: 1px solid #d1d5db;
+            border-radius: 11px;
+            padding: 9px 10px;
+            font-size: 13px;
+            font-weight: 900;
+            background: #ffffff;
+        }
+        .detail-help {
+            grid-column: 2;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.4;
+            margin-top: -5px;
+        }
 
         tr.row-updated { animation: rowFlash 1.4s ease; }
 
@@ -8210,7 +8235,7 @@ function renderDashboard(options = {}) {
 
                 if (!sku) {
                     penalty += 3;
-                    issues.push(makeIssue("missing_sku", "suggestion", item, "Missing SKU", "No SKU or code was detected. Searching, auditing, and cleanup become harder over time.", "Use a consistent SKU format for this merchant, such as CAT-001 or ITEM-001.", 0, "review"));
+                    issues.push(makeIssue("missing_sku", "suggestion", item, "Missing SKU", "No SKU or code was detected. Searching, auditing, and cleanup become harder over time.", "Add a SKU/code now or use the generated suggestion so staff can search and audit products faster.", 0, "fix_sku"));
                 }
 
                 if (category === "Uncategorized") {
@@ -8429,6 +8454,16 @@ function renderDashboard(options = {}) {
                 "</div>";
             }
 
+            if (issue.action === "fix_sku" || issue.type === "missing_sku") {
+                var suggestedSku = suggestSkuForItem(item);
+                return "<div class='smart-review-actions'>" +
+                    "<span class='smart-review-note'>Suggested</span>" +
+                    "<input class='smart-review-input smart-review-name-input' data-modal-sku-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(suggestedSku) + "' />" +
+                    "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Save SKU</button>" +
+                    "<button type='button' class='insight-fix-btn light' data-fix-action='open_details' data-fix-id='" + escapeHtml(itemId) + "'>Details</button>" +
+                "</div>";
+            }
+
             return "<div class='smart-review-actions'>" +
                 "<button type='button' class='insight-fix-btn' data-fix-action='review_row' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "'>Review Row</button>" +
                 "<button type='button' class='insight-fix-btn light' data-fix-action='mark_reviewed' data-fix-id='" + escapeHtml(itemId) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Mark Reviewed</button>" +
@@ -8538,6 +8573,7 @@ function renderDashboard(options = {}) {
             var nextName = values.name !== undefined ? String(values.name || "").trim() : String(item.name || "").trim();
             var nextPrice = values.priceCents !== undefined ? Number(values.priceCents || 0) : Number(item.price || 0);
             var nextCost = values.costCents !== undefined ? Number(values.costCents || 0) : getCostCents(itemId);
+            var nextSku = values.sku !== undefined ? String(values.sku || "").trim() : getItemSkuCode(item);
             var oldPrice = Number(item.price || 0);
             var oldCost = getCostCents(itemId);
 
@@ -8553,19 +8589,23 @@ function renderDashboard(options = {}) {
                 showToast("Cost must be a valid dollar amount.", "error");
                 return;
             }
+            if (values.sku !== undefined && !nextSku) {
+                showToast("Enter a SKU/code first.", "error");
+                return;
+            }
 
             try {
                 var connection = requireConnection();
                 if (!connection) return;
                 startBusy();
 
-                if (values.name !== undefined || values.priceCents !== undefined) {
+                if (values.name !== undefined || values.priceCents !== undefined || values.sku !== undefined) {
                     await fetchJson(
                         "/clover-update-item/" + encodeURIComponent(itemId),
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ name: nextName, price: nextPrice })
+                            body: JSON.stringify({ name: nextName, price: nextPrice, sku: nextSku, code: nextSku })
                         }
                     );
                 }
@@ -8585,6 +8625,10 @@ function renderDashboard(options = {}) {
                 item.name = nextName;
                 item.price = nextPrice;
                 item.cost = nextCost;
+                if (values.sku !== undefined) {
+                    item.sku = nextSku;
+                    item.code = nextSku;
+                }
                 lastUpdatedItemId = itemId;
                 markSavedNow();
 
@@ -8613,6 +8657,7 @@ function renderDashboard(options = {}) {
             if (action === "focus_cost") { focusProductRowField(itemId, "cost"); return; }
             if (action === "focus_price") { focusProductRowField(itemId, "price"); return; }
             if (action === "focus_name") { focusProductRowField(itemId, "name"); return; }
+            if (action === "focus_sku" || action === "open_details") { openItemDetails(itemId); return; }
             if (action === "review_row") { focusProductRowField(itemId, "name"); return; }
 
             if (action === "mark_reviewed") {
@@ -8622,6 +8667,32 @@ function renderDashboard(options = {}) {
                 renderItems(loadedItems);
                 renderIntelligencePanel();
                 showToast("Marked reviewed for this session.", "success");
+                return;
+            }
+
+            if (action === "generate_sku") {
+                var skuFieldGenerate = getModalField("data-modal-sku-for", itemId) || getModalField("data-detail-sku-for", itemId);
+                if (skuFieldGenerate) {
+                    skuFieldGenerate.value = suggestSkuForItem(item);
+                    skuFieldGenerate.focus();
+                    if (skuFieldGenerate.select) skuFieldGenerate.select();
+                }
+                return;
+            }
+
+            if (action === "save_sku") {
+                var skuValue = getModalFieldValue("data-modal-sku-for", itemId) || getModalFieldValue("data-detail-sku-for", itemId);
+                if (!skuValue || !skuValue.trim()) {
+                    var skuField = getModalField("data-modal-sku-for", itemId) || getModalField("data-detail-sku-for", itemId);
+                    if (skuField) skuField.focus();
+                    showToast("Enter a SKU/code first.", "error");
+                    return;
+                }
+                openConfirm(
+                    "Save SKU / Code",
+                    "Save SKU/code for " + (item.name || "this product") + " as " + skuValue.trim() + "? This updates the live Clover item code and removes the missing SKU alert.",
+                    async function () { await saveSmartReviewProduct(itemId, { sku: skuValue.trim() }, "Smart Review SKU Fix"); }
+                );
                 return;
             }
 
@@ -9317,7 +9388,8 @@ function renderDashboard(options = {}) {
 
             filtered.forEach(function (item) {
                 var row = document.createElement("tr");
-                var sku = item.sku || item.code || item.productCode || "-";
+                var sku = getItemSkuCode(item);
+            var suggestedSku = sku || suggestSkuForItem(item);
                 var available = item.available === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
                 var hidden = item.hidden ? '<span class="pill warn">Hidden</span>' : '<span class="pill good">Visible</span>';
                 var revenue = item.isRevenue === false ? '<span class="pill warn">No</span>' : '<span class="pill good">Yes</span>';
@@ -9540,7 +9612,8 @@ function renderDashboard(options = {}) {
             var item = loadedItems.find(function (it) { return it.id === itemId; });
             if (!item) return;
 
-            var sku = item.sku || item.code || item.productCode || "-";
+            var sku = getItemSkuCode(item);
+            var suggestedSku = sku || suggestSkuForItem(item);
             var available = item.available === false ? "No" : "Yes";
             var hidden = item.hidden ? "Hidden" : "Visible";
             var revenue = item.isRevenue === false ? "No" : "Yes";
@@ -9556,7 +9629,12 @@ function renderDashboard(options = {}) {
             if (title) title.textContent = item.name || "Product Details";
             if (grid) {
                 grid.innerHTML =
-                    "<div class='detail-label'>SKU / Code</div><div class='detail-value'>" + escapeHtml(sku) + "</div>" +
+                    "<div class='detail-label'>SKU / Code</div><div class='detail-value detail-edit-box'>" +
+                        "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
+                        "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
+                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save SKU</button>" +
+                    "</div>" +
+                    "<div class='detail-help'>" + escapeHtml(sku ? "SKU/code is editable here. Change it only if the merchant wants a cleaner code." : "Missing SKU fixed here. Use the generated code or type the merchant's own SKU.") + "</div>" +
                     "<div class='detail-label'>Clover ID</div><div class='detail-value'>" + escapeHtml(item.id || "-") + "</div>" +
                     "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
                     "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
@@ -10270,7 +10348,11 @@ function renderDashboard(options = {}) {
         var detailsModal = byId("detailsModal");
         if (detailsModal) {
             detailsModal.addEventListener("click", function (event) {
-                if (event.target === detailsModal) closeItemDetails();
+                if (event.target === detailsModal) { closeItemDetails(); return; }
+                var target = event.target;
+                if (target && target.getAttribute && target.getAttribute("data-fix-action")) {
+                    handleInsightFixAction(target.getAttribute("data-fix-action"), target.getAttribute("data-fix-id"), target);
+                }
             });
         }
 
