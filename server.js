@@ -2623,6 +2623,79 @@ function renderDashboard(options = {}) {
         .insight-fix-btn { border: 0; border-radius: 999px; background: #111827; color: white; font-size: 11px; font-weight: 900; padding: 7px 10px; cursor: pointer; white-space: nowrap; }
         .insight-fix-btn:hover { filter: brightness(1.08); }
 
+        .smart-review-card {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .smart-review-main strong {
+            display: block;
+            color: #0f172a;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .smart-review-main span {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.45;
+            margin-top: 4px;
+        }
+
+        .smart-review-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 7px;
+            flex-wrap: wrap;
+            min-width: 250px;
+        }
+
+        .smart-review-input {
+            width: 105px;
+            min-width: 105px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 8px 9px;
+            font-size: 12px;
+            font-weight: 900;
+            background: #ffffff;
+        }
+
+        .smart-review-name-input {
+            width: 190px;
+            min-width: 160px;
+        }
+
+        .smart-review-note {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 10px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .insight-fix-btn.success { background: #15803d; }
+        .insight-fix-btn.warning { background: #b45309; }
+        .insight-fix-btn.light { background: #f8fafc; color: #111827; border: 1px solid #e5e7eb; }
+
+        @media (max-width: 760px) {
+            .smart-review-card { grid-template-columns: 1fr; }
+            .smart-review-actions { justify-content: flex-start; min-width: 0; }
+            .smart-review-input, .smart-review-name-input { width: 100%; min-width: 0; }
+        }
+
+
 
 
         /* ----------------------------------------------------------------
@@ -6682,6 +6755,7 @@ function renderDashboard(options = {}) {
         var isBusy = false;
         var pendingConfirmAction = null;
         var activeViewMode = "all";
+        var reviewedIssueKeys = new Set();
         var activityLog = [];
         var priceChangeHistory = [];
         var lastBulkUndoSnapshot = null;
@@ -8187,8 +8261,15 @@ function renderDashboard(options = {}) {
             if (opportunityHelp) opportunityHelp.textContent = "Estimate assumes about " + intelligence.assumedMonthlyUnits + " sales/month on affected products until sales history is connected.";
         }
 
+        function getIssueKey(issue) {
+            if (!issue) return "";
+            return String(issue.type || "issue") + ":" + String(issue.itemId || "");
+        }
+
         function getCleanupIssues() {
-            return getInventoryIntelligence().allIssues;
+            return getInventoryIntelligence().allIssues.filter(function (issue) {
+                return !reviewedIssueKeys.has(getIssueKey(issue));
+            });
         }
 
         function getProfitSummary() {
@@ -8238,17 +8319,78 @@ function renderDashboard(options = {}) {
             return "<span class='severity-pill severity-" + escapeHtml(severity || "suggestion") + "'>" + escapeHtml(severity || "suggestion") + "</span>";
         }
 
+        function findLoadedItem(itemId) {
+            return (loadedItems || []).find(function (x) { return (x.id || "") === itemId; }) || null;
+        }
+
+        function getModalFieldValue(attributeName, itemId) {
+            var fields = document.querySelectorAll("[" + attributeName + "]");
+            for (var i = 0; i < fields.length; i++) {
+                if (fields[i].getAttribute(attributeName) === itemId) {
+                    return fields[i].value;
+                }
+            }
+            return "";
+        }
+
+        function getModalField(attributeName, itemId) {
+            var fields = document.querySelectorAll("[" + attributeName + "]");
+            for (var i = 0; i < fields.length; i++) {
+                if (fields[i].getAttribute(attributeName) === itemId) {
+                    return fields[i];
+                }
+            }
+            return null;
+        }
+
         function getIssueActionButton(issue) {
-            var label = "Review";
-            if (issue.action === "fix_price") label = "Price";
-            if (issue.action === "fix_cost") label = "Cost";
-            if (issue.action === "fix_name") label = "Fix Name";
-            return "<button type='button' class='insight-fix-btn' data-fix-action='" + escapeHtml(issue.action || "review") + "' data-fix-id='" + escapeHtml(issue.itemId || "") + "'>" + escapeHtml(label) + "</button>";
+            var item = issue.item || findLoadedItem(issue.itemId || "") || {};
+            var itemId = issue.itemId || item.id || "";
+            var price = Number(item.price || 0);
+            var cost = getCostCents(itemId);
+            var suggestedPrice = cost > 0 ? getTargetPriceForMargin(cost, 35) : 0;
+            var cleanName = cleanProductName(item.name || "");
+            var issueType = issue.type || "issue";
+            var issueKey = getIssueKey(issue);
+
+            if (issue.action === "fix_cost" || issue.type === "missing_cost") {
+                return "<div class='smart-review-actions'>" +
+                    "<input class='smart-review-input' data-modal-cost-for='" + escapeHtml(itemId) + "' placeholder='Cost $' value='' />" +
+                    "<button type='button' class='insight-fix-btn success' data-fix-action='save_cost' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Save Cost</button>" +
+                    "<button type='button' class='insight-fix-btn light' data-fix-action='focus_cost' data-fix-id='" + escapeHtml(itemId) + "'>Open Row</button>" +
+                "</div>";
+            }
+
+            if (issue.action === "fix_price" || issue.type === "missing_price" || issue.type === "suspicious_price" || issue.type === "below_cost" || issue.type === "weak_margin" || issue.type === "margin_opportunity") {
+                var defaultPrice = suggestedPrice > 0 ? suggestedPrice : price;
+                return "<div class='smart-review-actions'>" +
+                    "<span class='smart-review-note'>Now " + escapeHtml(formatCurrencyFromCents(price)) + "</span>" +
+                    "<input class='smart-review-input' data-modal-price-for='" + escapeHtml(itemId) + "' value='" + escapeHtml((defaultPrice / 100).toFixed(2)) + "' />" +
+                    "<button type='button' class='insight-fix-btn success' data-fix-action='save_price' data-fix-id='" + escapeHtml(itemId) + "' data-suggested-price='" + escapeHtml(defaultPrice) + "' data-issue-type='" + escapeHtml(issueType) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Save Price</button>" +
+                    "<button type='button' class='insight-fix-btn light' data-fix-action='focus_price' data-fix-id='" + escapeHtml(itemId) + "'>Open Row</button>" +
+                "</div>";
+            }
+
+            if (issue.action === "fix_name" || issue.type === "bad_name") {
+                return "<div class='smart-review-actions'>" +
+                    "<input class='smart-review-input smart-review-name-input' data-modal-name-for='" + escapeHtml(itemId) + "' value='" + escapeHtml(cleanName) + "' />" +
+                    "<button type='button' class='insight-fix-btn success' data-fix-action='save_name' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Save Name</button>" +
+                    "<button type='button' class='insight-fix-btn light' data-fix-action='focus_name' data-fix-id='" + escapeHtml(itemId) + "'>Open Row</button>" +
+                "</div>";
+            }
+
+            return "<div class='smart-review-actions'>" +
+                "<button type='button' class='insight-fix-btn' data-fix-action='review_row' data-fix-id='" + escapeHtml(itemId) + "' data-issue-type='" + escapeHtml(issueType) + "'>Review Row</button>" +
+                "<button type='button' class='insight-fix-btn light' data-fix-action='mark_reviewed' data-fix-id='" + escapeHtml(itemId) + "' data-issue-key='" + escapeHtml(issueKey) + "'>Mark Reviewed</button>" +
+            "</div>";
         }
 
         function issueToRow(issue) {
             var impact = issue.estimatedImpactCents > 0 ? " Estimated impact: " + formatCurrencyFromCents(issue.estimatedImpactCents) + "/month." : "";
-            return "<div><strong>" + severityBadge(issue.severity) + escapeHtml(issue.itemName) + " <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong><span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span></div><div>" + getIssueActionButton(issue) + "</div>";
+            return "<div class='smart-review-card'>" +
+                "<div class='smart-review-main'><strong>" + severityBadge(issue.severity) + escapeHtml(issue.itemName) + " <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong><span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span></div>" +
+                getIssueActionButton(issue) +
+            "</div>";
         }
 
         function showProfitIntelligence() {
@@ -8318,44 +8460,175 @@ function renderDashboard(options = {}) {
             showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
-        function handleInsightFixAction(action, itemId) {
-            var item = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; });
-            if (!item) { showToast("Product not found. Refresh inventory and try again.", "error"); return; }
-            if (action === "fix_cost") {
-                closeFeatureModal();
-                setViewMode("all");
-                setTimeout(function () {
-                    var input = document.querySelector("[data-cost-for='" + itemId + "']");
-                    if (input) { input.focus(); input.select(); showToast("Enter the true cost, then press Enter.", "info"); }
-                    else showToast("Cost field is not visible. Search or show all products first.", "info");
-                }, 150);
-                return;
-            }
-            if (action === "fix_name") {
-                var cleanName = cleanProductName(item.name || "");
-                if (!cleanName || cleanName.toLowerCase() === "new clover item") { showToast("This name needs a real merchant decision. Rename it in the product row.", "info"); closeFeatureModal(); return; }
-                closeFeatureModal();
-                setViewMode("all");
-                setTimeout(function () {
-                    var nameInput = document.querySelector("[data-name-for='" + itemId + "']");
-                    if (nameInput) { nameInput.value = cleanName; showToast("Cleaned name staged. Click the checkmark to save it to Clover.", "info"); nameInput.focus(); }
-                }, 150);
-                return;
-            }
-            if (action === "fix_price") {
-                var suggestion = getSmartPriceSuggestion(item);
-                if (!suggestion.suggestedPrice || suggestion.suggestedPrice <= 0) { showToast("Add cost first before applying smart price suggestions.", "info"); return; }
-                closeFeatureModal();
-                setViewMode("all");
-                setTimeout(function () {
-                    var priceInput = document.querySelector("[data-price-for='" + itemId + "']");
-                    if (priceInput) { priceInput.value = (suggestion.suggestedPrice / 100).toFixed(2); showToast("Suggested price staged. Click the checkmark to save it to Clover.", "info"); priceInput.focus(); priceInput.select(); }
-                }, 150);
-                return;
-            }
-            showToast("Review this item in the table before making changes.", "info");
+        function focusProductRowField(itemId, fieldName) {
             closeFeatureModal();
             setViewMode("all");
+            setTimeout(function () {
+                var selector = fieldName === "cost" ? "[data-cost-for='" + itemId + "']" : (fieldName === "price" ? "[data-price-for='" + itemId + "']" : "[data-name-for='" + itemId + "']");
+                var input = document.querySelector(selector);
+                if (input) {
+                    input.focus();
+                    if (input.select) input.select();
+                    try { input.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { input.scrollIntoView(); }
+                    showToast("Edit the " + fieldName + ", then press Enter or click the checkmark.", "info");
+                } else {
+                    showToast("Product row is not visible. Clear search or refresh inventory.", "info");
+                }
+            }, 150);
+        }
+
+        async function saveSmartReviewProduct(itemId, values, reason) {
+            if (isBusy) return;
+            var item = findLoadedItem(itemId);
+            if (!item) {
+                showToast("Product not found. Refresh inventory and try again.", "error");
+                return;
+            }
+
+            var nextName = values.name !== undefined ? String(values.name || "").trim() : String(item.name || "").trim();
+            var nextPrice = values.priceCents !== undefined ? Number(values.priceCents || 0) : Number(item.price || 0);
+            var nextCost = values.costCents !== undefined ? Number(values.costCents || 0) : getCostCents(itemId);
+            var oldPrice = Number(item.price || 0);
+            var oldCost = getCostCents(itemId);
+
+            if (!nextName) {
+                showToast("Product name cannot be empty.", "error");
+                return;
+            }
+            if (Number.isNaN(nextPrice) || nextPrice < 0 || !Number.isFinite(nextPrice)) {
+                showToast("Price must be a valid dollar amount.", "error");
+                return;
+            }
+            if (Number.isNaN(nextCost) || nextCost < 0 || !Number.isFinite(nextCost)) {
+                showToast("Cost must be a valid dollar amount.", "error");
+                return;
+            }
+
+            try {
+                var connection = requireConnection();
+                if (!connection) return;
+                startBusy();
+
+                if (values.name !== undefined || values.priceCents !== undefined) {
+                    await fetchJson(
+                        "/clover-update-item/" + encodeURIComponent(itemId),
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: nextName, price: nextPrice })
+                        }
+                    );
+                }
+
+                if (values.costCents !== undefined) {
+                    await fetchJson(
+                        "/item-cost/" + encodeURIComponent(itemId),
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ costCents: nextCost })
+                        }
+                    );
+                    itemCosts[itemId] = nextCost;
+                }
+
+                item.name = nextName;
+                item.price = nextPrice;
+                item.cost = nextCost;
+                lastUpdatedItemId = itemId;
+                markSavedNow();
+
+                if (values.priceCents !== undefined && oldPrice !== nextPrice) {
+                    recordPriceChange(item, oldPrice, nextPrice, reason || "Smart Review Fix");
+                }
+
+                logActivity(reason || "Smart Review Fix", (item.name || "Product") + " updated from Smart Review.", "Success");
+                showToast("Smart Review fix saved. InventoryRite refreshed the alerts.", "success");
+                closeFeatureModal();
+                renderItems(loadedItems);
+                updatePremiumProfitDashboard();
+                renderIntelligencePanel();
+                stopBusy();
+                await loadItems();
+            } catch (error) {
+                stopBusy();
+                showToast(error && error.message ? error.message : "Unable to save Smart Review fix.", "error");
+            }
+        }
+
+        function handleInsightFixAction(action, itemId, sourceEl) {
+            var item = findLoadedItem(itemId);
+            if (!item) { showToast("Product not found. Refresh inventory and try again.", "error"); return; }
+
+            if (action === "focus_cost") { focusProductRowField(itemId, "cost"); return; }
+            if (action === "focus_price") { focusProductRowField(itemId, "price"); return; }
+            if (action === "focus_name") { focusProductRowField(itemId, "name"); return; }
+            if (action === "review_row") { focusProductRowField(itemId, "name"); return; }
+
+            if (action === "mark_reviewed") {
+                var issueKey = sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "";
+                if (issueKey) reviewedIssueKeys.add(issueKey);
+                closeFeatureModal();
+                renderItems(loadedItems);
+                renderIntelligencePanel();
+                showToast("Marked reviewed for this session.", "success");
+                return;
+            }
+
+            if (action === "save_cost") {
+                var costValue = getModalFieldValue("data-modal-cost-for", itemId);
+                var costCents = priceToCentsFromDollarsString(costValue);
+                if (costCents === null) {
+                    var costField = getModalField("data-modal-cost-for", itemId);
+                    if (costField) costField.focus();
+                    showToast("Enter the true product cost first.", "error");
+                    return;
+                }
+                openConfirm(
+                    "Save Cost",
+                    "Save cost for " + (item.name || "this product") + " as " + formatCurrencyFromCents(costCents) + "? This updates InventoryRite cost data and refreshes margin alerts.",
+                    async function () { await saveSmartReviewProduct(itemId, { costCents: costCents }, "Smart Review Cost Fix"); }
+                );
+                return;
+            }
+
+            if (action === "save_price" || action === "fix_price") {
+                var priceValue = getModalFieldValue("data-modal-price-for", itemId);
+                var fallbackSuggested = sourceEl && sourceEl.getAttribute ? Number(sourceEl.getAttribute("data-suggested-price") || 0) : 0;
+                var priceCents = priceValue ? priceToCentsFromDollarsString(priceValue) : fallbackSuggested;
+                if (priceCents === null || Number(priceCents) <= 0) {
+                    var priceField = getModalField("data-modal-price-for", itemId);
+                    if (priceField) priceField.focus();
+                    showToast("Enter a valid selling price first.", "error");
+                    return;
+                }
+                var currentPrice = Number(item.price || 0);
+                openConfirm(
+                    "Confirm Price Change",
+                    "Change " + (item.name || "this product") + " from " + formatCurrencyFromCents(currentPrice) + " to " + formatCurrencyFromCents(priceCents) + "? This updates the live Clover item price.",
+                    async function () { await saveSmartReviewProduct(itemId, { priceCents: priceCents }, "Smart Review Price Fix"); }
+                );
+                return;
+            }
+
+            if (action === "save_name" || action === "fix_name") {
+                var nextName = getModalFieldValue("data-modal-name-for", itemId);
+                if (!nextName || !nextName.trim()) {
+                    var nameField = getModalField("data-modal-name-for", itemId);
+                    if (nameField) nameField.focus();
+                    showToast("Enter a clean product name first.", "error");
+                    return;
+                }
+                openConfirm(
+                    "Confirm Name Cleanup",
+                    "Rename " + (item.name || "this product") + " to " + nextName.trim() + "? This updates the live Clover item name.",
+                    async function () { await saveSmartReviewProduct(itemId, { name: nextName.trim() }, "Smart Review Name Fix"); }
+                );
+                return;
+            }
+
+            showToast("Review this item in the table before making changes.", "info");
+            focusProductRowField(itemId, "name");
         }
 
         function showOperationalShortcuts() {
@@ -9961,7 +10234,7 @@ function renderDashboard(options = {}) {
                 }
                 var target = event.target;
                 if (target && target.getAttribute && target.getAttribute("data-fix-action")) {
-                    handleInsightFixAction(target.getAttribute("data-fix-action"), target.getAttribute("data-fix-id"));
+                    handleInsightFixAction(target.getAttribute("data-fix-action"), target.getAttribute("data-fix-id"), target);
                 }
             });
         }
