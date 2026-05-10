@@ -7564,7 +7564,7 @@ function renderDashboard(options = {}) {
 
             openConfirm(
                 "Undo Last Bulk Update?",
-                "This will restore "This will restore " + rows.length + " product price(s) back to their previous values from the last pricing action.",
+                "This will restore "This will restore " + rows.length + " product price(s) back to their previous values.",
                 async function () {
                     await executeDirectPriceUpdates(connection, rows, "Undo Bulk Update");
                     lastBulkUndoSnapshot = null;
