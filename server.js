@@ -8106,11 +8106,24 @@ function renderDashboard(options = {}) {
             var costInputs = body.querySelectorAll("input[data-cost-for]");
             costInputs.forEach(function (input) {
                 input.addEventListener("blur", function (e) {
+                    var itemId = e.target.getAttribute("data-cost-for");
                     var nextTarget = e.relatedTarget || null;
                     if (nextTarget && nextTarget.getAttribute && nextTarget.getAttribute("data-action") === "save") {
                         return;
                     }
-                    saveItemCost(e.target.getAttribute("data-cost-for"), e.target.value);
+
+                    var nextCost = priceToCentsFromDollarsString(e.target.value);
+                    if (nextCost === null) {
+                        showToast("Cost must be a valid dollar amount.", "error");
+                        renderItems(loadedItems);
+                        return;
+                    }
+
+                    if (nextCost === getCostCents(itemId)) {
+                        return;
+                    }
+
+                    saveItemCost(itemId, e.target.value);
                 });
                 input.addEventListener("keydown", function (e) {
                     commitRowInputOnEnter(e, e.target.getAttribute("data-cost-for"));
@@ -8252,6 +8265,10 @@ function renderDashboard(options = {}) {
                 if (costCents === null) {
                     showToast("Cost must be a valid dollar amount.", "error");
                     renderItems(loadedItems);
+                    return;
+                }
+
+                if (costCents === getCostCents(itemId)) {
                     return;
                 }
 
@@ -8422,6 +8439,13 @@ function renderDashboard(options = {}) {
                 if (costCents === null) {
                     showToast("Cost must be a valid dollar amount.", "error");
                     return;
+                }
+
+                if (existingItem) {
+                    var oldName = String(existingItem.name || "").trim();
+                    if (name === oldName && priceCents === oldPriceCents && costCents === oldCostCents) {
+                        return;
+                    }
                 }
 
                 startBusy();
