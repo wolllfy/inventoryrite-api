@@ -754,11 +754,36 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
         html: `
             <div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:24px;color:#111827;">
                 <div style="max-width:820px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
-                    <div style="background:linear-gradient(135deg,#15803d,#0f172a);color:white;padding:24px;">
-                        <div style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#bbf7d0;">InventoryRite</div>
-                        <h1 style="margin:7px 0 0;font-size:25px;line-height:1.2;">Weekly Profit & Inventory Intelligence Report</h1>
-                        <p style="margin:8px 0 0;color:#d1fae5;line-height:1.5;">Actionable Clover inventory, margin, reorder, and cleanup insights.</p>
-                    </div>
+                    <div style="background:linear-gradient(135deg,#14532d 0%,#166534 35%,#0f172a 100%);color:white;padding:28px 24px;border-bottom:1px solid rgba(255,255,255,0.08);box-shadow:inset 0 -1px 0 rgba(255,255,255,0.05);">
+    
+    <div style="font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#dcfce7;opacity:.95;">
+        InventoryRite
+    </div>
+
+    <h1 style="
+        margin:10px 0 0;
+        font-size:28px;
+        line-height:1.15;
+        font-weight:900;
+        letter-spacing:-0.03em;
+        color:#ffffff;
+        text-shadow:0 1px 2px rgba(0,0,0,0.18);
+    ">
+        Weekly Profit & Inventory Intelligence Report
+    </h1>
+
+    <p style="
+        margin:12px 0 0;
+        color:#f0fdf4;
+        line-height:1.65;
+        font-size:15px;
+        max-width:720px;
+        opacity:.96;
+    ">
+        Actionable Clover inventory, margin, reorder, pricing, and cleanup insights designed to help merchants increase profitability and reduce inventory mistakes.
+    </p>
+
+</div>
 
                     <div style="padding:22px;background:#ffffff;">
                         <div style="border:1px solid #bbf7d0;background:#f0fdf4;border-radius:15px;padding:14px;margin-bottom:16px;">
