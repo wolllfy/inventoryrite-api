@@ -2747,6 +2747,43 @@ function renderDashboard(options = {}) {
             white-space: nowrap;
         }
 
+
+
+        .inline-fix-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 6px 9px;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1;
+            border: 1px solid #bbf7d0;
+            background: #ecfdf5;
+            color: #166534;
+        }
+
+        .inline-fix-status.error {
+            border-color: #fecaca;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .insight-fix-btn.is-saving,
+        .insight-fix-btn.is-saved {
+            pointer-events: none;
+            opacity: .82;
+        }
+
+        .insight-fix-btn.is-saved {
+            background: #166534;
+        }
+
+        .smart-review-actions.resolved {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+        }
+
         .insight-fix-btn.success { background: #15803d; }
         .insight-fix-btn.warning { background: #b45309; }
         .insight-fix-btn.light { background: #f8fafc; color: #111827; border: 1px solid #e5e7eb; }
@@ -2763,143 +2800,11 @@ function renderDashboard(options = {}) {
             white-space: normal;
         }
 
-        #featureModal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 18px;
-        }
-
-        #featureModal .modal-wide {
-            width: min(960px, calc(100vw - 36px));
-            max-height: min(82vh, 820px);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding: 0;
-            border-radius: 22px;
-            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.35);
-        }
-
-        #featureModal .modal-wide h3 {
-            margin: 0;
-            padding: 24px 28px 6px;
-            font-size: 23px;
-            letter-spacing: -0.03em;
-        }
-
-        #featureModal .modal-wide > p {
-            margin: 0;
-            padding: 0 28px 16px;
-            color: #64748b;
-            font-size: 14px;
-            line-height: 1.45;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        #featureModal .insight-list {
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 16px 18px;
-            background: #f8fafc;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        #featureModal .insight-row {
-            display: block;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 0;
-            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
-            overflow: hidden;
-        }
-
-        #featureModal .insight-row:has(.smart-review-summary-row),
-        #featureModal .insight-row:has(.smart-review-empty) {
-            padding: 14px;
-        }
-
-        #featureModal .smart-review-card {
-            padding: 14px;
-            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-        }
-
-        .smart-review-product-name {
-            font-size: 14px;
-            font-weight: 900;
-        }
-
-        .smart-review-main span:not(.cleanup-tag):not(.severity-pill):not(.smart-review-product-name) {
-            background: #eef4ff;
-            border-radius: 14px;
-            padding: 9px 11px;
-            color: #1e3a8a;
-        }
-
-        .smart-review-actions {
-            display: grid;
-            grid-template-columns: auto minmax(180px, 1fr) auto auto;
-            align-items: center;
-            gap: 9px;
-            padding: 10px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-        }
-
-        .smart-review-actions .smart-review-note {
-            justify-self: start;
-        }
-
-        .smart-review-actions .smart-review-input {
-            width: 100%;
-            min-width: 0;
-            flex: none;
-            height: 38px;
-            border-radius: 12px;
-            font-size: 13px;
-        }
-
-        .smart-review-actions .insight-fix-btn {
-            height: 36px;
-            padding: 0 14px;
-        }
-
-        .smart-review-inline-status {
-            display: none;
-            margin-top: -2px;
-            border-radius: 12px;
-            padding: 9px 11px;
-            font-size: 12px;
-            font-weight: 900;
-        }
-
-        .smart-review-inline-status.show { display: block; }
-        .smart-review-inline-status.success { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
-        .smart-review-inline-status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-        #featureModal .modal-actions {
-            margin-top: 0;
-            padding: 14px 22px;
-            border-top: 1px solid #e5e7eb;
-            background: #ffffff;
-            position: sticky;
-            bottom: 0;
-            justify-content: flex-end;
-        }
-
 
         @media (max-width: 760px) {
             .smart-review-card { grid-template-columns: 1fr; }
-            .smart-review-actions { grid-template-columns: 1fr; justify-content: flex-start; min-width: 0; }
+            .smart-review-actions { justify-content: flex-start; min-width: 0; }
             .smart-review-input, .smart-review-name-input { width: 100%; min-width: 0; }
-            #featureModal .modal-wide { width: calc(100vw - 20px); max-height: 88vh; }
-            #featureModal .modal-wide h3 { padding: 18px 18px 5px; }
-            #featureModal .modal-wide > p { padding: 0 18px 13px; }
-            #featureModal .insight-list { padding: 12px; }
         }
 
 
@@ -7873,6 +7778,7 @@ function renderDashboard(options = {}) {
 
         async function loadAlertSettings() {
             try {
+                setFixButtonState(sourceEl, "saving", "Saving...");
                 var connection = requireConnection();
                 if (!connection) return;
 
@@ -8657,14 +8563,9 @@ function renderDashboard(options = {}) {
 
         function issueToRow(issue) {
             var impact = issue.estimatedImpactCents > 0 ? " Estimated impact: " + formatCurrencyFromCents(issue.estimatedImpactCents) + "/month." : "";
-            var issueKey = getIssueKey(issue);
-            return "<div class='smart-review-card' data-smart-issue-key='" + escapeHtml(issueKey) + "'>" +
-                "<div class='smart-review-main'>" +
-                    "<strong>" + severityBadge(issue.severity) + "<span class='smart-review-product-name'>" + escapeHtml(issue.itemName) + "</span> <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong>" +
-                    "<span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span>" +
-                "</div>" +
+            return "<div class='smart-review-card'>" +
+                "<div class='smart-review-main'><strong>" + severityBadge(issue.severity) + escapeHtml(issue.itemName) + " <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong><span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span></div>" +
                 getIssueActionButton(issue) +
-                "<div class='smart-review-inline-status' aria-live='polite'></div>" +
             "</div>";
         }
 
@@ -8722,20 +8623,17 @@ function renderDashboard(options = {}) {
             showToast("Pricing Tools opened.", "info");
         }
 
-        function showCleanupTools(options) {
-            options = options || {};
+        function showCleanupTools() {
             var intelligence = getInventoryIntelligence();
-            var issues = getCleanupIssues();
+            var issues = intelligence.allIssues;
             var rows = [];
-            rows.push("<div class='smart-review-summary-row'><div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div></div>");
-            issues.slice(0, 50).forEach(function (issue) { rows.push(issueToRow(issue)); });
-            if (!issues.length) rows = ["<div class='smart-review-empty'><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
-            openFeatureModal("Cleanup Check", issues.length ? (issues.length + " open issue(s). Fix items inline here — no second confirmation popup and no background screen interruption.") : "No cleanup issues were found in the loaded product list.", rows);
+            rows.push("<div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
+            issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
+            if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
+            openFeatureModal("Cleanup Check", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
             setViewMode("cleanup");
-            if (!options.silent) {
-                logActivity("Cleanup Check", issues.length + " cleanup issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
-                showToast("Cleanup scan complete.", issues.length ? "info" : "success");
-            }
+            logActivity("Cleanup Check", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
+            showToast("Cleanup scan complete.", issues.length ? "info" : "success");
         }
 
         function focusProductRowField(itemId, fieldName) {
@@ -8755,33 +8653,83 @@ function renderDashboard(options = {}) {
             }, 150);
         }
 
-        function setSmartReviewButtonState(sourceEl, text, disabled) {
+
+        function getFixActionContainer(sourceEl) {
+            if (!sourceEl || !sourceEl.closest) return null;
+            return sourceEl.closest(".smart-review-actions") || sourceEl.closest(".detail-edit-box") || sourceEl.parentElement;
+        }
+
+        function setFixButtonState(sourceEl, state, label) {
             if (!sourceEl) return;
-            if (!sourceEl.getAttribute("data-original-text")) {
-                sourceEl.setAttribute("data-original-text", sourceEl.textContent || "Save");
+            if (!sourceEl.getAttribute("data-original-label")) {
+                sourceEl.setAttribute("data-original-label", sourceEl.textContent || "Save");
             }
-            sourceEl.textContent = text || sourceEl.getAttribute("data-original-text") || "Save";
-            sourceEl.disabled = !!disabled;
+            sourceEl.classList.remove("is-saving", "is-saved");
+            sourceEl.disabled = false;
+
+            if (state === "saving") {
+                sourceEl.classList.add("is-saving");
+                sourceEl.disabled = true;
+                sourceEl.textContent = label || "Saving...";
+                return;
+            }
+            if (state === "saved") {
+                sourceEl.classList.add("is-saved");
+                sourceEl.disabled = true;
+                sourceEl.textContent = label || "Saved";
+                return;
+            }
+            sourceEl.textContent = label || sourceEl.getAttribute("data-original-label") || "Save";
         }
 
-        function showSmartReviewInlineStatus(sourceEl, message, type) {
-            var card = sourceEl && sourceEl.closest ? sourceEl.closest(".smart-review-card") : null;
-            if (!card) return;
-            var status = card.querySelector(".smart-review-inline-status");
-            if (!status) return;
-            status.className = "smart-review-inline-status show " + (type || "success");
-            status.textContent = message || "Saved.";
+        function showInlineFixStatus(sourceEl, message, type) {
+            var container = getFixActionContainer(sourceEl);
+            if (!container) return;
+            var existing = container.querySelector(".inline-fix-status");
+            if (existing) existing.remove();
+            var status = document.createElement("span");
+            status.className = "inline-fix-status" + (type === "error" ? " error" : "");
+            status.textContent = message || (type === "error" ? "Needs review" : "Saved");
+            container.appendChild(status);
+            if (type !== "error") container.classList.add("resolved");
         }
 
-        function refreshSmartReviewModalAfterFix(issueKey) {
-            if (issueKey) reviewedIssueKeys.add(issueKey);
-            renderItems(loadedItems);
-            updatePremiumProfitDashboard();
-            renderIntelligencePanel();
-            setTimeout(function () { showCleanupTools({ silent: true }); }, 450);
+        function refreshOpenCleanupModal() {
+            var modal = byId("featureModal");
+            var titleEl = byId("featureTitle");
+            var messageEl = byId("featureMessage");
+            var listEl = byId("featureList");
+            if (!modal || !modal.classList.contains("show") || !titleEl || titleEl.textContent !== "Cleanup Check") return;
+
+            var intelligence = getInventoryIntelligence();
+            var issues = intelligence.allIssues;
+            var rows = [];
+            rows.push("<div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
+            issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
+            if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
+
+            if (messageEl) messageEl.textContent = issues.length ? (issues.length + " issue(s) remaining. Fixed items disappear from this list automatically.") : "No cleanup issues were found in the loaded product list.";
+            if (listEl) {
+                listEl.innerHTML = "";
+                rows.forEach(function (row) {
+                    var div = document.createElement("div");
+                    div.className = "insight-row";
+                    div.innerHTML = row;
+                    listEl.appendChild(div);
+                });
+            }
         }
 
-        async function saveSmartReviewProduct(itemId, values, reason, sourceEl, issueKey) {
+        function refreshOpenDetailsModal(itemId) {
+            var modal = byId("detailsModal");
+            if (!modal || !modal.classList.contains("show")) return;
+            openItemDetails(itemId);
+        }
+
+        async function saveSmartReviewProduct(itemId, values, reason, options) {
+            options = options || {};
+            var sourceEl = options.sourceEl || null;
+            var keepModals = options.keepModals !== false;
             if (isBusy) return;
             var item = findLoadedItem(itemId);
             if (!item) {
@@ -8856,19 +8804,29 @@ function renderDashboard(options = {}) {
                 }
 
                 logActivity(reason || "Smart Review Fix", (item.name || "Product") + " updated from Smart Review.", "Success");
-                setSmartReviewButtonState(sourceEl, "Saved", true);
-                showSmartReviewInlineStatus(sourceEl, "Saved. This issue was resolved and the review list is refreshing.", "success");
-                refreshSmartReviewModalAfterFix(issueKey || (sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : ""));
+                setFixButtonState(sourceEl, "saved", "Saved");
+                showInlineFixStatus(sourceEl, "Saved inside this review", "success");
+                if (!keepModals) closeFeatureModal();
+                renderItems(loadedItems);
+                updatePremiumProfitDashboard();
+                renderIntelligencePanel();
+                refreshOpenCleanupModal();
+                refreshOpenDetailsModal(itemId);
                 stopBusy();
+                await loadItems();
+                renderItems(loadedItems);
+                updatePremiumProfitDashboard();
+                renderIntelligencePanel();
+                refreshOpenCleanupModal();
+                refreshOpenDetailsModal(itemId);
             } catch (error) {
                 stopBusy();
-                setSmartReviewButtonState(sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-original-text") : "Save", false);
-                showSmartReviewInlineStatus(sourceEl, error && error.message ? error.message : "Unable to save this fix.", "error");
-                showToast(error && error.message ? error.message : "Unable to save Smart Review fix.", "error");
+                setFixButtonState(sourceEl, "normal");
+                showInlineFixStatus(sourceEl, error && error.message ? error.message : "Unable to save fix.", "error");
             }
         }
 
-        function handleInsightFixAction(action, itemId, sourceEl) {
+        async function handleInsightFixAction(action, itemId, sourceEl) {
             var item = findLoadedItem(itemId);
             if (!item) { showToast("Product not found. Refresh inventory and try again.", "error"); return; }
 
@@ -8881,8 +8839,10 @@ function renderDashboard(options = {}) {
             if (action === "mark_reviewed") {
                 var issueKey = sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "";
                 if (issueKey) reviewedIssueKeys.add(issueKey);
-                showSmartReviewInlineStatus(sourceEl, "Marked reviewed for this session.", "success");
-                refreshSmartReviewModalAfterFix(issueKey);
+                closeFeatureModal();
+                renderItems(loadedItems);
+                renderIntelligencePanel();
+                showToast("Marked reviewed for this session.", "success");
                 return;
             }
 
@@ -8904,8 +8864,7 @@ function renderDashboard(options = {}) {
                     showToast("Enter a SKU/code first.", "error");
                     return;
                 }
-                setSmartReviewButtonState(sourceEl, "Saving...", true);
-                saveSmartReviewProduct(itemId, { sku: skuValue.trim() }, "Smart Review SKU Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
+                await saveSmartReviewProduct(itemId, { sku: skuValue.trim() }, "Smart Review SKU Fix", { sourceEl: sourceEl, keepModals: true });
                 return;
             }
 
@@ -8918,8 +8877,7 @@ function renderDashboard(options = {}) {
                     showToast("Enter the true product cost first.", "error");
                     return;
                 }
-                setSmartReviewButtonState(sourceEl, "Saving...", true);
-                saveSmartReviewProduct(itemId, { costCents: costCents }, "Smart Review Cost Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
+                await saveSmartReviewProduct(itemId, { costCents: costCents }, "Smart Review Cost Fix", { sourceEl: sourceEl, keepModals: true });
                 return;
             }
 
@@ -8933,8 +8891,7 @@ function renderDashboard(options = {}) {
                     showToast("Enter a valid selling price first.", "error");
                     return;
                 }
-                setSmartReviewButtonState(sourceEl, "Saving...", true);
-                saveSmartReviewProduct(itemId, { priceCents: priceCents }, "Smart Review Price Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
+                await saveSmartReviewProduct(itemId, { priceCents: priceCents }, "Smart Review Price Fix", { sourceEl: sourceEl, keepModals: true });
                 return;
             }
 
@@ -8946,8 +8903,7 @@ function renderDashboard(options = {}) {
                     showToast("Enter a clean product name first.", "error");
                     return;
                 }
-                setSmartReviewButtonState(sourceEl, "Saving...", true);
-                saveSmartReviewProduct(itemId, { name: nextName.trim() }, "Smart Review Name Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
+                await saveSmartReviewProduct(itemId, { name: nextName.trim() }, "Smart Review Name Fix", { sourceEl: sourceEl, keepModals: true });
                 return;
             }
 
@@ -8961,7 +8917,7 @@ function renderDashboard(options = {}) {
                 "<div><strong>Profit Alert Filter</strong><span>Click Profit Alerts to focus only on products that may need a price fix.</span></div><div><span>Active</span></div>",
                 "<div><strong>Cleanup Check</strong><span>Find duplicate names, missing prices, missing costs, bad names, and below-cost items.</span></div><div><span>Active</span></div>",
                 "<div><strong>Export for Backup</strong><span>Use Export CSV before major edits so the merchant has a safe product snapshot.</span></div><div><span>Active</span></div>",
-                "<div><strong>Safe Launch Rule</strong><span>No smart tool automatically changes Clover pricing without merchant confirmation.</span></div><div><span>Safe</span></div>"
+                "<div><strong>Safe Launch Rule</strong><span>Smart Review changes save inline, keep the modal focused, and never show a second popup behind the workflow.</span></div><div><span>Safe</span></div>"
             ];
             openFeatureModal("Quick Actions", "These are the daily shortcuts that make the app feel faster than Clover's normal product screen.", rows);
             logActivity("Quick Actions", "Shortcut guide opened.", "Viewed");
