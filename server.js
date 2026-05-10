@@ -5387,6 +5387,291 @@ function renderDashboard(options = {}) {
             .premium-profit-actions .btn { width: 100%; }
         }
 
+
+        /* ----------------------------------------------------------------
+        | PREMIUM UI POLISH PASS - CLEANER PAID SAAS FEEL
+        | Safe CSS-only update. No button/sync logic changed.
+        ---------------------------------------------------------------- */
+
+        .wrap {
+            max-width: 1380px;
+        }
+
+        .inventory-card {
+            padding: 18px;
+        }
+
+        .hero {
+            min-height: 88px;
+            padding: 14px 20px;
+            margin-bottom: 14px;
+        }
+
+        .hero h2 {
+            font-size: 23px;
+            letter-spacing: -0.04em;
+        }
+
+        .hero p {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .inventory-command-center,
+        .merchant-control-bar,
+        .bulk-panel,
+        .premium-profit-dashboard,
+        .operations-panel,
+        .productivity-hub,
+        .operations-summary-strip,
+        .last-action-strip {
+            margin-bottom: 12px;
+        }
+
+        .inventory-command-center {
+            padding: 13px;
+            border-radius: 16px;
+        }
+
+        .command-title,
+        .merchant-control-title,
+        .bulk-panel-title {
+            font-size: 13px;
+        }
+
+        .command-subtitle,
+        .merchant-control-subtitle {
+            font-size: 11px;
+        }
+
+        .btn,
+        .control-btn {
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            box-shadow: 0 8px 18px rgba(21, 128, 61, 0.18);
+        }
+
+        .btn-dark {
+            background: #0f172a;
+        }
+
+        .btn-light,
+        .control-neutral,
+        .control-all,
+        .control-low,
+        .control-reorder,
+        .control-export,
+        .control-rules,
+        .control-log {
+            background: #ffffff;
+        }
+
+        .btn:hover,
+        .control-btn:hover,
+        .profit-card:hover,
+        .productivity-card:hover,
+        .intelligence-box:hover,
+        .stat-box:hover {
+            transform: translateY(-1px);
+        }
+
+        .productivity-hub {
+            grid-template-columns: repeat(4, minmax(160px, 1fr));
+            gap: 9px;
+        }
+
+        .productivity-card {
+            min-height: 84px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            border-color: #dbe4ee;
+        }
+
+        .productivity-title {
+            font-size: 12px;
+        }
+
+        .productivity-copy {
+            font-size: 10.5px;
+        }
+
+        .merchant-control-bar,
+        .operations-tools,
+        .operations-panel {
+            padding: 12px 14px;
+            border-radius: 16px;
+        }
+
+        .merchant-control-actions {
+            gap: 7px;
+        }
+
+        .control-btn {
+            min-height: 32px;
+            padding: 7px 10px;
+            font-size: 11.5px;
+        }
+
+        .operations-summary-strip {
+            padding: 8px 11px;
+            border-radius: 13px;
+            font-size: 12px;
+        }
+
+        .premium-profit-dashboard {
+            border-radius: 18px !important;
+            background:
+                linear-gradient(135deg, rgba(240, 253, 244, 0.96) 0%, rgba(255,255,255,0.98) 55%, rgba(239, 246, 255, 0.55) 100%) !important;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+        }
+
+        .premium-profit-dashboard h3,
+        .premium-profit-dashboard .dashboard-title,
+        .premium-profit-dashboard .profit-dashboard-title {
+            letter-spacing: -0.03em;
+        }
+
+        .profit-card,
+        .premium-profit-dashboard .stat-box,
+        .premium-profit-dashboard [data-profit-filter],
+        .premium-profit-dashboard button[data-profit-filter] {
+            background: rgba(255,255,255,0.94) !important;
+            border-color: #dbe4ee !important;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.035);
+            transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+        }
+
+        .profit-card:hover,
+        .premium-profit-dashboard .stat-box:hover,
+        .premium-profit-dashboard [data-profit-filter]:hover,
+        .premium-profit-dashboard button[data-profit-filter]:hover {
+            border-color: #86efac !important;
+            box-shadow: 0 14px 28px rgba(21, 128, 61, 0.09);
+            background: #ffffff !important;
+        }
+
+        .stat-label,
+        .intelligence-label,
+        .risk-score-label {
+            color: #475569;
+            letter-spacing: .045em;
+        }
+
+        .stat-value,
+        .intelligence-value,
+        .risk-score-value {
+            letter-spacing: -0.035em;
+        }
+
+        .snapshot-pill,
+        .operations-summary-strip span,
+        .last-saved-status,
+        .badge {
+            font-size: 11.5px;
+        }
+
+        .last-action-strip {
+            padding: 8px 11px;
+            border-radius: 13px;
+            font-size: 12px;
+        }
+
+        .recent-changes-card,
+        .activity-panel,
+        .table-wrap {
+            border-radius: 15px;
+        }
+
+        th {
+            height: 42px;
+            font-size: 11px;
+        }
+
+        tbody td {
+            height: 58px;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .name-input,
+        .small-input {
+            min-height: 37px;
+            font-size: 13px;
+        }
+
+        .row-actions .btn-small {
+            min-height: 32px;
+        }
+
+        .view-filter-note {
+            padding: 8px 11px;
+            font-size: 12px;
+            border-radius: 12px;
+        }
+
+        .toast {
+            border-radius: 13px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 900px) {
+            .wrap {
+                padding-left: 10px;
+                padding-right: 10px;
+                margin-top: 10px;
+            }
+
+            .inventory-card {
+                padding: 12px;
+            }
+
+            .hero {
+                padding: 12px 14px;
+            }
+
+            .hero h2 {
+                font-size: 20px;
+            }
+
+            .productivity-hub,
+            .stats-row,
+            .intelligence-strip,
+            .risk-score-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .merchant-control-actions {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .command-search-actions {
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .productivity-hub,
+            .stats-row,
+            .intelligence-strip,
+            .risk-score-row,
+            .merchant-control-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .btn,
+            .control-btn,
+            .command-search-actions .btn {
+                width: 100%;
+            }
+
+            .topbar {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+        }
+
 </style>
 </head>
 <body>
