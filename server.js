@@ -2763,11 +2763,143 @@ function renderDashboard(options = {}) {
             white-space: normal;
         }
 
+        #featureModal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        #featureModal .modal-wide {
+            width: min(960px, calc(100vw - 36px));
+            max-height: min(82vh, 820px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
+            border-radius: 22px;
+            box-shadow: 0 30px 90px rgba(15, 23, 42, 0.35);
+        }
+
+        #featureModal .modal-wide h3 {
+            margin: 0;
+            padding: 24px 28px 6px;
+            font-size: 23px;
+            letter-spacing: -0.03em;
+        }
+
+        #featureModal .modal-wide > p {
+            margin: 0;
+            padding: 0 28px 16px;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.45;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        #featureModal .insight-list {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 18px;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #featureModal .insight-row {
+            display: block;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 0;
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+            overflow: hidden;
+        }
+
+        #featureModal .insight-row:has(.smart-review-summary-row),
+        #featureModal .insight-row:has(.smart-review-empty) {
+            padding: 14px;
+        }
+
+        #featureModal .smart-review-card {
+            padding: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+
+        .smart-review-product-name {
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .smart-review-main span:not(.cleanup-tag):not(.severity-pill):not(.smart-review-product-name) {
+            background: #eef4ff;
+            border-radius: 14px;
+            padding: 9px 11px;
+            color: #1e3a8a;
+        }
+
+        .smart-review-actions {
+            display: grid;
+            grid-template-columns: auto minmax(180px, 1fr) auto auto;
+            align-items: center;
+            gap: 9px;
+            padding: 10px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+        }
+
+        .smart-review-actions .smart-review-note {
+            justify-self: start;
+        }
+
+        .smart-review-actions .smart-review-input {
+            width: 100%;
+            min-width: 0;
+            flex: none;
+            height: 38px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .smart-review-actions .insight-fix-btn {
+            height: 36px;
+            padding: 0 14px;
+        }
+
+        .smart-review-inline-status {
+            display: none;
+            margin-top: -2px;
+            border-radius: 12px;
+            padding: 9px 11px;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .smart-review-inline-status.show { display: block; }
+        .smart-review-inline-status.success { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; }
+        .smart-review-inline-status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+        #featureModal .modal-actions {
+            margin-top: 0;
+            padding: 14px 22px;
+            border-top: 1px solid #e5e7eb;
+            background: #ffffff;
+            position: sticky;
+            bottom: 0;
+            justify-content: flex-end;
+        }
+
 
         @media (max-width: 760px) {
             .smart-review-card { grid-template-columns: 1fr; }
-            .smart-review-actions { justify-content: flex-start; min-width: 0; }
+            .smart-review-actions { grid-template-columns: 1fr; justify-content: flex-start; min-width: 0; }
             .smart-review-input, .smart-review-name-input { width: 100%; min-width: 0; }
+            #featureModal .modal-wide { width: calc(100vw - 20px); max-height: 88vh; }
+            #featureModal .modal-wide h3 { padding: 18px 18px 5px; }
+            #featureModal .modal-wide > p { padding: 0 18px 13px; }
+            #featureModal .insight-list { padding: 12px; }
         }
 
 
@@ -8525,9 +8657,14 @@ function renderDashboard(options = {}) {
 
         function issueToRow(issue) {
             var impact = issue.estimatedImpactCents > 0 ? " Estimated impact: " + formatCurrencyFromCents(issue.estimatedImpactCents) + "/month." : "";
-            return "<div class='smart-review-card'>" +
-                "<div class='smart-review-main'><strong>" + severityBadge(issue.severity) + escapeHtml(issue.itemName) + " <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong><span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span></div>" +
+            var issueKey = getIssueKey(issue);
+            return "<div class='smart-review-card' data-smart-issue-key='" + escapeHtml(issueKey) + "'>" +
+                "<div class='smart-review-main'>" +
+                    "<strong>" + severityBadge(issue.severity) + "<span class='smart-review-product-name'>" + escapeHtml(issue.itemName) + "</span> <span class='cleanup-tag'>" + escapeHtml(issue.title) + "</span></strong>" +
+                    "<span>" + escapeHtml(issue.explanation + " " + issue.recommendation + impact) + "</span>" +
+                "</div>" +
                 getIssueActionButton(issue) +
+                "<div class='smart-review-inline-status' aria-live='polite'></div>" +
             "</div>";
         }
 
@@ -8585,17 +8722,20 @@ function renderDashboard(options = {}) {
             showToast("Pricing Tools opened.", "info");
         }
 
-        function showCleanupTools() {
+        function showCleanupTools(options) {
+            options = options || {};
             var intelligence = getInventoryIntelligence();
-            var issues = intelligence.allIssues;
+            var issues = getCleanupIssues();
             var rows = [];
-            rows.push("<div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div>");
-            issues.slice(0, 35).forEach(function (issue) { rows.push(issueToRow(issue)); });
-            if (!issues.length) rows = ["<div><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
-            openFeatureModal("Cleanup Check", issues.length ? (issues.length + " issue(s) found. Each issue explains the risk, recommendation, and where possible, a quick action.") : "No cleanup issues were found in the loaded product list.", rows);
+            rows.push("<div class='smart-review-summary-row'><div><strong>Product Review Score</strong><span>" + escapeHtml(intelligence.healthScore + "/100 with " + intelligence.criticalIssues.length + " critical issue(s), " + intelligence.warnings.length + " warning(s), and " + intelligence.opportunities.length + " opportunity/suggestion(s).") + "</span></div><div><span>Score</span></div></div>");
+            issues.slice(0, 50).forEach(function (issue) { rows.push(issueToRow(issue)); });
+            if (!issues.length) rows = ["<div class='smart-review-empty'><strong>No cleanup issues found</strong><span>Your loaded products look clean based on name, price, cost, SKU, duplicate, margin, category, stale, and suspicious-price checks.</span></div><div><span>Clean</span></div>"];
+            openFeatureModal("Cleanup Check", issues.length ? (issues.length + " open issue(s). Fix items inline here — no second confirmation popup and no background screen interruption.") : "No cleanup issues were found in the loaded product list.", rows);
             setViewMode("cleanup");
-            logActivity("Cleanup Check", issues.length + " issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
-            showToast("Cleanup scan complete.", issues.length ? "info" : "success");
+            if (!options.silent) {
+                logActivity("Cleanup Check", issues.length + " cleanup issue(s) reviewed. Health score " + intelligence.healthScore + "/100.", "Viewed");
+                showToast("Cleanup scan complete.", issues.length ? "info" : "success");
+            }
         }
 
         function focusProductRowField(itemId, fieldName) {
@@ -8615,7 +8755,33 @@ function renderDashboard(options = {}) {
             }, 150);
         }
 
-        async function saveSmartReviewProduct(itemId, values, reason) {
+        function setSmartReviewButtonState(sourceEl, text, disabled) {
+            if (!sourceEl) return;
+            if (!sourceEl.getAttribute("data-original-text")) {
+                sourceEl.setAttribute("data-original-text", sourceEl.textContent || "Save");
+            }
+            sourceEl.textContent = text || sourceEl.getAttribute("data-original-text") || "Save";
+            sourceEl.disabled = !!disabled;
+        }
+
+        function showSmartReviewInlineStatus(sourceEl, message, type) {
+            var card = sourceEl && sourceEl.closest ? sourceEl.closest(".smart-review-card") : null;
+            if (!card) return;
+            var status = card.querySelector(".smart-review-inline-status");
+            if (!status) return;
+            status.className = "smart-review-inline-status show " + (type || "success");
+            status.textContent = message || "Saved.";
+        }
+
+        function refreshSmartReviewModalAfterFix(issueKey) {
+            if (issueKey) reviewedIssueKeys.add(issueKey);
+            renderItems(loadedItems);
+            updatePremiumProfitDashboard();
+            renderIntelligencePanel();
+            setTimeout(function () { showCleanupTools({ silent: true }); }, 450);
+        }
+
+        async function saveSmartReviewProduct(itemId, values, reason, sourceEl, issueKey) {
             if (isBusy) return;
             var item = findLoadedItem(itemId);
             if (!item) {
@@ -8690,15 +8856,14 @@ function renderDashboard(options = {}) {
                 }
 
                 logActivity(reason || "Smart Review Fix", (item.name || "Product") + " updated from Smart Review.", "Success");
-                showToast("Smart Review fix saved. InventoryRite refreshed the alerts.", "success");
-                closeFeatureModal();
-                renderItems(loadedItems);
-                updatePremiumProfitDashboard();
-                renderIntelligencePanel();
+                setSmartReviewButtonState(sourceEl, "Saved", true);
+                showSmartReviewInlineStatus(sourceEl, "Saved. This issue was resolved and the review list is refreshing.", "success");
+                refreshSmartReviewModalAfterFix(issueKey || (sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : ""));
                 stopBusy();
-                await loadItems();
             } catch (error) {
                 stopBusy();
+                setSmartReviewButtonState(sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-original-text") : "Save", false);
+                showSmartReviewInlineStatus(sourceEl, error && error.message ? error.message : "Unable to save this fix.", "error");
                 showToast(error && error.message ? error.message : "Unable to save Smart Review fix.", "error");
             }
         }
@@ -8716,10 +8881,8 @@ function renderDashboard(options = {}) {
             if (action === "mark_reviewed") {
                 var issueKey = sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "";
                 if (issueKey) reviewedIssueKeys.add(issueKey);
-                closeFeatureModal();
-                renderItems(loadedItems);
-                renderIntelligencePanel();
-                showToast("Marked reviewed for this session.", "success");
+                showSmartReviewInlineStatus(sourceEl, "Marked reviewed for this session.", "success");
+                refreshSmartReviewModalAfterFix(issueKey);
                 return;
             }
 
@@ -8741,11 +8904,8 @@ function renderDashboard(options = {}) {
                     showToast("Enter a SKU/code first.", "error");
                     return;
                 }
-                openConfirm(
-                    "Save SKU / Code",
-                    "Save SKU/code for " + (item.name || "this product") + " as " + skuValue.trim() + "? This updates the live Clover item code and removes the missing SKU alert.",
-                    async function () { await saveSmartReviewProduct(itemId, { sku: skuValue.trim() }, "Smart Review SKU Fix"); }
-                );
+                setSmartReviewButtonState(sourceEl, "Saving...", true);
+                saveSmartReviewProduct(itemId, { sku: skuValue.trim() }, "Smart Review SKU Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
                 return;
             }
 
@@ -8758,11 +8918,8 @@ function renderDashboard(options = {}) {
                     showToast("Enter the true product cost first.", "error");
                     return;
                 }
-                openConfirm(
-                    "Save Cost",
-                    "Save cost for " + (item.name || "this product") + " as " + formatCurrencyFromCents(costCents) + "? This updates InventoryRite cost data and refreshes margin alerts.",
-                    async function () { await saveSmartReviewProduct(itemId, { costCents: costCents }, "Smart Review Cost Fix"); }
-                );
+                setSmartReviewButtonState(sourceEl, "Saving...", true);
+                saveSmartReviewProduct(itemId, { costCents: costCents }, "Smart Review Cost Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
                 return;
             }
 
@@ -8776,12 +8933,8 @@ function renderDashboard(options = {}) {
                     showToast("Enter a valid selling price first.", "error");
                     return;
                 }
-                var currentPrice = Number(item.price || 0);
-                openConfirm(
-                    "Confirm Price Change",
-                    "Change " + (item.name || "this product") + " from " + formatCurrencyFromCents(currentPrice) + " to " + formatCurrencyFromCents(priceCents) + "? This updates the live Clover item price.",
-                    async function () { await saveSmartReviewProduct(itemId, { priceCents: priceCents }, "Smart Review Price Fix"); }
-                );
+                setSmartReviewButtonState(sourceEl, "Saving...", true);
+                saveSmartReviewProduct(itemId, { priceCents: priceCents }, "Smart Review Price Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
                 return;
             }
 
@@ -8793,11 +8946,8 @@ function renderDashboard(options = {}) {
                     showToast("Enter a clean product name first.", "error");
                     return;
                 }
-                openConfirm(
-                    "Confirm Name Cleanup",
-                    "Rename " + (item.name || "this product") + " to " + nextName.trim() + "? This updates the live Clover item name.",
-                    async function () { await saveSmartReviewProduct(itemId, { name: nextName.trim() }, "Smart Review Name Fix"); }
-                );
+                setSmartReviewButtonState(sourceEl, "Saving...", true);
+                saveSmartReviewProduct(itemId, { name: nextName.trim() }, "Smart Review Name Fix", sourceEl, sourceEl && sourceEl.getAttribute ? sourceEl.getAttribute("data-issue-key") : "");
                 return;
             }
 
