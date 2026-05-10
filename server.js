@@ -8068,7 +8068,39 @@ function renderDashboard(options = {}) {
                 });
             });
 
-            // Wire up cost inputs after render
+            // Wire up inline editor keyboard saves after render.
+            // Pressing Enter in Product Name, Price, or Cost now runs the same
+            // Clover sync path as clicking the checkmark save button.
+            function commitRowInputOnEnter(e, itemId) {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (!itemId) return;
+
+                if (e.target && e.target.blur) {
+                    e.target.blur();
+                }
+
+                updateItem(itemId);
+            }
+
+            var nameInputs = body.querySelectorAll("input[data-name-for]");
+            nameInputs.forEach(function (input) {
+                input.addEventListener("keydown", function (e) {
+                    commitRowInputOnEnter(e, e.target.getAttribute("data-name-for"));
+                });
+            });
+
+            var priceInputs = body.querySelectorAll("input[data-price-for]");
+            priceInputs.forEach(function (input) {
+                input.addEventListener("keydown", function (e) {
+                    commitRowInputOnEnter(e, e.target.getAttribute("data-price-for"));
+                });
+            });
+
+            // Cost still auto-saves locally on blur, but Enter now saves the full
+            // product row to Clover too, matching the checkmark behavior.
             var costInputs = body.querySelectorAll("input[data-cost-for]");
             costInputs.forEach(function (input) {
                 input.addEventListener("blur", function (e) {
@@ -8079,10 +8111,7 @@ function renderDashboard(options = {}) {
                     saveItemCost(e.target.getAttribute("data-cost-for"), e.target.value);
                 });
                 input.addEventListener("keydown", function (e) {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        updateItem(e.target.getAttribute("data-cost-for"));
-                    }
+                    commitRowInputOnEnter(e, e.target.getAttribute("data-cost-for"));
                 });
             });
 
