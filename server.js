@@ -2199,188 +2199,6 @@ function renderDashboard(options = {}) {
             .detail-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-
-        /* Compact professional product detail modal - keeps the editor inside the screen */
-        #detailsModal {
-            align-items: center;
-            justify-content: center;
-        }
-        #detailsModal .modal {
-            width: min(920px, calc(100vw - 28px));
-            max-width: 920px;
-            max-height: min(82vh, 760px);
-            padding: 18px 18px 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            border-radius: 20px;
-        }
-        #detailsModal .modal h3 {
-            font-size: 21px;
-            margin: 0 0 3px;
-            letter-spacing: -0.02em;
-        }
-        #detailsModal .modal > p {
-            font-size: 12px;
-            line-height: 1.35;
-            margin: 0 0 10px;
-            color: #64748b;
-        }
-        #detailsModal .detail-grid {
-            margin-top: 0;
-            overflow-y: auto;
-            padding: 0 2px 12px;
-            max-height: calc(82vh - 118px);
-        }
-        #detailsModal .modal-actions {
-            position: sticky;
-            bottom: 0;
-            margin: 0 -18px;
-            padding: 12px 18px;
-            background: rgba(255,255,255,0.96);
-            border-top: 1px solid #e5e7eb;
-            backdrop-filter: blur(8px);
-        }
-        .detail-compact-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
-            gap: 12px;
-            align-items: start;
-        }
-        .detail-panel.compact-panel {
-            padding: 12px;
-            border-radius: 15px;
-        }
-        .detail-section-title.compact-title {
-            margin-bottom: 10px;
-            font-size: 11px;
-        }
-        .detail-field-row {
-            display: grid;
-            grid-template-columns: 105px minmax(0, 1fr);
-            gap: 10px;
-            align-items: start;
-            padding: 8px 0;
-            border-bottom: 1px solid #eef2f7;
-        }
-        .detail-field-row:last-child { border-bottom: 0; }
-        .detail-field-row .detail-label {
-            font-size: 12px;
-            padding-top: 8px;
-        }
-        .detail-control-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-        }
-        .detail-control-line {
-            display: flex;
-            gap: 7px;
-            align-items: center;
-            min-width: 0;
-        }
-        #detailsModal .detail-input {
-            min-width: 0;
-            width: 100%;
-            flex: 1 1 auto;
-            padding: 8px 10px;
-            font-size: 13px;
-            border-radius: 10px;
-        }
-        #detailsModal .insight-fix-btn {
-            min-height: 32px;
-            padding: 7px 10px;
-            border-radius: 10px;
-            white-space: nowrap;
-            font-size: 12px;
-        }
-        .detail-hint {
-            font-size: 11px;
-            line-height: 1.35;
-            color: #64748b;
-            font-weight: 800;
-        }
-        .detail-right-stack {
-            display: grid;
-            gap: 12px;
-        }
-        .detail-stat-row.compact-stats {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .detail-stat-row.compact-stats .detail-stat {
-            padding: 9px;
-            border-radius: 12px;
-        }
-        .detail-stat-row.compact-stats .detail-stat span {
-            font-size: 10px;
-            margin-bottom: 3px;
-        }
-        .detail-stat-row.compact-stats .detail-stat strong {
-            font-size: 15px;
-        }
-        .detail-status-grid {
-            display: grid;
-            gap: 7px;
-        }
-        .detail-status-line {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            font-size: 12px;
-            padding-bottom: 7px;
-            border-bottom: 1px solid #eef2f7;
-        }
-        .detail-status-line:last-child { border-bottom: 0; padding-bottom: 0; }
-        .detail-status-line span:first-child {
-            color: #64748b;
-            font-weight: 900;
-        }
-        .detail-status-line span:last-child {
-            color: #0f172a;
-            font-weight: 900;
-            text-align: right;
-            word-break: break-word;
-        }
-        .detail-target-line {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 8px 9px;
-            border-radius: 12px;
-            background: #f8fafc;
-            font-size: 12px;
-            font-weight: 900;
-            color: #334155;
-        }
-        .detail-target-line strong { color:#0f172a; }
-        .detail-action-note {
-            margin-top: 8px;
-            padding: 8px 9px;
-            border-radius: 12px;
-            background: #ecfdf5;
-            border: 1px solid #bbf7d0;
-            color: #166534;
-            font-size: 11px;
-            font-weight: 900;
-            line-height: 1.35;
-        }
-        @media (max-width: 860px) {
-            #detailsModal .modal {
-                max-height: 88vh;
-                width: calc(100vw - 18px);
-                padding: 15px 15px 0;
-            }
-            #detailsModal .detail-grid { max-height: calc(88vh - 112px); }
-            .detail-compact-layout { grid-template-columns: 1fr; }
-            .detail-field-row { grid-template-columns: 1fr; gap: 5px; }
-            .detail-field-row .detail-label { padding-top: 0; }
-            .detail-control-line { flex-wrap: wrap; }
-            #detailsModal .modal-actions { margin: 0 -15px; padding: 11px 15px; }
-        }
-
         tr.row-updated { animation: rowFlash 1.4s ease; }
 
         @keyframes rowFlash {
@@ -6762,6 +6580,235 @@ function renderDashboard(options = {}) {
             vertical-align: middle;
         }
 
+
+        /* ---------------------------------------------------------------
+        | LAUNCH READY GUIDED FLOW + SMART RECOMMENDATIONS
+        --------------------------------------------------------------- */
+        .launch-guide-card {
+            background: linear-gradient(135deg, rgba(255,255,255,.98), rgba(240,253,244,.82));
+            border: 1px solid #bbf7d0;
+            border-radius: 20px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+            padding: 16px;
+            margin: 0 0 14px;
+        }
+        .launch-guide-head {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:14px;
+            margin-bottom:12px;
+        }
+        .launch-guide-kicker {
+            color:#15803d;
+            font-size:11px;
+            letter-spacing:.10em;
+            text-transform:uppercase;
+            font-weight:900;
+            margin-bottom:4px;
+        }
+        .launch-guide-title {
+            margin:0;
+            color:#0f172a;
+            font-size:18px;
+            line-height:1.15;
+            letter-spacing:-.03em;
+            font-weight:900;
+        }
+        .launch-guide-subtitle {
+            margin:4px 0 0;
+            color:#64748b;
+            font-size:12.5px;
+            line-height:1.45;
+            font-weight:800;
+        }
+        .launch-guide-progress {
+            min-width:116px;
+            border:1px solid #bbf7d0;
+            background:#f0fdf4;
+            color:#166534;
+            border-radius:999px;
+            padding:8px 11px;
+            font-size:12px;
+            font-weight:900;
+            text-align:center;
+            white-space:nowrap;
+        }
+        .launch-steps-grid {
+            display:grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap:10px;
+        }
+        .launch-step {
+            background:#ffffff;
+            border:1px solid #e2e8f0;
+            border-radius:15px;
+            padding:12px;
+            min-height:112px;
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+            box-shadow:0 7px 18px rgba(15,23,42,.035);
+        }
+        .launch-step.done {
+            border-color:#86efac;
+            background:#f0fdf4;
+        }
+        .launch-step.warning {
+            border-color:#fed7aa;
+            background:#fff7ed;
+        }
+        .launch-step-top {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+        }
+        .launch-step-num {
+            width:26px;
+            height:26px;
+            border-radius:10px;
+            background:#0f172a;
+            color:#fff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:12px;
+            font-weight:900;
+        }
+        .launch-step.done .launch-step-num { background:#15803d; }
+        .launch-step.warning .launch-step-num { background:#b45309; }
+        .launch-step-status {
+            color:#64748b;
+            font-size:10.5px;
+            font-weight:900;
+            text-transform:uppercase;
+            letter-spacing:.05em;
+        }
+        .launch-step-title {
+            color:#0f172a;
+            font-size:13px;
+            font-weight:900;
+            line-height:1.15;
+        }
+        .launch-step-copy {
+            color:#64748b;
+            font-size:12px;
+            line-height:1.35;
+            font-weight:800;
+            flex:1;
+        }
+        .launch-step .btn {
+            min-height:32px;
+            padding:7px 10px;
+            border-radius:10px;
+            font-size:11.5px;
+            width:100%;
+        }
+        .recommendations-panel {
+            background:#ffffff;
+            border:1px solid #dbe4ee;
+            border-radius:18px;
+            padding:14px;
+            margin:0 0 14px;
+            box-shadow:0 8px 22px rgba(15,23,42,.045);
+        }
+        .recommendations-header {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:10px;
+        }
+        .recommendations-title {
+            color:#0f172a;
+            font-size:15px;
+            font-weight:900;
+            letter-spacing:-.02em;
+            margin:0;
+        }
+        .recommendations-subtitle {
+            color:#64748b;
+            font-size:12px;
+            font-weight:800;
+            margin-top:3px;
+        }
+        .recommendations-list {
+            display:grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap:10px;
+        }
+        .recommendation-card {
+            border:1px solid #e2e8f0;
+            border-radius:15px;
+            background:#f8fafc;
+            padding:12px;
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+            min-height:130px;
+        }
+        .recommendation-card.critical { background:#fff1f2; border-color:#fecdd3; }
+        .recommendation-card.warning { background:#fff7ed; border-color:#fed7aa; }
+        .recommendation-card.good { background:#f0fdf4; border-color:#bbf7d0; }
+        .recommendation-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .recommendation-badge {
+            border-radius:999px;
+            padding:4px 8px;
+            background:#eef2ff;
+            color:#1d4ed8;
+            font-size:10.5px;
+            font-weight:900;
+            text-transform:uppercase;
+        }
+        .recommendation-card.critical .recommendation-badge { background:#fee2e2; color:#b91c1c; }
+        .recommendation-card.warning .recommendation-badge { background:#ffedd5; color:#9a3412; }
+        .recommendation-card.good .recommendation-badge { background:#dcfce7; color:#166534; }
+        .recommendation-title { font-size:13px; font-weight:900; color:#0f172a; line-height:1.2; }
+        .recommendation-copy { font-size:12px; font-weight:800; line-height:1.35; color:#64748b; flex:1; }
+        .recommendation-card .btn { min-height:32px; padding:7px 10px; font-size:11.5px; border-radius:10px; width:100%; }
+        .bulk-preview-list {
+            display:grid;
+            gap:8px;
+            margin-top:10px;
+        }
+        .bulk-preview-row {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            border:1px solid #e5e7eb;
+            background:#f8fafc;
+            border-radius:12px;
+            padding:9px 10px;
+            font-size:12px;
+            font-weight:900;
+        }
+        .bulk-preview-name { color:#0f172a; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .bulk-preview-price { color:#15803d; white-space:nowrap; }
+        .bulk-preview-impact {
+            margin-top:10px;
+            padding:10px 12px;
+            border-radius:13px;
+            border:1px solid #bbf7d0;
+            background:#f0fdf4;
+            color:#166534;
+            font-size:12px;
+            font-weight:900;
+            line-height:1.35;
+        }
+        @media (max-width: 980px) {
+            .launch-steps-grid,
+            .recommendations-list { grid-template-columns:1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .launch-guide-head,
+            .recommendations-header { flex-direction:column; align-items:flex-start; }
+            .launch-guide-progress { width:100%; }
+            .launch-steps-grid,
+            .recommendations-list { grid-template-columns:1fr; }
+        }
+
 </style>
 </head>
 <body>
@@ -6796,6 +6843,29 @@ function renderDashboard(options = {}) {
                 <button id="btnHeroSync" type="button" class="btn btn-light">Sync Clover</button>
                 <button id="btnHeroAdvanced" type="button" class="btn btn-light">Tools</button>
             </div>
+        </section>
+
+        <section class="launch-guide-card" id="launchGuideCard">
+            <div class="launch-guide-head">
+                <div>
+                    <div class="launch-guide-kicker">Start Here</div>
+                    <h3 class="launch-guide-title">Get this Clover inventory ready in 4 steps.</h3>
+                    <p class="launch-guide-subtitle">InventoryRite guides merchants from sync to cleanup to profit review without forcing them to understand every tool on day one.</p>
+                </div>
+                <div class="launch-guide-progress" id="launchGuideProgress">0 of 4 ready</div>
+            </div>
+            <div class="launch-steps-grid" id="launchStepsGrid"></div>
+        </section>
+
+        <section class="recommendations-panel" id="smartRecommendationsPanel">
+            <div class="recommendations-header">
+                <div>
+                    <h3 class="recommendations-title">Smart Recommendations</h3>
+                    <div class="recommendations-subtitle" id="recommendationsSubtitle">Sync Clover to see the highest-value next actions.</div>
+                </div>
+                <button id="btnRecommendationsRefresh" type="button" class="btn btn-light btn-small">Refresh Advice</button>
+            </div>
+            <div class="recommendations-list" id="recommendationsList"></div>
         </section>
 
         
@@ -7718,12 +7788,24 @@ function renderDashboard(options = {}) {
             var dirLabel = direction === "increase" ? "increased" : "decreased";
             var dirWord = direction === "increase" ? "Increasing" : "Decreasing";
 
+            var previewRows = selectedIds.slice(0, 6).map(function (itemId) {
+                var item = (loadedItems || []).find(function (it) { return (it.id || "") === itemId; }) || {};
+                var currentCents = Number(item.price || 0);
+                var multiplier = direction === "increase" ? (1 + pct / 100) : (1 - pct / 100);
+                var newCents = Math.max(0, Math.round(currentCents * multiplier));
+                return "<div class='bulk-preview-row'><span class='bulk-preview-name'>" + escapeHtml(item.name || itemId) + "</span><span class='bulk-preview-price'>" + escapeHtml(formatCurrencyFromCents(currentCents)) + " → " + escapeHtml(formatCurrencyFromCents(newCents)) + "</span></div>";
+            }).join("");
+            var moreCount = selectedIds.length > 6 ? "<div class='bulk-preview-row'><span class='bulk-preview-name'>...and " + (selectedIds.length - 6) + " more product(s)</span><span class='bulk-preview-price'>Preview only</span></div>" : "";
+            var previewHtml = "<div class='bulk-preview-list'>" + previewRows + moreCount + "</div>" +
+                "<div class='bulk-preview-impact'>This will update " + selectedIds.length + " live Clover product price(s) by " + (direction === "increase" ? "+" : "-") + pct + "%. You can use Undo Bulk immediately after this if needed.</div>";
+
             openConfirm(
                 "Bulk Price " + (direction === "increase" ? "Increase" : "Decrease"),
-                "You are about to update " + selectedIds.length + " live Clover product price(s) by " + (direction === "increase" ? "+" : "-") + pct + "%. Please confirm before InventoryRite saves these changes. You can use Undo Bulk immediately after this if needed.",
+                previewHtml,
                 async function () {
                     await executeBulkUpdate(connection, selectedIds, pct, direction, dirLabel);
-                }
+                },
+                true
             );
         }
 
@@ -8730,6 +8812,145 @@ function renderDashboard(options = {}) {
             return analyzeInventoryIntelligence(loadedItems || []);
         }
 
+        function runGuidedAction(action) {
+            switch (action) {
+                case "sync":
+                    loadItems();
+                    break;
+                case "costs":
+                    setViewMode("missingCost");
+                    showToast("Showing products that need cost. Add cost to unlock real profit analytics.", "info");
+                    break;
+                case "review":
+                    showCleanupTools();
+                    break;
+                case "profit":
+                    openPremiumProfitReview();
+                    break;
+                case "bulk":
+                    toggleBulkPanel();
+                    break;
+                default:
+                    showToast("Choose an action to continue.", "info");
+            }
+        }
+
+        function renderLaunchGuide() {
+            var grid = byId("launchStepsGrid");
+            var progress = byId("launchGuideProgress");
+            if (!grid) return;
+
+            var items = loadedItems || [];
+            var intelligence = getInventoryIntelligence();
+            var summary = getProfitSummary();
+            var synced = items.length > 0;
+            var hasCosts = summary.costed > 0;
+            var cleanupReady = synced && intelligence.allIssues.length === 0;
+            var profitReady = synced && hasCosts && summary.avgMargin !== null;
+
+            var steps = [
+                {
+                    n: 1,
+                    title: "Sync Clover",
+                    copy: synced ? (items.length + " products loaded from Clover.") : "Load live Clover products before reviewing costs, margins, or cleanup.",
+                    done: synced,
+                    action: "sync",
+                    button: synced ? "Sync Again" : "Sync Clover"
+                },
+                {
+                    n: 2,
+                    title: "Add Costs",
+                    copy: hasCosts ? (summary.costed + " products have cost data. Missing cost: " + summary.missingCost + ".") : "Enter product costs so InventoryRite can show real margin and profit.",
+                    done: hasCosts,
+                    warning: synced && !hasCosts,
+                    action: "costs",
+                    button: hasCosts ? "Review Costs" : "Add Costs"
+                },
+                {
+                    n: 3,
+                    title: "Clean Product Data",
+                    copy: synced ? (intelligence.allIssues.length ? intelligence.allIssues.length + " cleanup issue(s) need review." : "No cleanup issues detected in the loaded inventory.") : "Fix missing SKU, barcode, category, duplicate, stale, and messy product records.",
+                    done: cleanupReady,
+                    warning: synced && intelligence.allIssues.length > 0,
+                    action: "review",
+                    button: "Review Alerts"
+                },
+                {
+                    n: 4,
+                    title: "Review Profit",
+                    copy: profitReady ? ("Average margin is " + summary.avgMargin.toFixed(1) + "%. Opportunity: " + formatCurrencyFromCents(summary.estimatedProfitOpportunity) + ".") : "Use the Profit Dashboard to find weak margins and one-click pricing opportunities.",
+                    done: profitReady,
+                    warning: synced && hasCosts && summary.estimatedProfitOpportunity > 0,
+                    action: "profit",
+                    button: "Profit Review"
+                }
+            ];
+
+            var doneCount = steps.filter(function (step) { return step.done; }).length;
+            if (progress) progress.textContent = doneCount + " of 4 ready";
+
+            grid.innerHTML = steps.map(function (step) {
+                var className = "launch-step" + (step.done ? " done" : (step.warning ? " warning" : ""));
+                var status = step.done ? "Ready" : (step.warning ? "Needs action" : "Next");
+                return "<div class='" + className + "'>" +
+                    "<div class='launch-step-top'><div class='launch-step-num'>" + step.n + "</div><div class='launch-step-status'>" + escapeHtml(status) + "</div></div>" +
+                    "<div class='launch-step-title'>" + escapeHtml(step.title) + "</div>" +
+                    "<div class='launch-step-copy'>" + escapeHtml(step.copy) + "</div>" +
+                    "<button type='button' class='btn " + (step.done ? "btn-light" : "btn-primary") + "' data-guide-action='" + escapeHtml(step.action) + "'>" + escapeHtml(step.button) + "</button>" +
+                "</div>";
+            }).join("");
+        }
+
+        function buildRecommendation(priority, title, copy, action, button) {
+            return { priority: priority || "good", title: title || "Recommendation", copy: copy || "Review this item.", action: action || "review", button: button || "Review" };
+        }
+
+        function renderSmartRecommendations() {
+            var list = byId("recommendationsList");
+            var subtitle = byId("recommendationsSubtitle");
+            if (!list) return;
+
+            var items = loadedItems || [];
+            var intelligence = getInventoryIntelligence();
+            var summary = getProfitSummary();
+            var recommendations = [];
+
+            if (!items.length) {
+                recommendations.push(buildRecommendation("warning", "Sync Clover inventory", "Load products first so InventoryRite can generate cleanup, cost, and profit recommendations.", "sync", "Sync Clover"));
+            } else {
+                if (summary.missingCost > 0) {
+                    recommendations.push(buildRecommendation("warning", "Add missing costs", summary.missingCost + " product(s) need cost data before profit analytics are fully accurate.", "costs", "Add Costs"));
+                }
+                if (intelligence.criticalIssues.length > 0) {
+                    recommendations.push(buildRecommendation("critical", "Fix critical product alerts", intelligence.criticalIssues.length + " critical issue(s) found, including below-cost, duplicate, or suspicious product records.", "review", "Review Alerts"));
+                }
+                if (summary.lowMargin > 0 || summary.estimatedProfitOpportunity > 0) {
+                    recommendations.push(buildRecommendation("warning", "Review weak margins", summary.lowMargin + " low-margin item(s). Potential monthly opportunity: " + formatCurrencyFromCents(summary.estimatedProfitOpportunity) + ".", "profit", "Profit Review"));
+                }
+                if (summary.missingCost === 0 && intelligence.criticalIssues.length === 0 && summary.estimatedProfitOpportunity <= 0) {
+                    recommendations.push(buildRecommendation("good", "Inventory looks healthy", "No major cost, margin, or cleanup issues are currently blocking this merchant.", "profit", "View Dashboard"));
+                }
+                recommendations.push(buildRecommendation("good", "Use bulk tools carefully", "Select rows first, then preview bulk price changes before saving them to Clover.", "bulk", "Open Bulk Tools"));
+            }
+
+            recommendations = recommendations.slice(0, 3);
+            if (subtitle) subtitle.textContent = items.length ? "Highest-value next actions based on the current Clover inventory." : "Sync Clover to generate recommendations.";
+
+            list.innerHTML = recommendations.map(function (rec) {
+                return "<div class='recommendation-card " + escapeHtml(rec.priority) + "'>" +
+                    "<div class='recommendation-top'><span class='recommendation-badge'>" + escapeHtml(rec.priority) + "</span></div>" +
+                    "<div class='recommendation-title'>" + escapeHtml(rec.title) + "</div>" +
+                    "<div class='recommendation-copy'>" + escapeHtml(rec.copy) + "</div>" +
+                    "<button type='button' class='btn " + (rec.priority === "critical" ? "btn-danger" : (rec.priority === "warning" ? "btn-amber" : "btn-light")) + "' data-recommendation-action='" + escapeHtml(rec.action) + "'>" + escapeHtml(rec.button) + "</button>" +
+                "</div>";
+            }).join("");
+        }
+
+        function refreshGuidedLaunchUX() {
+            renderLaunchGuide();
+            renderSmartRecommendations();
+        }
+
         function renderIntelligencePanel() {
             var intelligence = getInventoryIntelligence();
             var summaryText = byId("operationsSummaryText");
@@ -8781,6 +9002,7 @@ function renderDashboard(options = {}) {
             if (warning) warning.textContent = warningCount;
             if (opportunity) opportunity.textContent = formatCurrencyFromCents(intelligence.estimatedProfitOpportunity);
             if (opportunityHelp) opportunityHelp.textContent = "Estimate assumes about " + intelligence.assumedMonthlyUnits + " sales/month on affected products until sales history is connected.";
+            refreshGuidedLaunchUX();
         }
 
         function getIssueKey(issue) {
@@ -10223,70 +10445,50 @@ function renderDashboard(options = {}) {
             if (title) title.textContent = item.name || "Product Details";
             if (grid) {
                 grid.innerHTML =
-                    "<div class='detail-compact-layout'>" +
-                        "<div class='detail-panel compact-panel'>" +
-                            "<div class='detail-section-title compact-title'>Product Identity</div>" +
-
-                            "<div class='detail-field-row'>" +
-                                "<div class='detail-label'>SKU / Code</div>" +
-                                "<div class='detail-control-stack'>" +
-                                    "<div class='detail-control-line'>" +
-                                        "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
-                                        "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
-                                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save</button>" +
-                                    "</div>" +
-                                    "<div class='detail-hint'>" + escapeHtml(sku ? "Editable item code. Use only when the merchant wants a cleaner code." : "Missing SKU can be fixed here with the generated code or merchant SKU.") + "</div>" +
-                                "</div>" +
+                    "<div class='detail-panel'>" +
+                        "<div class='detail-section-title'>Product Identity</div>" +
+                        "<div class='detail-grid-inner'>" +
+                            "<div class='detail-label'>SKU / Code</div><div class='detail-value detail-edit-box'>" +
+                                "<input class='detail-input' data-detail-sku-for='" + escapeHtml(item.id || "") + "' data-modal-sku-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(suggestedSku) + "' placeholder='Enter SKU / Code' />" +
+                                "<button type='button' class='insight-fix-btn light' data-fix-action='generate_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Generate</button>" +
+                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_sku' data-fix-id='" + escapeHtml(item.id || "") + "'>Save SKU</button>" +
                             "</div>" +
-
-                            "<div class='detail-field-row'>" +
-                                "<div class='detail-label'>Barcode / UPC</div>" +
-                                "<div class='detail-control-stack'>" +
-                                    "<div class='detail-control-line'>" +
-                                        "<input class='detail-input' data-detail-barcode-for='" + escapeHtml(item.id || "") + "' data-modal-barcode-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(barcode) + "' placeholder='Scan or type barcode' />" +
-                                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_barcode' data-fix-id='" + escapeHtml(item.id || "") + "'>Save</button>" +
-                                    "</div>" +
-                                    "<div class='detail-hint'>Stored by InventoryRite for scanning, cleanup, CSV exports, and audits.</div>" +
-                                "</div>" +
+                            "<div class='detail-help'>" + escapeHtml(sku ? "SKU/code is editable here. Change it only if the merchant wants a cleaner code." : "Missing SKU can be fixed here using the generated code or the merchant's own SKU.") + "</div>" +
+                            "<div class='detail-label'>Barcode / UPC</div><div class='detail-value detail-edit-box'>" +
+                                "<input class='detail-input' data-detail-barcode-for='" + escapeHtml(item.id || "") + "' data-modal-barcode-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(barcode) + "' placeholder='Scan or type barcode' />" +
+                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_barcode' data-fix-id='" + escapeHtml(item.id || "") + "'>Save Barcode</button>" +
                             "</div>" +
-
-                            "<div class='detail-field-row'>" +
-                                "<div class='detail-label'>Category</div>" +
-                                "<div class='detail-control-stack'>" +
-                                    "<div class='detail-control-line'>" +
-                                        "<input class='detail-input' data-detail-category-for='" + escapeHtml(item.id || "") + "' data-modal-category-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(category === "Uncategorized" ? "" : category) + "' placeholder='Example: Drinks, Grocery, Retail' />" +
-                                        "<button type='button' class='insight-fix-btn success' data-fix-action='save_category' data-fix-id='" + escapeHtml(item.id || "") + "'>Save</button>" +
-                                    "</div>" +
-                                    "<div class='detail-hint'>Used for cleanup, reporting, reorder review, and margin grouping.</div>" +
-                                "</div>" +
+                            "<div class='detail-help'>InventoryRite stores this for scanning, cleanup, CSV export, and audits. Clover may not expose barcode as a clean separate item field.</div>" +
+                            "<div class='detail-label'>Category</div><div class='detail-value detail-edit-box'>" +
+                                "<input class='detail-input' data-detail-category-for='" + escapeHtml(item.id || "") + "' data-modal-category-for='" + escapeHtml(item.id || "") + "' value='" + escapeHtml(category === "Uncategorized" ? "" : category) + "' placeholder='Example: Drinks, Grocery, Retail' />" +
+                                "<button type='button' class='insight-fix-btn success' data-fix-action='save_category' data-fix-id='" + escapeHtml(item.id || "") + "'>Save Category</button>" +
                             "</div>" +
-
-                            "<div class='detail-action-note'>Fast edit panel: keep the main table clean, but let the merchant repair Clover data in one place.</div>" +
+                            "<div class='detail-help'>Categories help margin review, cleanup, reporting, and reorder organization.</div>" +
+                            "<div class='detail-label'>Clover ID</div><div class='detail-value mono-value'>" + escapeHtml(item.id || "-") + "</div>" +
                         "</div>" +
+                    "</div>" +
 
-                        "<div class='detail-right-stack'>" +
-                            "<div class='detail-panel compact-panel'>" +
-                                "<div class='detail-section-title compact-title'>Pricing</div>" +
-                                "<div class='detail-stat-row compact-stats'>" +
-                                    "<div class='detail-stat'><span>Price</span><strong>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</strong></div>" +
-                                    "<div class='detail-stat'><span>Cost</span><strong>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</strong></div>" +
-                                    "<div class='detail-stat'><span>Profit</span><strong>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</strong></div>" +
-                                    "<div class='detail-stat'><span>Margin</span><strong class='margin-badge " + marginClass + "'>" + escapeHtml(marginLabel) + "</strong></div>" +
-                                "</div>" +
-                                "<div class='detail-target-line'><span>40% target price</span><strong>" + escapeHtml(suggestedTarget > 0 ? formatCurrencyFromCents(suggestedTarget) : "Add cost first") + "</strong></div>" +
-                            "</div>" +
+                    "<div class='detail-panel'>" +
+                        "<div class='detail-section-title'>Pricing Intelligence</div>" +
+                        "<div class='detail-stat-row'>" +
+                            "<div class='detail-stat'><span>Price</span><strong>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</strong></div>" +
+                            "<div class='detail-stat'><span>Cost</span><strong>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</strong></div>" +
+                            "<div class='detail-stat'><span>Profit / Unit</span><strong>" + escapeHtml(formatCurrencyFromCents(profitCents)) + "</strong></div>" +
+                            "<div class='detail-stat'><span>Margin</span><strong class='margin-badge " + marginClass + "'>" + escapeHtml(marginLabel) + "</strong></div>" +
+                        "</div>" +
+                        "<div class='detail-grid-inner compact'>" +
+                            "<div class='detail-label'>40% Target Price</div><div class='detail-value'>" + escapeHtml(suggestedTarget > 0 ? formatCurrencyFromCents(suggestedTarget) : "Add cost first") + "</div>" +
+                        "</div>" +
+                    "</div>" +
 
-                            "<div class='detail-panel compact-panel'>" +
-                                "<div class='detail-section-title compact-title'>Status</div>" +
-                                "<div class='detail-status-grid'>" +
-                                    "<div class='detail-status-line'><span>Qty</span><span>" + escapeHtml(qty === null ? "Unknown" : qty) + "</span></div>" +
-                                    "<div class='detail-status-line'><span>Available</span><span>" + escapeHtml(available) + "</span></div>" +
-                                    "<div class='detail-status-line'><span>Hidden</span><span>" + escapeHtml(hidden) + "</span></div>" +
-                                    "<div class='detail-status-line'><span>Revenue</span><span>" + escapeHtml(revenue) + "</span></div>" +
-                                    "<div class='detail-status-line'><span>Modified</span><span>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</span></div>" +
-                                    "<div class='detail-status-line'><span>Clover ID</span><span class='mono-value'>" + escapeHtml(item.id || "-") + "</span></div>" +
-                                "</div>" +
-                            "</div>" +
+                    "<div class='detail-panel'>" +
+                        "<div class='detail-section-title'>Inventory Status</div>" +
+                        "<div class='detail-grid-inner compact'>" +
+                            "<div class='detail-label'>Quantity</div><div class='detail-value'>" + escapeHtml(qty === null ? "Unknown" : qty) + "</div>" +
+                            "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
+                            "<div class='detail-label'>Hidden</div><div class='detail-value'>" + escapeHtml(hidden) + "</div>" +
+                            "<div class='detail-label'>Revenue Item</div><div class='detail-value'>" + escapeHtml(revenue) + "</div>" +
+                            "<div class='detail-label'>Modified</div><div class='detail-value'>" + escapeHtml(formatDateFromClover(item.modifiedTime)) + "</div>" +
                         "</div>" +
                     "</div>";
             }
@@ -10952,6 +11154,21 @@ function renderDashboard(options = {}) {
         bind("btnHeroSync", "click", loadItems);
         bind("btnHeroAdd", "click", toggleAddPanel);
         bind("btnHeroAdvanced", "click", toggleAdvancedTools);
+        bind("btnRecommendationsRefresh", "click", refreshGuidedLaunchUX);
+        document.addEventListener("click", function (event) {
+            var guideBtn = event.target && event.target.closest ? event.target.closest("[data-guide-action]") : null;
+            if (guideBtn) {
+                event.preventDefault();
+                runGuidedAction(guideBtn.getAttribute("data-guide-action") || "");
+                return;
+            }
+            var recBtn = event.target && event.target.closest ? event.target.closest("[data-recommendation-action]") : null;
+            if (recBtn) {
+                event.preventDefault();
+                runGuidedAction(recBtn.getAttribute("data-recommendation-action") || "");
+            }
+        });
+        refreshGuidedLaunchUX();
         bind("btnToggleAdvancedTop", "click", toggleAdvancedTools);
         bind("btnToggleAddTop", "click", toggleAddPanel);
         bind("btnToggleAdd", "click", toggleAddPanel);
