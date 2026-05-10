@@ -5711,10 +5711,7 @@ function renderDashboard(options = {}) {
         
 <section class="card inventory-card">
 <div class="table-top">
-                <div>
-                    <h3>Products</h3>
-                    <p>Search, edit, save, or select rows for bulk updates.</p>
-                    <div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
+                <div><div class="sync-note" id="lastSyncNote">Last synced: Not yet</div>
                 </div>
             </div>
 
