@@ -60,7 +60,8 @@ const REQUIRED_CLOVER_SCOPES = [
     "item_read",
     "item_write",
     "inventory_read",
-    "inventory_write"
+    "inventory_write",
+    "order_read"
 ];
 
 
@@ -6912,6 +6913,197 @@ function renderDashboard(options = {}) {
             .recommendations-list { grid-template-columns:1fr; }
         }
 
+
+        /* ----------------------------------------------------------------
+        | SALES + PROFIT INTELLIGENCE PANEL
+        ---------------------------------------------------------------- */
+        .sales-intelligence-panel {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 16px;
+            margin: 0 0 16px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.055);
+        }
+
+        .sales-intelligence-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .sales-intelligence-kicker {
+            color: #15803d;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .sales-intelligence-title {
+            margin: 3px 0 2px;
+            color: #0f172a;
+            font-size: 18px;
+            line-height: 1.15;
+            font-weight: 900;
+        }
+
+        .sales-intelligence-subtitle {
+            margin: 0;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .sales-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 10px 0 12px;
+        }
+
+        .sales-metric-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            padding: 11px;
+            min-height: 76px;
+        }
+
+        .sales-metric-label {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .sales-metric-value {
+            margin-top: 5px;
+            color: #0f172a;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: -.03em;
+        }
+
+        .sales-metric-help {
+            margin-top: 3px;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .sales-insight-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .sales-list-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .sales-list-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 11px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .sales-list-body {
+            padding: 4px 0;
+        }
+
+        .sales-list-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 11px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 12px;
+        }
+
+        .sales-list-row:last-child {
+            border-bottom: 0;
+        }
+
+        .sales-product-name {
+            color: #0f172a;
+            font-weight: 900;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sales-product-meta {
+            margin-top: 2px;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .sales-product-value {
+            color: #0f172a;
+            font-weight: 900;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .sales-state-note {
+            border: 1px solid #bbf7d0;
+            background: #f0fdf4;
+            color: #166534;
+            border-radius: 14px;
+            padding: 11px 12px;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .sales-state-note.warning {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        @media (max-width: 920px) {
+            .sales-metric-grid,
+            .sales-insight-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sales-metric-grid,
+            .sales-insight-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sales-intelligence-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sales-intelligence-head .btn {
+                width: 100%;
+            }
+        }
+
 </style>
 </head>
 <body>
@@ -6969,6 +7161,63 @@ function renderDashboard(options = {}) {
                 <button id="btnRecommendationsRefresh" type="button" class="btn btn-light btn-small">Refresh Advice</button>
             </div>
             <div class="recommendations-list" id="recommendationsList"></div>
+        </section>
+
+                <section class="sales-intelligence-panel" id="salesIntelligencePanel">
+            <div class="sales-intelligence-head">
+                <div>
+                    <div class="sales-intelligence-kicker">New Premium Insight</div>
+                    <h3 class="sales-intelligence-title">Last 30 Days Sales + Profit Intelligence</h3>
+                    <p class="sales-intelligence-subtitle">See what sold, what made money, what needs cost data, and what inventory is not moving.</p>
+                </div>
+                <button id="btnRefreshSalesIntelligence" type="button" class="btn btn-light btn-small">Refresh Sales</button>
+            </div>
+
+            <div id="salesIntelligenceState" class="sales-state-note warning">
+                Sync Clover inventory first. Sales intelligence will use Clover order data plus your saved costs.
+            </div>
+
+            <div class="sales-metric-grid" id="salesMetricGrid" style="display:none;">
+                <div class="sales-metric-card">
+                    <div class="sales-metric-label">Revenue</div>
+                    <div class="sales-metric-value" id="salesRevenueValue">$0.00</div>
+                    <div class="sales-metric-help">Last 30 days</div>
+                </div>
+                <div class="sales-metric-card">
+                    <div class="sales-metric-label">Units Sold</div>
+                    <div class="sales-metric-value" id="salesUnitsValue">0</div>
+                    <div class="sales-metric-help">Across sold products</div>
+                </div>
+                <div class="sales-metric-card">
+                    <div class="sales-metric-label">Estimated Profit</div>
+                    <div class="sales-metric-value" id="salesProfitValue">$0.00</div>
+                    <div class="sales-metric-help">Based on saved costs</div>
+                </div>
+                <div class="sales-metric-card">
+                    <div class="sales-metric-label">Avg Profit Margin</div>
+                    <div class="sales-metric-value" id="salesMarginValue">--</div>
+                    <div class="sales-metric-help">Only known-cost items</div>
+                </div>
+            </div>
+
+            <div class="sales-insight-grid" id="salesInsightGrid" style="display:none;">
+                <div class="sales-list-card">
+                    <div class="sales-list-title"><span>Top Sellers</span><span>Revenue</span></div>
+                    <div class="sales-list-body" id="salesTopSellersList"></div>
+                </div>
+                <div class="sales-list-card">
+                    <div class="sales-list-title"><span>Profit Winners</span><span>Profit</span></div>
+                    <div class="sales-list-body" id="salesProfitWinnersList"></div>
+                </div>
+                <div class="sales-list-card">
+                    <div class="sales-list-title"><span>Worst Margins</span><span>Margin</span></div>
+                    <div class="sales-list-body" id="salesWorstMarginsList"></div>
+                </div>
+                <div class="sales-list-card">
+                    <div class="sales-list-title"><span>Dead Inventory</span><span>Price</span></div>
+                    <div class="sales-list-body" id="salesDeadInventoryList"></div>
+                </div>
+            </div>
         </section>
 
         
@@ -7384,6 +7633,7 @@ function renderDashboard(options = {}) {
         var loadedItems = [];
         var itemCosts = {};
         var itemMetadata = {};
+        var salesIntelligence = null;
         var lastUpdatedItemId = "";
         var bulkUpdatedItemIds = [];
         var isBusy = false;
@@ -8012,6 +8262,133 @@ function renderDashboard(options = {}) {
             await loadItems();
         }
 
+
+
+
+        /*
+        |------------------------------------------------------------------
+        | SALES + PROFIT INTELLIGENCE
+        |------------------------------------------------------------------
+        */
+
+        function renderSalesList(elementId, items, valueFormatter, metaFormatter, emptyText) {
+            var el = byId(elementId);
+            if (!el) return;
+
+            items = Array.isArray(items) ? items : [];
+
+            if (!items.length) {
+                el.innerHTML = "<div class='sales-list-row'><div><div class='sales-product-name'>" + escapeHtml(emptyText || "No data yet") + "</div><div class='sales-product-meta'>Sync Clover sales to update this panel.</div></div><div class='sales-product-value'>--</div></div>";
+                return;
+            }
+
+            el.innerHTML = items.slice(0, 5).map(function (item) {
+                var name = item && item.name ? item.name : "Unnamed Product";
+                var meta = metaFormatter ? metaFormatter(item) : "";
+                var value = valueFormatter ? valueFormatter(item) : "";
+                return "<div class='sales-list-row'>" +
+                    "<div><div class='sales-product-name'>" + escapeHtml(name) + "</div>" +
+                    "<div class='sales-product-meta'>" + escapeHtml(meta) + "</div></div>" +
+                    "<div class='sales-product-value'>" + escapeHtml(value) + "</div>" +
+                    "</div>";
+            }).join("");
+        }
+
+        function setSalesState(message, warning) {
+            var state = byId("salesIntelligenceState");
+            if (!state) return;
+            state.textContent = message || "";
+            state.className = "sales-state-note" + (warning ? " warning" : "");
+        }
+
+        function renderSalesIntelligence(intelligence) {
+            salesIntelligence = intelligence || null;
+
+            var metricGrid = byId("salesMetricGrid");
+            var insightGrid = byId("salesInsightGrid");
+
+            if (!intelligence) {
+                if (metricGrid) metricGrid.style.display = "none";
+                if (insightGrid) insightGrid.style.display = "none";
+                setSalesState("Sync Clover inventory first. Sales intelligence will use Clover order data plus your saved costs.", true);
+                return;
+            }
+
+            if (metricGrid) metricGrid.style.display = "";
+            if (insightGrid) insightGrid.style.display = "";
+
+            setStatText("salesRevenueValue", formatCurrencyFromCents(intelligence.revenueCents || 0));
+            setStatText("salesUnitsValue", String(Number(intelligence.unitsSold || 0).toFixed(Number(intelligence.unitsSold || 0) % 1 === 0 ? 0 : 2)));
+            setStatText("salesProfitValue", formatCurrencyFromCents(intelligence.estimatedProfitCents || 0));
+            setStatText("salesMarginValue", intelligence.avgProfitMarginPercent === null || intelligence.avgProfitMarginPercent === undefined
+                ? "--"
+                : Number(intelligence.avgProfitMarginPercent).toFixed(1) + "%");
+
+            if (Number(intelligence.orderCount || 0) <= 0) {
+                setSalesState("No Clover sales were found in the last 30 days. This panel will populate after orders sync from Clover.", true);
+            } else if (Number(intelligence.missingCostSalesCents || 0) > 0) {
+                setSalesState("Sales loaded. Add missing costs to unlock more accurate profit on " + formatCurrencyFromCents(intelligence.missingCostSalesCents) + " of recent sales.", true);
+            } else {
+                setSalesState("Sales loaded from Clover. Profit estimates are based on the costs saved in InventoryRite.", false);
+            }
+
+            renderSalesList(
+                "salesTopSellersList",
+                intelligence.topSellers || [],
+                function (item) { return formatCurrencyFromCents(item.revenueCents || 0); },
+                function (item) { return Number(item.unitsSold || 0).toFixed(Number(item.unitsSold || 0) % 1 === 0 ? 0 : 2) + " unit(s) sold"; },
+                "No top sellers yet"
+            );
+
+            renderSalesList(
+                "salesProfitWinnersList",
+                intelligence.profitWinners || [],
+                function (item) { return formatCurrencyFromCents(item.estimatedProfitCents || 0); },
+                function (item) { return formatCurrencyFromCents(item.revenueCents || 0) + " revenue"; },
+                "Add costs to see profit winners"
+            );
+
+            renderSalesList(
+                "salesWorstMarginsList",
+                intelligence.worstMargins || [],
+                function (item) { return item.marginPercent === null || item.marginPercent === undefined ? "--" : Number(item.marginPercent).toFixed(1) + "%"; },
+                function (item) { return formatCurrencyFromCents(item.revenueCents || 0) + " revenue"; },
+                "No margin risks yet"
+            );
+
+            renderSalesList(
+                "salesDeadInventoryList",
+                intelligence.deadInventory || [],
+                function (item) { return formatCurrencyFromCents(item.priceCents || 0); },
+                function () { return "No sales in the last 30 days"; },
+                "No dead inventory found"
+            );
+        }
+
+        async function loadSalesIntelligence() {
+            var btn = byId("btnRefreshSalesIntelligence");
+            try {
+                if (!embeddedConnection || !embeddedConnection.merchant_id) {
+                    renderSalesIntelligence(null);
+                    return;
+                }
+
+                setButtonText("btnRefreshSalesIntelligence", "Loading...");
+                setSalesState("Loading last 30 days of Clover sales and profit intelligence...", false);
+
+                var data = await fetchJson("/clover-sales-intelligence?days=30");
+                renderSalesIntelligence(data && data.intelligence ? data.intelligence : null);
+            } catch (error) {
+                var message = error && error.message ? error.message : "Unable to load sales intelligence.";
+                var metricGrid = byId("salesMetricGrid");
+                var insightGrid = byId("salesInsightGrid");
+                if (metricGrid) metricGrid.style.display = "none";
+                if (insightGrid) insightGrid.style.display = "none";
+                setSalesState(message + " Inventory tools still work normally.", true);
+            } finally {
+                setButtonText("btnRefreshSalesIntelligence", "Refresh Sales");
+            }
+        }
 
 
         /*
@@ -10710,6 +11087,7 @@ function renderDashboard(options = {}) {
                 loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
+                loadSalesIntelligence();
                 var pageCount = data.pagination && data.pagination.pageCount ? Number(data.pagination.pageCount) : 1;
                 var truncated = data.pagination && data.pagination.truncated;
                 if (loadedItems.length === 0) {
@@ -11278,6 +11656,7 @@ function renderDashboard(options = {}) {
         bind("btnHeroAdd", "click", toggleAddPanel);
         bind("btnHeroAdvanced", "click", toggleAdvancedTools);
         bind("btnRecommendationsRefresh", "click", refreshGuidedLaunchUX);
+        bind("btnRefreshSalesIntelligence", "click", loadSalesIntelligence);
         document.addEventListener("click", function (event) {
             var guideBtn = event.target && event.target.closest ? event.target.closest("[data-guide-action]") : null;
             if (guideBtn) {
@@ -11746,6 +12125,320 @@ app.get("/clover-merchant", async (req, res) => {
 | CLOVER ITEMS ROUTE
 |--------------------------------------------------------------------------
 */
+
+
+/*
+|--------------------------------------------------------------------------
+| SALES + PROFIT INTELLIGENCE - LAST 30 DAYS
+|--------------------------------------------------------------------------
+| Pulls recent Clover orders and combines sold units/revenue with saved
+| InventoryRite costs. This is the premium value layer that shows merchants
+| what is selling, what is profitable, and what is sitting dead.
+|--------------------------------------------------------------------------
+*/
+
+function parseCloverLineQuantity(lineItem) {
+    const raw =
+        lineItem?.unitQty ??
+        lineItem?.quantity ??
+        lineItem?.qty ??
+        lineItem?.count ??
+        1;
+
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) return 1;
+
+    // Clover sometimes stores weighted/unit quantities in thousandths.
+    if (value > 100 && Number.isInteger(value) && value % 1000 === 0) {
+        return value / 1000;
+    }
+
+    return value;
+}
+
+function getCloverLineItemId(lineItem) {
+    return String(
+        lineItem?.item?.id ||
+        lineItem?.itemId ||
+        lineItem?.item?.uuid ||
+        lineItem?.id ||
+        ""
+    );
+}
+
+function getCloverLineItemName(lineItem) {
+    return String(
+        lineItem?.name ||
+        lineItem?.item?.name ||
+        lineItem?.itemName ||
+        "Unnamed Product"
+    );
+}
+
+function getCloverLineRevenueCents(lineItem, qty) {
+    const directTotal =
+        lineItem?.total ??
+        lineItem?.grossAmount ??
+        lineItem?.amount ??
+        lineItem?.lineTotal;
+
+    if (directTotal !== undefined && directTotal !== null && directTotal !== "") {
+        const total = Number(directTotal);
+        if (Number.isFinite(total)) return Math.max(0, Math.round(total));
+    }
+
+    const unitPrice = Number(lineItem?.price || lineItem?.unitPrice || 0);
+    if (Number.isFinite(unitPrice) && unitPrice > 0) {
+        return Math.max(0, Math.round(unitPrice * Math.max(1, Number(qty || 1))));
+    }
+
+    return 0;
+}
+
+async function fetchRecentCloverOrders(accessToken, merchantId, days = 30) {
+    const safeDays = Math.max(1, Math.min(90, Number(days || 30)));
+    const sinceMillis = Date.now() - safeDays * 24 * 60 * 60 * 1000;
+    const safeLimit = 100;
+    const maxPages = Number(process.env.CLOVER_MAX_ORDER_PAGES || 50);
+    const orders = [];
+    let offset = 0;
+    let pageCount = 0;
+
+    while (pageCount < maxPages) {
+        const url =
+            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/orders` +
+            `?limit=${safeLimit}` +
+            `&offset=${offset}` +
+            `&expand=lineItems` +
+            `&filter=clientCreatedTime>=${sinceMillis}`;
+
+        const response = await cloverApi.get(url, {
+            headers: cloverHeaders(accessToken)
+        });
+
+        const data = response.data || {};
+        const elements = Array.isArray(data.elements) ? data.elements : [];
+        orders.push(...elements);
+
+        pageCount += 1;
+
+        if (elements.length < safeLimit) break;
+        offset += safeLimit;
+    }
+
+    return {
+        days: safeDays,
+        since: new Date(sinceMillis).toISOString(),
+        pageCount,
+        totalLoaded: orders.length,
+        truncated: pageCount >= maxPages,
+        elements: orders
+    };
+}
+
+function buildSalesProfitIntelligence({ orders = [], items = [], costs = {}, days = 30 }) {
+    const products = new Map();
+
+    (items || []).forEach((item) => {
+        if (!item || !item.id) return;
+        const id = String(item.id);
+        const costCents = Number(costs[id] || item.cost || item.costCents || 0);
+        products.set(id, {
+            id,
+            name: String(item.name || "Unnamed Product"),
+            priceCents: Number(item.price || item.priceCents || 0),
+            costCents: Number.isFinite(costCents) ? Math.max(0, Math.round(costCents)) : 0,
+            unitsSold: 0,
+            revenueCents: 0,
+            estimatedCostCents: 0,
+            estimatedProfitCents: 0,
+            hasKnownCost: costCents > 0
+        });
+    });
+
+    let orderCount = 0;
+    let lineCount = 0;
+    let revenueCents = 0;
+    let unitsSold = 0;
+    let estimatedCostCents = 0;
+    let estimatedProfitCents = 0;
+    let missingCostSalesCents = 0;
+
+    (orders || []).forEach((order) => {
+        if (!order || order.deletedTime) return;
+
+        const state = String(order.state || "").toLowerCase();
+        if (state && ["voided", "cancelled", "canceled"].includes(state)) return;
+
+        const lineItems = order.lineItems && Array.isArray(order.lineItems.elements)
+            ? order.lineItems.elements
+            : [];
+
+        if (!lineItems.length) return;
+
+        orderCount += 1;
+
+        lineItems.forEach((lineItem) => {
+            if (!lineItem || lineItem.refunded || lineItem.isRevenue === false) return;
+
+            const qty = parseCloverLineQuantity(lineItem);
+            const itemId = getCloverLineItemId(lineItem);
+            const name = getCloverLineItemName(lineItem);
+            const lineRevenue = getCloverLineRevenueCents(lineItem, qty);
+
+            if (lineRevenue <= 0) return;
+
+            lineCount += 1;
+            unitsSold += qty;
+            revenueCents += lineRevenue;
+
+            let product = itemId ? products.get(itemId) : null;
+
+            if (!product) {
+                product = {
+                    id: itemId || `line-${lineCount}`,
+                    name,
+                    priceCents: Number(lineItem.price || 0),
+                    costCents: Number(costs[itemId] || 0),
+                    unitsSold: 0,
+                    revenueCents: 0,
+                    estimatedCostCents: 0,
+                    estimatedProfitCents: 0,
+                    hasKnownCost: Number(costs[itemId] || 0) > 0
+                };
+                products.set(product.id, product);
+            }
+
+            const unitCost = Number(product.costCents || 0);
+            const lineCost = unitCost > 0 ? Math.round(unitCost * qty) : 0;
+            const lineProfit = unitCost > 0 ? lineRevenue - lineCost : 0;
+
+            product.unitsSold += qty;
+            product.revenueCents += lineRevenue;
+            product.estimatedCostCents += lineCost;
+            product.estimatedProfitCents += lineProfit;
+            product.hasKnownCost = product.hasKnownCost || unitCost > 0;
+
+            estimatedCostCents += lineCost;
+            estimatedProfitCents += lineProfit;
+            if (unitCost <= 0) missingCostSalesCents += lineRevenue;
+        });
+    });
+
+    const soldProducts = Array.from(products.values())
+        .filter((product) => product.unitsSold > 0)
+        .map((product) => ({
+            ...product,
+            marginPercent: product.revenueCents > 0 && product.hasKnownCost
+                ? ((product.estimatedProfitCents / product.revenueCents) * 100)
+                : null
+        }));
+
+    const topSellers = soldProducts
+        .slice()
+        .sort((a, b) => b.revenueCents - a.revenueCents)
+        .slice(0, 8);
+
+    const fastMovers = soldProducts
+        .slice()
+        .sort((a, b) => b.unitsSold - a.unitsSold)
+        .slice(0, 8);
+
+    const profitWinners = soldProducts
+        .filter((product) => product.hasKnownCost)
+        .slice()
+        .sort((a, b) => b.estimatedProfitCents - a.estimatedProfitCents)
+        .slice(0, 8);
+
+    const worstMargins = soldProducts
+        .filter((product) => product.hasKnownCost && product.marginPercent !== null)
+        .slice()
+        .sort((a, b) => a.marginPercent - b.marginPercent)
+        .slice(0, 8);
+
+    const deadInventory = Array.from(products.values())
+        .filter((product) => product.unitsSold <= 0 && product.priceCents > 0)
+        .slice()
+        .sort((a, b) => b.priceCents - a.priceCents)
+        .slice(0, 8);
+
+    return {
+        days,
+        orderCount,
+        lineCount,
+        totalProducts: products.size,
+        soldProductCount: soldProducts.length,
+        revenueCents,
+        unitsSold,
+        estimatedCostCents,
+        estimatedProfitCents,
+        missingCostSalesCents,
+        avgProfitMarginPercent: revenueCents > 0 && estimatedCostCents > 0
+            ? ((estimatedProfitCents / revenueCents) * 100)
+            : null,
+        topSellers,
+        fastMovers,
+        profitWinners,
+        worstMargins,
+        deadInventory
+    };
+}
+
+app.get("/clover-sales-intelligence", async (req, res) => {
+    try {
+        const { accessToken, merchantId } = await getConnectionFromRequest(req);
+
+        if (!accessToken || !merchantId) {
+            return res.status(400).json({
+                success: false,
+                message: "Connect Clover before loading sales intelligence."
+            });
+        }
+
+        const days = Math.max(1, Math.min(90, Number(req.query.days || 30)));
+
+        const [ordersData, itemsData, costs] = await Promise.all([
+            fetchRecentCloverOrders(accessToken, merchantId, days),
+            fetchAllCloverItems(accessToken, merchantId),
+            getItemCostsForMerchant(merchantId)
+        ]);
+
+        const metadata = await getItemMetadataForMerchant(merchantId);
+        applyMetadataToCloverItems(itemsData, metadata);
+
+        const intelligence = buildSalesProfitIntelligence({
+            orders: ordersData.elements || [],
+            items: itemsData.elements || [],
+            costs,
+            days
+        });
+
+        logApiCall("/clover-sales-intelligence", merchantId, "GET", 200);
+
+        return res.json({
+            success: true,
+            message: intelligence.orderCount
+                ? `Loaded ${days}-day sales intelligence from Clover orders.`
+                : `No Clover order line items found in the last ${days} days.`,
+            days,
+            ordersLoaded: ordersData.totalLoaded,
+            ordersTruncated: ordersData.truncated,
+            inventoryLoaded: itemsData.totalLoaded,
+            intelligence
+        });
+    } catch (error) {
+        console.error("Sales Intelligence Error:", error.response?.data || error.message);
+        const cloverError = getCloverError(error);
+        return res.status(cloverError.status).json({
+            success: false,
+            message: cloverError.status === 403
+                ? "Sales intelligence needs Clover order permission. Enable order_read for this app, then reconnect Clover."
+                : "Failed to load sales intelligence from Clover orders.",
+            error: cloverError.data
+        });
+    }
+});
+
 
 app.get("/clover-items", async (req, res) => {
     try {
@@ -12893,6 +13586,7 @@ app.get("/dev", (req, res) => {
 /app-status
 /clover-connection
 /clover-items
+/clover-sales-intelligence
 /clover-create-item
 /clover-update-item/:itemId
 /clover-delete-item/:itemId
