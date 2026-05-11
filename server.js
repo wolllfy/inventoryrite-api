@@ -391,8 +391,7 @@ async function saveCloverConnection(connection) {
         employee_id: connection.employee_id || "",
         access_token: connection.access_token || "",
         refresh_token: connection.refresh_token || latestCloverConnection.refresh_token || "",
-        token_expires_at: connection.token_expires_at,
-            scopes: connection.scopes || "" || latestCloverConnection.token_expires_at || "",
+        token_expires_at: connection.token_expires_at || latestCloverConnection.token_expires_at || "",
         scopes: connection.scopes || latestCloverConnection.scopes || "",
         connected_at: connection.connected_at || new Date().toISOString()
     };
@@ -7175,11 +7174,11 @@ function renderDashboard(options = {}) {
                     <h3 class="sales-intelligence-title">Last 30 Days Sales + Profit Intelligence</h3>
                     <p class="sales-intelligence-subtitle">See what sold, what made money, what needs cost data, and what inventory is not moving.</p>
                 </div>
-                <button id="btnRefreshSalesIntelligence" type="button" class="btn btn-primary btn-small">Enable Sales Intelligence</button>
+                <button id="btnRefreshSalesIntelligence" type="button" class="btn btn-light btn-small">Refresh Sales</button>
             </div>
 
             <div id="salesIntelligenceState" class="sales-state-note warning">
-                Sales Intelligence is optional. Sync inventory first, then click Enable Sales Intelligence to test Clover order access and load the last 30 days.
+                Sync Clover inventory first. Sales intelligence will use Clover order data plus your saved costs.
             </div>
 
             <div class="sales-metric-grid" id="salesMetricGrid" style="display:none;">
@@ -8315,7 +8314,7 @@ function renderDashboard(options = {}) {
             if (!intelligence) {
                 if (metricGrid) metricGrid.style.display = "none";
                 if (insightGrid) insightGrid.style.display = "none";
-                setSalesState("Sales Intelligence is optional. Sync inventory first, then click Enable Sales Intelligence to test Clover order access and load the last 30 days.", true);
+                setSalesState("Sync Clover inventory first. Sales intelligence will use Clover order data plus your saved costs.", true);
                 return;
             }
 
@@ -8371,15 +8370,15 @@ function renderDashboard(options = {}) {
         }
 
         async function loadSalesIntelligence() {
+            var btn = byId("btnRefreshSalesIntelligence");
             try {
                 if (!embeddedConnection || !embeddedConnection.merchant_id) {
                     renderSalesIntelligence(null);
-                    setSalesState("Connect Clover and sync inventory first. Sales Intelligence will stay locked until a merchant connection is available.", true);
                     return;
                 }
 
-                setButtonText("btnRefreshSalesIntelligence", "Testing Access...");
-                setSalesState("Testing Clover Orders access and loading the last 30 days of sales...", false);
+                setButtonText("btnRefreshSalesIntelligence", "Loading...");
+                setSalesState("Loading last 30 days of Clover sales and profit intelligence...", false);
 
                 var requestHeaders = {};
                 if (embeddedConnection && embeddedConnection.merchant_id) {
@@ -8387,30 +8386,7 @@ function renderDashboard(options = {}) {
                 }
 
                 var data = await fetchJson("/clover-sales-intelligence?days=30", { headers: requestHeaders });
-
-                if (!data || data.success === false) {
-                    var metricGrid = byId("salesMetricGrid");
-                    var insightGrid = byId("salesInsightGrid");
-                    if (metricGrid) metricGrid.style.display = "none";
-                    if (insightGrid) insightGrid.style.display = "none";
-
-                    var message = data && data.message
-                        ? data.message
-                        : "Sales Intelligence is not enabled yet. Inventory tools still work normally.";
-
-                    if (data && data.needsReconnect) {
-                        message = "Reconnect Clover to enable Sales Intelligence. Inventory tools still work normally.";
-                        setButtonText("btnRefreshSalesIntelligence", "Reconnect Needed");
-                    } else {
-                        setButtonText("btnRefreshSalesIntelligence", "Enable Sales Intelligence");
-                    }
-
-                    setSalesState(message, true);
-                    return;
-                }
-
                 renderSalesIntelligence(data && data.intelligence ? data.intelligence : null);
-                setButtonText("btnRefreshSalesIntelligence", "Refresh Sales");
             } catch (error) {
                 var rawMessage = error && error.message ? error.message : "Unable to load sales intelligence.";
                 var metricGrid = byId("salesMetricGrid");
@@ -8420,19 +8396,16 @@ function renderDashboard(options = {}) {
 
                 var friendlyMessage = rawMessage;
                 if (String(rawMessage).includes("401") || String(rawMessage).includes("Unauthorized")) {
-                    friendlyMessage = "Reconnect Clover to enable Sales Intelligence. Inventory tools still work normally.";
-                    setButtonText("btnRefreshSalesIntelligence", "Reconnect Needed");
+                    friendlyMessage = "Sales intelligence needs a fresh Clover connection with Orders Read access. Click Connect Clover again, then refresh sales.";
                 } else if (String(rawMessage).includes("403")) {
-                    friendlyMessage = "Sales Intelligence needs Orders Read permission in Clover. Inventory tools still work normally.";
-                    setButtonText("btnRefreshSalesIntelligence", "Enable Sales Intelligence");
-                } else {
-                    setButtonText("btnRefreshSalesIntelligence", "Enable Sales Intelligence");
+                    friendlyMessage = "Sales intelligence needs Orders Read permission in Clover. Inventory tools still work normally.";
                 }
 
                 setSalesState(friendlyMessage, true);
+            } finally {
+                setButtonText("btnRefreshSalesIntelligence", "Refresh Sales");
             }
         }
-
 
 
         /*
@@ -11865,8 +11838,7 @@ app.get("/", async (req, res) => {
                 employee_id: connection.employee_id || "",
                 access_token: connection.access_token || "",
                 refresh_token: connection.refresh_token || "",
-                token_expires_at: connection.token_expires_at,
-            scopes: connection.scopes || "" || "",
+                token_expires_at: connection.token_expires_at || "",
                 scopes: connection.scopes || "",
                 connected_at: connection.connected_at || ""
             }));
@@ -12108,8 +12080,7 @@ app.get("/clover-connection", async (req, res) => {
             connected_at: connection.connected_at,
             hasAccessToken: !!connection.access_token,
             hasRefreshToken: !!connection.refresh_token,
-            token_expires_at: connection.token_expires_at,
-            scopes: connection.scopes || ""
+            token_expires_at: connection.token_expires_at
         }
     });
 });
@@ -12501,8 +12472,8 @@ app.get("/clover-sales-intelligence", async (req, res) => {
             success: false,
             needsReconnect,
             message: needsReconnect
-                ? "Reconnect Clover to enable Sales Intelligence. Inventory tools still work normally."
-                : "Sales Intelligence could not load right now. Inventory tools still work normally.",
+                ? "Sales intelligence needs a fresh Clover connection with Orders Read access. Click Connect Clover again, then refresh sales."
+                : "Failed to load sales intelligence from Clover orders.",
             error: cloverError.data,
             intelligence: null
         });
