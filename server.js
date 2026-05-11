@@ -685,7 +685,17 @@ async function saveAlertSettingsForMerchant(merchantId, settingsInput) {
 }
 
 function getItemQuantityServer(item) {
-    const candidates = [item.stockCount, item.quantity, item.qty, item.inventoryCount, item.availableQuantity];
+    const candidates = [
+        item.stockCount,
+        item.quantity,
+        item.qty,
+        item.inventoryCount,
+        item.availableQuantity,
+        item.onHandQuantity,
+        item.currentStock,
+        item.stock_quantity
+    ];
+
     for (const value of candidates) {
         if (value !== undefined && value !== null && value !== "") {
             const numberValue = Number(value);
@@ -693,6 +703,27 @@ function getItemQuantityServer(item) {
         }
     }
     return null;
+}
+
+function getItemAvailabilityServer(item = {}) {
+    const candidates = [
+        item.available,
+        item.isAvailable,
+        item.itemAvailable,
+        item.enabled,
+        item.visible
+    ];
+
+    for (const value of candidates) {
+        if (value !== undefined && value !== null && value !== "") {
+            return parseOptionalBoolean(value, true);
+        }
+    }
+
+    // Hidden items should not be treated as actively available to customers.
+    if (item.hidden === true || String(item.hidden || "").toLowerCase() === "true") return false;
+
+    return true;
 }
 
 function calculateMarginServer(priceCents, costCents) {
@@ -729,6 +760,8 @@ function normalizeItemForReport(item, costs = {}) {
     const suggestedPrice = cost > 0 ? getTargetPriceForMarginServer(cost, 40) : 0;
     const potentialGainPerSale = price > 0 && suggestedPrice > price ? suggestedPrice - price : 0;
 
+    const available = getItemAvailabilityServer(item || {});
+
     return {
         id,
         name: String(item?.name || item?.itemName || "Unnamed Product"),
@@ -738,6 +771,8 @@ function normalizeItemForReport(item, costs = {}) {
         price,
         cost,
         qty,
+        hasQuantity: qty !== null,
+        available,
         margin,
         suggestedPrice,
         potentialGainPerSale
@@ -752,6 +787,13 @@ function analyzeInventoryReport({ items = [], costs = {}, settings = {} }) {
     const lowStock = normalized
         .filter((item) => item.qty !== null && item.qty <= threshold)
         .sort((a, b) => Number(a.qty || 0) - Number(b.qty || 0));
+
+    const quantityTrackedItems = normalized.filter((item) => item.qty !== null);
+    const unavailableItems = normalized
+        .filter((item) => item.available === false)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    const inventoryMode = quantityTrackedItems.length > 0 ? "quantity" : "availability";
+    const stockAlertItems = inventoryMode === "quantity" ? lowStock : unavailableItems;
 
     const missingCost = normalized
         .filter((item) => item.price > 0 && item.cost <= 0)
@@ -803,6 +845,7 @@ function analyzeInventoryReport({ items = [], costs = {}, settings = {} }) {
     penalty += missingCost.length * 4;
     penalty += missingPrice.length * 6;
     penalty += lowStock.length * 3;
+    if (inventoryMode === "availability") penalty += unavailableItems.length * 3;
     penalty += duplicateCount * 3;
     const healthScore = Math.max(0, Math.min(100, Math.round(100 - penalty)));
 
@@ -818,6 +861,11 @@ function analyzeInventoryReport({ items = [], costs = {}, settings = {} }) {
         avgMargin,
         healthScore,
         healthLabel,
+        inventoryMode,
+        inventoryModeLabel: inventoryMode === "quantity" ? "Quantity Tracking" : "Availability Monitoring",
+        quantityTrackedCount: quantityTrackedItems.length,
+        unavailableItems,
+        stockAlertItems,
         lowStock,
         missingCost,
         missingPrice,
@@ -879,32 +927,39 @@ function buildMissingCostRows(items) {
 
 function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, isTest = false }) {
     const report = analyzeInventoryReport({ items, costs, settings });
+    const stockAlertItems = report.stockAlertItems || report.lowStock || [];
     const lowStockItems = report.lowStock || [];
+    const unavailableItems = report.unavailableItems || [];
     const threshold = report.threshold || Number(settings?.low_stock_threshold || 5);
     const reorderMultiplier = Math.max(1, Number(settings?.low_stock_reorder_multiplier || 3));
+    const isQuantityMode = report.inventoryMode === "quantity";
 
-    const subjectPrefix = isTest ? "InventoryRite Test Low Stock Alert" : "InventoryRite Low Stock Alert";
-    const subject = lowStockItems.length
-        ? `${subjectPrefix} - ${lowStockItems.length} Item(s) Need Reorder`
-        : `${subjectPrefix} - No Low Stock Items Found`;
+    const subjectPrefix = isTest ? "InventoryRite Test Stock Alert" : "InventoryRite Stock Alert";
+    const subject = stockAlertItems.length
+        ? `${subjectPrefix} - ${stockAlertItems.length} Item(s) Need Attention`
+        : `${subjectPrefix} - No Stock Issues Found`;
 
-    const rows = lowStockItems.slice(0, 25).map((item) => {
+    const rows = stockAlertItems.slice(0, 25).map((item) => {
         const currentQty = item.qty === null ? "Unknown" : item.qty;
-        const suggested = Math.max(threshold * reorderMultiplier, threshold - Number(item.qty || 0) + threshold * Math.max(1, reorderMultiplier - 1));
+        const suggested = isQuantityMode
+            ? Math.max(threshold * reorderMultiplier, threshold - Number(item.qty || 0) + threshold * Math.max(1, reorderMultiplier - 1))
+            : "Review";
         const priceText = item.price > 0 ? centsToMoneyServer(item.price) : "No price";
         const skuText = item.sku ? item.sku : "--";
+        const statusText = isQuantityMode ? currentQty : "Unavailable";
+        const thresholdText = isQuantityMode ? threshold : "Availability";
         return `<tr>
             <td style="padding:11px;border-bottom:1px solid #e5e7eb;">
                 <div style="font-weight:900;color:#111827;">${safe(item.name)}</div>
                 <div style="font-size:12px;color:#64748b;margin-top:3px;">SKU: ${safe(skuText)} · Price: ${safe(priceText)}</div>
             </td>
-            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:900;color:#b91c1c;">${safe(currentQty)}</td>
-            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(threshold)}</td>
+            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:900;color:#b91c1c;">${safe(statusText)}</td>
+            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(thresholdText)}</td>
             <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:900;color:#166534;">${safe(suggested)}</td>
         </tr>`;
     }).join("");
 
-    const hasRows = lowStockItems.length > 0;
+    const hasRows = stockAlertItems.length > 0;
 
     return {
         subject,
@@ -918,8 +973,12 @@ function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, i
                         <h1 style="margin:10px 0 0;font-size:26px;line-height:1.15;font-weight:900;color:#ffffff;">${safe(isTest ? "Test Low Stock Alert" : "Low Stock Alert")}</h1>
                         <p style="margin:10px 0 0;color:#fff1f2;line-height:1.55;font-size:14px;">
                             ${hasRows
-                                ? `InventoryRite found ${safe(lowStockItems.length)} item(s) at or below your low-stock threshold of ${safe(threshold)}.`
-                                : `InventoryRite checked your Clover inventory and did not find products at or below the low-stock threshold of ${safe(threshold)}.`}
+                                ? (isQuantityMode
+                                    ? `InventoryRite found ${safe(lowStockItems.length)} item(s) at or below your low-stock threshold of ${safe(threshold)}.`
+                                    : `InventoryRite found ${safe(unavailableItems.length)} unavailable item(s). Clover is currently using availability monitoring instead of quantity stock counts.`)
+                                : (isQuantityMode
+                                    ? `InventoryRite checked your Clover inventory and did not find products at or below the low-stock threshold of ${safe(threshold)}.`
+                                    : `InventoryRite checked availability and did not find unavailable products. Quantity stock counts were not detected.`)}
                         </p>
                     </div>
                     <div style="padding:22px;background:#ffffff;">
@@ -927,7 +986,7 @@ function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, i
                             <div style="font-size:13px;color:${hasRows ? "#991b1b" : "#166534"};font-weight:900;">${hasRows ? "Action Needed" : "Inventory Looks Good"}</div>
                             <div style="font-size:14px;color:${hasRows ? "#7f1d1d" : "#14532d"};line-height:1.55;margin-top:6px;">
                                 Merchant <strong>${safe(merchantId)}</strong> has <strong>${safe(report.totalItems)}</strong> product(s) loaded.
-                                ${hasRows ? "Review these low-stock products and reorder before you run out." : "No reorder emergency was detected right now."}
+                                ${hasRows ? (isQuantityMode ? "Review these low-stock products and reorder before you run out." : "Review these unavailable products inside Clover or InventoryRite.") : "No stock emergency was detected right now."}
                             </div>
                         </div>
 
@@ -936,20 +995,20 @@ function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, i
                                 <thead>
                                     <tr style="background:#fff7ed;">
                                         <th style="padding:10px;text-align:left;">Product</th>
-                                        <th style="padding:10px;text-align:center;">Current Stock</th>
-                                        <th style="padding:10px;text-align:center;">Threshold</th>
-                                        <th style="padding:10px;text-align:center;">Suggested Reorder</th>
+                                        <th style="padding:10px;text-align:center;">${safe(isQuantityMode ? "Current Stock" : "Status")}</th>
+                                        <th style="padding:10px;text-align:center;">${safe(isQuantityMode ? "Threshold" : "Mode")}</th>
+                                        <th style="padding:10px;text-align:center;">${safe(isQuantityMode ? "Suggested Reorder" : "Next Step")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>${rows}</tbody>
                             </table>
                         ` : `
-                            <p style="color:#166534;font-weight:bold;margin:0;">No low-stock products found right now.</p>
+                            <p style="color:#166534;font-weight:bold;margin:0;">No stock issues found right now.</p>
                         `}
 
                         <div style="margin-top:20px;border-top:1px solid #e5e7eb;padding-top:14px;color:#64748b;font-size:13px;line-height:1.55;">
                             <strong style="color:#0f172a;">How this alert works:</strong>
-                            InventoryRite sends this only when Low Stock Alerts are set to Daily or Weekly and product quantity is at or below the saved threshold.
+                            InventoryRite adapts to the Clover merchant setup. If Clover sends quantity counts, alerts use the low-stock threshold. If Clover only sends availability, alerts watch for unavailable items.
                         </div>
 
                         <p style="margin:16px 0 0;color:#64748b;font-size:12px;line-height:1.5;">
@@ -1034,7 +1093,7 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
                             </tr>
                             <tr>
                                 ${buildReportMetricCard("Missing Costs", String(report.missingCost.length), "Products with a selling price but no saved cost.", "#92400e")}
-                                ${buildReportMetricCard("Low Stock", String(report.lowStock.length), `Threshold: ${report.threshold}. Reorder suggestions included below.`, "#b91c1c")}
+                                ${buildReportMetricCard(report.inventoryMode === "quantity" ? "Low Stock" : "Unavailable Items", String(report.stockAlertItems.length), report.inventoryMode === "quantity" ? `Threshold: ${report.threshold}. Reorder suggestions included below.` : "Clover is in availability monitoring mode; quantity stock counts were not detected.", "#b91c1c")}
                             </tr>
                         </table>
 
@@ -1086,8 +1145,8 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
                             </table>
                         ` : `<p style="color:#166534;font-weight:bold;">No missing-cost cleanup found right now.</p>`}
 
-                        <h2 style="margin:22px 0 10px;font-size:18px;">Reorder Suggestions</h2>
-                        ${report.lowStock.length ? `
+                        <h2 style="margin:22px 0 10px;font-size:18px;">${report.inventoryMode === "quantity" ? "Reorder Suggestions" : "Availability Monitoring"}</h2>
+                        ${report.inventoryMode === "quantity" ? (report.lowStock.length ? `
                             <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
                                 <thead>
                                     <tr style="background:#f0fdf4;">
@@ -1098,7 +1157,18 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
                                 </thead>
                                 <tbody>${lowStockRows}</tbody>
                             </table>
-                        ` : `<p style="color:#166534;font-weight:bold;">No low-stock products found right now.</p>`}
+                        ` : `<p style="color:#166534;font-weight:bold;">No low-stock products found right now.</p>`) : (report.unavailableItems.length ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#fff7ed;">
+                                        <th style="padding:10px;text-align:left;">Product</th>
+                                        <th style="padding:10px;text-align:center;">Status</th>
+                                        <th style="padding:10px;text-align:center;">Next Step</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${report.unavailableItems.slice(0, 12).map((item) => `<tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name)}</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;color:#b91c1c;font-weight:900;">Unavailable</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">Review in Clover</td></tr>`).join("")}</tbody>
+                            </table>
+                        ` : `<p style="color:#166534;font-weight:bold;">No unavailable products found right now. Quantity counts were not detected, so reorder quantities are not available yet.</p>`)}
 
                         <div style="margin-top:22px;border-top:1px solid #e5e7eb;padding-top:16px;color:#64748b;font-size:13px;line-height:1.55;">
                             <strong style="color:#0f172a;">How to use this report:</strong>
@@ -8650,7 +8720,7 @@ function renderDashboard(options = {}) {
             items = items || [];
             var loaded = items.length;
             var visible = items.filter(function (item) { return !item.hidden; }).length;
-            var available = items.filter(function (item) { return item.available !== false; }).length;
+            var available = items.filter(function (item) { return getItemAvailability(item) !== false; }).length;
             var totalCents = items.reduce(function (sum, item) {
                 return sum + Number(item.price || 0);
             }, 0);
@@ -9148,7 +9218,16 @@ function renderDashboard(options = {}) {
         }
 
         function getItemQuantity(item) {
-            var candidates = [item.stockCount, item.quantity, item.qty, item.inventoryCount, item.availableQuantity];
+            var candidates = [
+                item.stockCount,
+                item.quantity,
+                item.qty,
+                item.inventoryCount,
+                item.availableQuantity,
+                item.onHandQuantity,
+                item.currentStock,
+                item.stock_quantity
+            ];
             for (var i = 0; i < candidates.length; i++) {
                 if (candidates[i] !== undefined && candidates[i] !== null && candidates[i] !== "") {
                     var n = Number(candidates[i]);
@@ -9156,6 +9235,39 @@ function renderDashboard(options = {}) {
                 }
             }
             return null;
+        }
+
+        function getItemAvailability(item) {
+            if (!item) return true;
+            var candidates = [item.available, item.isAvailable, item.itemAvailable, item.enabled, item.visible];
+            for (var i = 0; i < candidates.length; i++) {
+                if (candidates[i] !== undefined && candidates[i] !== null && candidates[i] !== "") {
+                    var text = String(candidates[i]).trim().toLowerCase();
+                    if (["false", "0", "no", "n", "unavailable", "inactive", "disabled", "hidden"].indexOf(text) >= 0) return false;
+                    if (["true", "1", "yes", "y", "available", "active", "enabled", "visible"].indexOf(text) >= 0) return true;
+                    return !!candidates[i];
+                }
+            }
+            if (item.hidden === true || String(item.hidden || "").toLowerCase() === "true") return false;
+            return true;
+        }
+
+        function getInventoryTrackingSummary(items) {
+            items = items || loadedItems || [];
+            var quantityTracked = items.filter(function (item) { return getItemQuantity(item) !== null; }).length;
+            var unavailable = items.filter(function (item) { return getItemAvailability(item) === false; }).length;
+            var total = items.length;
+            return {
+                mode: quantityTracked > 0 ? "quantity" : "availability",
+                quantityTracked: quantityTracked,
+                unavailable: unavailable,
+                total: total,
+                label: quantityTracked > 0 ? "Quantity Tracking Active" : "Availability Monitoring Mode"
+            };
+        }
+
+        function getUnavailableItems() {
+            return (loadedItems || []).filter(function (item) { return getItemAvailability(item) === false; });
         }
 
         function getLowStockThreshold() {
@@ -9166,6 +9278,12 @@ function renderDashboard(options = {}) {
 
         function getLowStockItems() {
             var threshold = getLowStockThreshold();
+            var summary = getInventoryTrackingSummary(loadedItems || []);
+
+            if (summary.mode === "availability") {
+                return getUnavailableItems();
+            }
+
             return (loadedItems || []).filter(function (item) {
                 var qty = getItemQuantity(item);
                 return qty !== null && qty <= threshold;
@@ -9186,7 +9304,10 @@ function renderDashboard(options = {}) {
             var note = byId("viewFilterNote");
             if (note) {
                 if (activeViewMode === "lowStock") {
-                    note.textContent = "Showing Low Stock view. Products with quantity 5 or less appear here when Clover sends quantity data.";
+                    var stockSummary = getInventoryTrackingSummary(loadedItems || []);
+                    note.textContent = stockSummary.mode === "quantity"
+                        ? "Showing Low Stock view. Products at or below your saved threshold appear here."
+                        : "Showing Availability Monitoring view. Clover is not sending quantity counts, so unavailable products appear here instead.";
                     note.classList.add("show");
                 } else if (activeViewMode === "profitAlerts") {
                     note.textContent = "Showing Profit Alerts view. Low-margin and below-cost items are highlighted here.";
@@ -9284,7 +9405,7 @@ function renderDashboard(options = {}) {
                     csvEscape(category),
                     csvEscape(quantity === null ? "" : quantity),
                     csvEscape(reorderLevel),
-                    csvEscape(item.available === false ? "No" : "Yes"),
+                    csvEscape(getItemAvailability(item) === false ? "No" : "Yes"),
                     csvEscape(item.hidden ? "Yes" : "No"),
                     csvEscape(margin === null ? "" : margin.toFixed(1)),
                     csvEscape((profit / 100).toFixed(2))
@@ -9332,20 +9453,26 @@ function renderDashboard(options = {}) {
         function showLowStock() {
             var lowItems = getLowStockItems();
             var threshold = getLowStockThreshold();
+            var summary = getInventoryTrackingSummary(loadedItems || []);
             var rows = lowItems.slice(0, 25).map(function (item) {
                 var qty = getItemQuantity(item);
+                if (summary.mode === "availability") {
+                    return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Clover is not sending quantity counts for this merchant. This item is currently marked unavailable.</span></div><div><span>Unavailable</span></div>";
+                }
                 var suggested = Math.max(threshold * 3, threshold - Number(qty || 0) + threshold * 2);
                 return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Quantity: " + escapeHtml(qty === null ? "Unknown" : qty) + " - Suggested reorder: " + escapeHtml(suggested) + " units - Price " + escapeHtml(formatCurrencyFromCents(item.price || 0)) + "</span></div><div><span>Low Stock</span></div>";
             });
 
             openFeatureModal(
-                "Low Stock Alerts",
-                lowItems.length ? (lowItems.length + " product(s) are at or below your low-stock threshold of " + threshold + ".") : "No low-stock items were found. Clover may not be sending quantity data for these products yet.",
+                summary.mode === "quantity" ? "Low Stock Alerts" : "Availability Monitoring",
+                lowItems.length
+                    ? (summary.mode === "quantity" ? (lowItems.length + " product(s) are at or below your low-stock threshold of " + threshold + ".") : (lowItems.length + " unavailable product(s) found. Quantity stock counts were not detected for this merchant."))
+                    : (summary.mode === "quantity" ? "No low-stock items were found." : "No unavailable products were found. Quantity stock counts were not detected for this merchant."),
                 rows
             );
             setViewMode("lowStock");
-            logActivity("Low Stock View", lowItems.length + " low-stock item(s) reviewed.", "Viewed");
-            showToast("Low Stock view enabled.", "info");
+            logActivity(summary.mode === "quantity" ? "Low Stock View" : "Availability View", lowItems.length + " stock-related item(s) reviewed.", "Viewed");
+            showToast(summary.mode === "quantity" ? "Low Stock view enabled." : "Availability Monitoring view enabled.", "info");
         }
 
         function showProfitAlerts() {
@@ -9371,6 +9498,22 @@ function renderDashboard(options = {}) {
         function showReorderPlanning() {
             var lowItems = getLowStockItems();
             var threshold = getLowStockThreshold();
+            var summary = getInventoryTrackingSummary(loadedItems || []);
+
+            if (summary.mode === "availability") {
+                var availabilityRows = lowItems.slice(0, 25).map(function (item) {
+                    return "<div><strong>" + escapeHtml(item.name || "Unnamed Product") + "</strong><span>Quantity counts are not available. Item is currently marked unavailable in Clover.</span></div><div><span>Review</span></div>";
+                });
+                openFeatureModal(
+                    "Availability Monitoring",
+                    lowItems.length ? "InventoryRite can monitor unavailable products, but reorder quantities require Clover quantity tracking." : "No unavailable products found. Quantity stock counts were not detected yet.",
+                    availabilityRows
+                );
+                logActivity("Availability Monitoring", lowItems.length + " unavailable item(s) checked.", "Viewed");
+                showToast("Availability monitoring opened.", "info");
+                return;
+            }
+
             var rows = lowItems.slice(0, 25).map(function (item) {
                 var qty = getItemQuantity(item);
                 var price = Number(item.price || 0);
@@ -9488,7 +9631,16 @@ function renderDashboard(options = {}) {
 
         function showAlertSettings() {
             var s = alertSettings || {};
+            var trackingSummary = getInventoryTrackingSummary(loadedItems || []);
+            var trackingNote = trackingSummary.mode === "quantity"
+                ? ("Quantity Tracking Active: " + trackingSummary.quantityTracked + " of " + trackingSummary.total + " products have Clover stock counts. Low-stock alerts will use the saved threshold.")
+                : ("Availability Monitoring Mode: Clover is not sending quantity stock counts yet. Alerts will watch for unavailable products instead of reorder quantities.");
+
             var rows = [
+                "<div style='display:block;width:100%;border:1px solid " + (trackingSummary.mode === "quantity" ? "#bbf7d0" : "#fed7aa") + ";background:" + (trackingSummary.mode === "quantity" ? "#f0fdf4" : "#fff7ed") + ";border-radius:14px;padding:12px;'>" +
+                    "<strong>" + escapeHtml(trackingSummary.label) + "</strong>" +
+                    "<div class='sync-note'>" + escapeHtml(trackingNote) + "</div>" +
+                "</div>",
                 "<div style='display:block;width:100%;'>" +
                     "<label>Email Address</label>" +
                     "<input id='alertEmail' type='email' placeholder='owner@store.com' value='" + escapeHtml(s.report_email || "") + "' />" +
@@ -9504,7 +9656,7 @@ function renderDashboard(options = {}) {
                     "<div><label>Send Time</label><select id='alertReportTime' class='small-input'><option>7:00 AM</option><option>8:00 AM</option><option>9:00 AM</option><option>10:00 AM</option><option>5:00 PM</option></select><div class='sync-note'>Daily alerts and weekly reports use this same time.</div></div>" +
                 "</div>",
                 "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;'>" +
-                    "<div><label>Low Stock Alerts</label><select id='alertLowStockFrequency' class='small-input'><option value='off'>Off</option><option value='daily'>Daily at send time</option><option value='weekly'>Weekly with report</option></select><div class='sync-note'>Daily checks every day at the send time. Weekly uses the report day/time.</div></div>" +
+                    "<div><label>Low Stock Alerts</label><select id='alertLowStockFrequency' class='small-input'><option value='off'>Off</option><option value='daily'>Daily at send time</option><option value='weekly'>Weekly with report</option></select><div class='sync-note'>Daily checks every day at the send time. Weekly uses the report day/time. If Clover has no counts, alerts monitor unavailable items.</div></div>" +
                     "<div><label>Low Stock Threshold</label><input id='alertLowStockThreshold' type='number' min='1' max='999' value='" + escapeHtml(s.low_stock_threshold || 5) + "' /><div class='sync-note'>Items at or below this quantity are flagged.</div></div>" +
                     "<div><label>Suggested Reorder Multiplier</label><input id='alertReorderMultiplier' type='number' min='1' max='20' value='" + escapeHtml(s.low_stock_reorder_multiplier || 3) + "' /><div class='sync-note'>Example: threshold 5 × 3 = suggest reorder around 15.</div></div>" +
                 "</div>",
@@ -9514,7 +9666,7 @@ function renderDashboard(options = {}) {
                 "</div>"
             ];
 
-            openFeatureModal("Email Reports & Alerts", "One simple schedule controls reports and alerts. Merchants can turn low-stock alerts off, daily, or weekly with the report.", rows);
+            openFeatureModal("Email Reports & Alerts", "One simple schedule controls reports and alerts. InventoryRite adapts to quantity tracking or availability-only Clover setups.", rows);
 
             setTimeout(function () {
                 var dayBox = byId("alertReportDay");
@@ -11297,8 +11449,13 @@ function renderDashboard(options = {}) {
 
             var baseItems = (items || []).filter(function (item) {
                 if (activeViewMode === "lowStock") {
-                    var qty = getItemQuantity(item);
-                    if (!(qty !== null && qty <= 5)) return false;
+                    var trackingSummary = getInventoryTrackingSummary(items || []);
+                    if (trackingSummary.mode === "quantity") {
+                        var qty = getItemQuantity(item);
+                        if (!(qty !== null && qty <= getLowStockThreshold())) return false;
+                    } else if (getItemAvailability(item) !== false) {
+                        return false;
+                    }
                 }
                 if (activeViewMode === "profitAlerts") {
                     var priceForAlert = Number(item.price || 0);
