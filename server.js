@@ -7456,12 +7456,6 @@ function renderDashboard(options = {}) {
             } catch (e2) {}
         }
 
-        function saveUndoSnapshot() {
-            // Backward-compatible alias for older bulk price flows.
-            // The real storage function is saveStoredHistory().
-            return saveStoredHistory();
-        }
-
         function formatRelativeTime(timestamp) {
             var date = timestamp ? new Date(timestamp) : new Date();
             var diff = Math.max(0, Date.now() - date.getTime());
@@ -8212,6 +8206,7 @@ function renderDashboard(options = {}) {
 
         async function loadAlertSettings() {
             try {
+                setFixButtonState(sourceEl, "saving", "Saving...");
                 var connection = requireConnection();
                 if (!connection) return;
 
@@ -11083,7 +11078,7 @@ function renderDashboard(options = {}) {
 
             if (undoSnapshot.items.length) {
                 lastBulkUndoSnapshot = undoSnapshot;
-                saveStoredHistory();
+                saveUndoSnapshot();
             }
 
             stopBusy();
