@@ -60,9 +60,12 @@ const REQUIRED_CLOVER_SCOPES = [
     "item_read",
     "item_write",
     "inventory_read",
-    "inventory_write",
-    "order_read"
+    "inventory_write"
 ];
+
+// Sales intelligence is optional. Do NOT require order_read during basic inventory loading.
+// If Clover order permission is not enabled yet, the sales panel shows a safe message
+// while inventory, costs, cleanup, and profit tools continue to work normally.
 
 
 const DATABASE_URL = process.env.DATABASE_URL?.trim() || "";
@@ -8376,7 +8379,12 @@ function renderDashboard(options = {}) {
                 setButtonText("btnRefreshSalesIntelligence", "Loading...");
                 setSalesState("Loading last 30 days of Clover sales and profit intelligence...", false);
 
-                var data = await fetchJson("/clover-sales-intelligence?days=30");
+                var requestHeaders = {};
+                if (embeddedConnection && embeddedConnection.merchant_id) {
+                    requestHeaders["X-Merchant-Id"] = embeddedConnection.merchant_id;
+                }
+
+                var data = await fetchJson("/clover-sales-intelligence?days=30", { headers: requestHeaders });
                 renderSalesIntelligence(data && data.intelligence ? data.intelligence : null);
             } catch (error) {
                 var message = error && error.message ? error.message : "Unable to load sales intelligence.";
@@ -11061,7 +11069,11 @@ function renderDashboard(options = {}) {
                     requestHeaders["X-Merchant-Id"] = connection.merchantId;
                 }
 
-                await loadAlertSettings();
+                try {
+                    await loadAlertSettings();
+                } catch (settingsError) {
+                    console.warn("Alert settings could not load. Inventory sync will continue.", settingsError);
+                }
 
                 var data = await fetchJson(
                     "/clover-items",
@@ -11087,7 +11099,9 @@ function renderDashboard(options = {}) {
                 loadStoredHistory();
                 renderItems(loadedItems);
                 updateLastSyncNote();
-                loadSalesIntelligence();
+                // Sales intelligence is intentionally not auto-loaded here.
+                // Inventory must remain the primary, reliable workflow. Merchants can
+                // refresh sales insights from the Sales + Profit panel when order access is available.
                 var pageCount = data.pagination && data.pagination.pageCount ? Number(data.pagination.pageCount) : 1;
                 var truncated = data.pagination && data.pagination.truncated;
                 if (loadedItems.length === 0) {
@@ -11098,7 +11112,11 @@ function renderDashboard(options = {}) {
                     logActivity("Inventory Loaded", loadedItems.length + " product(s) synced from Clover" + (pageCount > 1 ? " across " + pageCount + " pages." : "."), truncated ? "Partial" : "Success");
                 }
             } catch (error) {
-                showToast(error && error.message ? error.message : "Unable to load inventory.", "error");
+                var inventoryMessage = error && error.message ? error.message : "Unable to load inventory.";
+                if (inventoryMessage.toLowerCase().indexOf("failed to load clover inventory") >= 0) {
+                    inventoryMessage = "Inventory could not load from Clover. Your saved InventoryRite data is safe. Try Refresh, or reconnect Clover if this continues.";
+                }
+                showToast(inventoryMessage, "error");
             } finally {
                 setButtonText("btnRefreshInventory", "Refresh");
                 setButtonText("btnRefreshInventoryTop", "Refresh");
