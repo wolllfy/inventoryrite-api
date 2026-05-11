@@ -591,7 +591,7 @@ function normalizeAlertSettings(input = {}, merchantId = "") {
     const defaults = defaultAlertSettings(merchantId);
     const email = String(input.report_email || input.email || "").trim();
     const threshold = Math.max(1, Math.min(999, Math.round(Number(input.low_stock_threshold || input.lowStockThreshold || defaults.low_stock_threshold))));
-    const allowedFrequencies = new Set(["daily", "weekly"]);
+    const allowedFrequencies = new Set(["off", "daily", "weekly"]);
     const rawFrequency = String(input.low_stock_alert_frequency || input.lowStockAlertFrequency || defaults.low_stock_alert_frequency).trim().toLowerCase();
     const frequency = allowedFrequencies.has(rawFrequency) ? rawFrequency : defaults.low_stock_alert_frequency;
     const reorderMultiplier = Math.max(1, Math.min(20, Math.round(Number(input.low_stock_reorder_multiplier || input.lowStockReorderMultiplier || defaults.low_stock_reorder_multiplier))));
@@ -949,7 +949,7 @@ function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, i
 
                         <div style="margin-top:20px;border-top:1px solid #e5e7eb;padding-top:14px;color:#64748b;font-size:13px;line-height:1.55;">
                             <strong style="color:#0f172a;">How this alert works:</strong>
-                            InventoryRite sends this only when Low Stock Alerts are enabled and product quantity is at or below the threshold saved in Email Reports & Alerts.
+                            InventoryRite sends this only when Low Stock Alerts are set to Daily or Weekly and product quantity is at or below the saved threshold.
                         </div>
 
                         <p style="margin:16px 0 0;color:#64748b;font-size:12px;line-height:1.5;">
@@ -9411,7 +9411,6 @@ function renderDashboard(options = {}) {
 
                 var emailBox = byId("alertEmail");
                 var weeklyBox = byId("alertWeeklyEnabled");
-                var lowBox = byId("alertLowStockEnabled");
                 var reorderBox = byId("alertReorderEnabled");
                 var dayBox = byId("alertReportDay");
                 var timeBox = byId("alertReportTime");
@@ -9420,9 +9419,12 @@ function renderDashboard(options = {}) {
                 var reorderMultiplierBox = byId("alertReorderMultiplier");
 
                 var email = emailBox && emailBox.value ? emailBox.value.trim() : "";
-                if ((weeklyBox && weeklyBox.checked) || (lowBox && lowBox.checked)) {
+                var lowStockFrequency = lowFrequencyBox && lowFrequencyBox.value ? lowFrequencyBox.value : "off";
+                var lowStockEnabled = lowStockFrequency !== "off";
+
+                if ((weeklyBox && weeklyBox.checked) || lowStockEnabled) {
                     if (!email || email.indexOf("@") < 1) {
-                        showToast("Enter a valid email before enabling reports.", "error");
+                        showToast("Enter a valid email before enabling reports or alerts.", "error");
                         return;
                     }
                 }
@@ -9430,12 +9432,12 @@ function renderDashboard(options = {}) {
                 var payload = {
                     report_email: email,
                     weekly_reports_enabled: !!(weeklyBox && weeklyBox.checked),
-                    low_stock_alerts_enabled: !!(lowBox && lowBox.checked),
+                    low_stock_alerts_enabled: lowStockEnabled,
                     reorder_suggestions_enabled: !!(reorderBox && reorderBox.checked),
                     weekly_report_day: dayBox && dayBox.value ? dayBox.value : "Monday",
                     weekly_report_time: timeBox && timeBox.value ? timeBox.value : "7:00 AM",
                     low_stock_threshold: thresholdBox && thresholdBox.value ? Number(thresholdBox.value) : 5,
-                    low_stock_alert_frequency: lowFrequencyBox && lowFrequencyBox.value ? lowFrequencyBox.value : "daily",
+                    low_stock_alert_frequency: lowStockFrequency,
                     low_stock_reorder_multiplier: reorderMultiplierBox && reorderMultiplierBox.value ? Number(reorderMultiplierBox.value) : 3,
                     timezone: "America/New_York"
                 };
@@ -9494,16 +9496,16 @@ function renderDashboard(options = {}) {
                 "</div>",
                 "<div style='display:block;width:100%;'>" +
                     "<label><input id='alertWeeklyEnabled' type='checkbox' " + (s.weekly_reports_enabled ? "checked" : "") + " /> Weekly Profit Report</label>" +
-                    "<label><input id='alertLowStockEnabled' type='checkbox' " + (s.low_stock_alerts_enabled ? "checked" : "") + " /> Low Stock Alerts</label>" +
                     "<label><input id='alertReorderEnabled' type='checkbox' " + (s.reorder_suggestions_enabled !== false ? "checked" : "") + " /> Include Reorder Suggestions</label>" +
-                "</div>",
-                "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;'>" +
-                    "<div><label>Weekly Day</label><select id='alertReportDay' class='small-input'><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>" +
-                    "<div><label>Time</label><select id='alertReportTime' class='small-input'><option>7:00 AM</option><option>8:00 AM</option><option>9:00 AM</option><option>10:00 AM</option><option>5:00 PM</option></select></div>" +
-                    "<div><label>Low Stock Threshold</label><input id='alertLowStockThreshold' type='number' min='1' max='999' value='" + escapeHtml(s.low_stock_threshold || 5) + "' /></div>" +
+                    "<div class='sync-note'>Low-stock alerts are controlled below by frequency. Choose Off, Daily, or Weekly with report.</div>" +
                 "</div>",
                 "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;'>" +
-                    "<div><label>Low Stock Alert Frequency</label><select id='alertLowStockFrequency' class='small-input'><option value='daily'>Daily summary</option><option value='weekly'>Weekly summary</option></select><div class='sync-note'>Merchant controls how often low-stock emails are sent.</div></div>" +
+                    "<div><label>Report Day</label><select id='alertReportDay' class='small-input'><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select><div class='sync-note'>Used for weekly profit reports and weekly low-stock alerts.</div></div>" +
+                    "<div><label>Send Time</label><select id='alertReportTime' class='small-input'><option>7:00 AM</option><option>8:00 AM</option><option>9:00 AM</option><option>10:00 AM</option><option>5:00 PM</option></select><div class='sync-note'>Daily alerts and weekly reports use this same time.</div></div>" +
+                "</div>",
+                "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%;'>" +
+                    "<div><label>Low Stock Alerts</label><select id='alertLowStockFrequency' class='small-input'><option value='off'>Off</option><option value='daily'>Daily at send time</option><option value='weekly'>Weekly with report</option></select><div class='sync-note'>Daily checks every day at the send time. Weekly uses the report day/time.</div></div>" +
+                    "<div><label>Low Stock Threshold</label><input id='alertLowStockThreshold' type='number' min='1' max='999' value='" + escapeHtml(s.low_stock_threshold || 5) + "' /><div class='sync-note'>Items at or below this quantity are flagged.</div></div>" +
                     "<div><label>Suggested Reorder Multiplier</label><input id='alertReorderMultiplier' type='number' min='1' max='20' value='" + escapeHtml(s.low_stock_reorder_multiplier || 3) + "' /><div class='sync-note'>Example: threshold 5 × 3 = suggest reorder around 15.</div></div>" +
                 "</div>",
                 "<div style='display:flex;gap:10px;flex-wrap:wrap;width:100%;'>" +
@@ -9512,7 +9514,7 @@ function renderDashboard(options = {}) {
                 "</div>"
             ];
 
-            openFeatureModal("Email Reports & Alerts", "Let the merchant control reports, dedicated low-stock alerts, reorder suggestions, and test emails.", rows);
+            openFeatureModal("Email Reports & Alerts", "One simple schedule controls reports and alerts. Merchants can turn low-stock alerts off, daily, or weekly with the report.", rows);
 
             setTimeout(function () {
                 var dayBox = byId("alertReportDay");
@@ -9520,7 +9522,7 @@ function renderDashboard(options = {}) {
                 if (dayBox) dayBox.value = s.weekly_report_day || "Monday";
                 if (timeBox) timeBox.value = s.weekly_report_time || "7:00 AM";
                 var lowFrequencyBox = byId("alertLowStockFrequency");
-                if (lowFrequencyBox) lowFrequencyBox.value = s.low_stock_alert_frequency || "daily";
+                if (lowFrequencyBox) lowFrequencyBox.value = s.low_stock_alerts_enabled ? (s.low_stock_alert_frequency || "daily") : "off";
 
                 bind("btnSaveAlertSettings", "click", function () { saveAlertSettingsFromModal(false); });
                 bind("btnSendTestReport", "click", function () { saveAlertSettingsFromModal(true); });
@@ -14143,6 +14145,7 @@ function shouldSendLowStockAlertNow(settings) {
     const frequency = String(settings.low_stock_alert_frequency || "daily").toLowerCase();
     const reportMinutes = convertTimeTextToMinutes(settings.weekly_report_time || "7:00 AM");
 
+    if (frequency === "off") return false;
     if (frequency === "weekly" && zoned.weekday !== String(settings.weekly_report_day || "Monday").trim()) return false;
     if (zoned.minutes < reportMinutes) return false;
     if (wasSentOnDate(settings.last_low_stock_alert_sent_at, settings.timezone, zoned.dateKey)) return false;
@@ -14277,8 +14280,9 @@ initDatabase()
             console.log(`Server running on port ${PORT}`);
             console.log(`Database mode: ${USE_DATABASE ? "PostgreSQL" : "Demo memory only"}`);
 
-            // Alert scheduler checks due merchants. Merchant settings control day/time and low-stock frequency.
+            // Alert scheduler checks due merchants. Merchant settings control one shared day/time and low-stock frequency.
+            // Default is hourly so the selected send time is respected without waiting a full day after deploy.
             // Merchants can still send immediate test emails from the UI.
-            setInterval(runDueAlertReports, Number(process.env.ALERT_SCHEDULER_INTERVAL_MS || 24 * 60 * 60 * 1000));
+            setInterval(runDueAlertReports, Number(process.env.ALERT_SCHEDULER_INTERVAL_MS || 60 * 60 * 1000));
         });
     });
