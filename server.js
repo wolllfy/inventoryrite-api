@@ -60,12 +60,13 @@ const REQUIRED_CLOVER_SCOPES = [
     "item_read",
     "item_write",
     "inventory_read",
-    "inventory_write"
+    "inventory_write",
+    "order_read"
 ];
 
-// Sales intelligence is optional. Do NOT require order_read during basic inventory loading.
-// If Clover order permission is not enabled yet, the sales panel shows a safe message
-// while inventory, costs, cleanup, and profit tools continue to work normally.
+// Sales intelligence uses Clover order history. Inventory still loads normally if
+// order access is not authorized yet, but new OAuth connections should request
+// order_read so the Last 30 Days Sales + Profit panel can work.
 
 
 const DATABASE_URL = process.env.DATABASE_URL?.trim() || "";
@@ -8387,12 +8388,20 @@ function renderDashboard(options = {}) {
                 var data = await fetchJson("/clover-sales-intelligence?days=30", { headers: requestHeaders });
                 renderSalesIntelligence(data && data.intelligence ? data.intelligence : null);
             } catch (error) {
-                var message = error && error.message ? error.message : "Unable to load sales intelligence.";
+                var rawMessage = error && error.message ? error.message : "Unable to load sales intelligence.";
                 var metricGrid = byId("salesMetricGrid");
                 var insightGrid = byId("salesInsightGrid");
                 if (metricGrid) metricGrid.style.display = "none";
                 if (insightGrid) insightGrid.style.display = "none";
-                setSalesState(message + " Inventory tools still work normally.", true);
+
+                var friendlyMessage = rawMessage;
+                if (String(rawMessage).includes("401") || String(rawMessage).includes("Unauthorized")) {
+                    friendlyMessage = "Sales intelligence needs a fresh Clover connection with Orders Read access. Click Connect Clover again, then refresh sales.";
+                } else if (String(rawMessage).includes("403")) {
+                    friendlyMessage = "Sales intelligence needs Orders Read permission in Clover. Inventory tools still work normally.";
+                }
+
+                setSalesState(friendlyMessage, true);
             } finally {
                 setButtonText("btnRefreshSalesIntelligence", "Refresh Sales");
             }
@@ -12032,10 +12041,15 @@ app.get("/connect-clover", (req, res) => {
         `inventoryrite_oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${SECURE_COOKIE_FLAG}`
     );
 
-    // Use the full configured Clover scopes without filtering/blocking them.
-    // This restores the original OAuth behavior and avoids mismatches between
-    // Clover Developer Dashboard permissions and the scopes sent during install.
-    const scope = process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" ");
+    // Use configured Clover scopes, but always include order_read because the
+    // Sales + Profit Intelligence panel reads recent Clover orders. If Render has
+    // CLOVER_SCOPES set from an older deploy, this prevents the OAuth URL from
+    // accidentally omitting order_read. Merchants must reconnect after this change.
+    const configuredScopeText = process.env.CLOVER_SCOPES || REQUIRED_CLOVER_SCOPES.join(" ");
+    const scopeParts = configuredScopeText.split(/\s+/).map((part) => part.trim()).filter(Boolean);
+    const scopeSet = new Set(scopeParts);
+    REQUIRED_CLOVER_SCOPES.forEach((scopeName) => scopeSet.add(scopeName));
+    const scope = Array.from(scopeSet).join(" ");
 
     const cloverAuthUrl =
         `${CLOVER_BASE_URL}/oauth/authorize` +
@@ -12415,8 +12429,12 @@ app.get("/clover-sales-intelligence", async (req, res) => {
 
         const days = Math.max(1, Math.min(90, Number(req.query.days || 30)));
 
-        const [ordersData, itemsData, costs] = await Promise.all([
-            fetchRecentCloverOrders(accessToken, merchantId, days),
+        // Load orders first. If order authorization fails, do not waste time loading
+        // inventory/costs or return a scary generic error. The frontend will show a
+        // clean reconnect message and inventory tools continue to work normally.
+        const ordersData = await fetchRecentCloverOrders(accessToken, merchantId, days);
+
+        const [itemsData, costs] = await Promise.all([
             fetchAllCloverItems(accessToken, merchantId),
             getItemCostsForMerchant(merchantId)
         ]);
@@ -12447,12 +12465,17 @@ app.get("/clover-sales-intelligence", async (req, res) => {
     } catch (error) {
         console.error("Sales Intelligence Error:", error.response?.data || error.message);
         const cloverError = getCloverError(error);
-        return res.status(cloverError.status).json({
+        const status = Number(cloverError.status || 500);
+        const needsReconnect = status === 401 || status === 403;
+
+        return res.status(needsReconnect ? 200 : status).json({
             success: false,
-            message: cloverError.status === 403
-                ? "Sales intelligence needs Clover order permission. Enable order_read for this app, then reconnect Clover."
+            needsReconnect,
+            message: needsReconnect
+                ? "Sales intelligence needs a fresh Clover connection with Orders Read access. Click Connect Clover again, then refresh sales."
                 : "Failed to load sales intelligence from Clover orders.",
-            error: cloverError.data
+            error: cloverError.data,
+            intelligence: null
         });
     }
 });
