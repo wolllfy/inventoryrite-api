@@ -6689,6 +6689,177 @@ function renderDashboard(options = {}) {
         }
 
 
+
+
+        /* ---------------------------------------------------------------
+        | MERCHANT DAILY COMMAND CENTER
+        | Designed for Clover Flex/Mini/Duo and desktop merchants who want
+        | the fastest answer to: what sold, what needs fixing, and what is
+        | costing me money today?
+        --------------------------------------------------------------- */
+        .daily-command-panel {
+            background: linear-gradient(135deg, #0f172a 0%, #14532d 52%, #166534 100%);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 20px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+            padding: 16px;
+            margin: 0 0 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .daily-command-panel:after {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 999px;
+            right: -90px;
+            top: -110px;
+            background: rgba(255,255,255,.09);
+            pointer-events: none;
+        }
+        .daily-command-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 12px;
+        }
+        .daily-command-kicker {
+            color: #bbf7d0;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .10em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .daily-command-title {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.12;
+            letter-spacing: -.035em;
+            font-weight: 900;
+            color: #ffffff;
+        }
+        .daily-command-subtitle {
+            margin: 5px 0 0;
+            color: #dcfce7;
+            font-size: 12.5px;
+            font-weight: 800;
+            line-height: 1.45;
+            max-width: 720px;
+        }
+        .daily-command-primary-action {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 1;
+        }
+        .daily-command-primary-action .btn {
+            min-height: 36px;
+            padding: 8px 12px;
+            border-radius: 11px;
+            font-size: 12px;
+        }
+        .daily-command-primary-action .btn-primary {
+            background: #ffffff;
+            color: #14532d;
+            box-shadow: 0 10px 22px rgba(0,0,0,.16);
+        }
+        .daily-command-primary-action .btn-light {
+            background: rgba(255,255,255,.12);
+            color: #ffffff;
+            border-color: rgba(255,255,255,.25);
+        }
+        .daily-command-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 9px;
+            position: relative;
+            z-index: 1;
+        }
+        .daily-command-card {
+            background: rgba(255,255,255,.10);
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: 15px;
+            padding: 11px;
+            min-height: 82px;
+            backdrop-filter: blur(8px);
+            transition: transform .14s ease, background .14s ease, border-color .14s ease;
+        }
+        .daily-command-card:hover {
+            transform: translateY(-1px);
+            background: rgba(255,255,255,.145);
+            border-color: rgba(255,255,255,.28);
+        }
+        .daily-command-card.warning {
+            background: rgba(251, 191, 36, .16);
+            border-color: rgba(253, 230, 138, .35);
+        }
+        .daily-command-card.danger {
+            background: rgba(248, 113, 113, .17);
+            border-color: rgba(254, 202, 202, .36);
+        }
+        .daily-command-card.good {
+            background: rgba(74, 222, 128, .14);
+            border-color: rgba(187, 247, 208, .35);
+        }
+        .daily-command-label {
+            color: #dcfce7;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .daily-command-value {
+            margin-top: 5px;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: -.03em;
+            line-height: 1.05;
+        }
+        .daily-command-help {
+            margin-top: 4px;
+            color: #d1fae5;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+        .daily-command-footnote {
+            margin-top: 10px;
+            color: #dcfce7;
+            font-size: 11.5px;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+        }
+        @media (max-width: 1120px) {
+            .daily-command-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (max-width: 720px) {
+            .daily-command-panel { padding: 13px; border-radius: 18px; }
+            .daily-command-head { flex-direction: column; }
+            .daily-command-primary-action { width: 100%; justify-content: stretch; }
+            .daily-command-primary-action .btn { flex: 1 1 140px; }
+            .daily-command-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .daily-command-title { font-size: 18px; }
+            .daily-command-card { min-height: 76px; padding: 10px; }
+            .daily-command-value { font-size: 18px; }
+        }
+        @media (max-width: 420px) {
+            .daily-command-grid { grid-template-columns: 1fr; }
+        }
+
+
         /* ---------------------------------------------------------------
         | LAUNCH READY GUIDED FLOW + SMART RECOMMENDATIONS
         --------------------------------------------------------------- */
@@ -7422,23 +7593,71 @@ function renderDashboard(options = {}) {
         ${connected ? `
         <section class="hero simple-hero">
             <div class="simple-hero-copy">
-                <div class="eyebrow">Clover Inventory</div>
-                <h2>Manage Clover inventory faster.</h2>
-                <p>Search, edit, import/export CSV, and review pricing tools from one clean workspace.</p>
+                <div class="eyebrow">Daily Clover Command Center</div>
+                <h2>See what sold, what made money, and what needs fixing.</h2>
+                <p>InventoryRite turns Clover products, costs, and sales into a simple daily profit workflow for busy merchants.</p>
             </div>
             <div class="simple-hero-actions">
-                <button id="btnHeroAdd" type="button" class="btn btn-primary">Add Product</button>
+                <button id="btnHeroAdvanced" type="button" class="btn btn-primary">Fix Issues</button>
                 <button id="btnHeroSync" type="button" class="btn btn-light">Sync Clover</button>
-                <button id="btnHeroAdvanced" type="button" class="btn btn-light">Tools</button>
+                <button id="btnHeroAdd" type="button" class="btn btn-light">Add Product</button>
             </div>
+        </section>
+
+        <section class="daily-command-panel" id="dailyCommandPanel">
+            <div class="daily-command-head">
+                <div>
+                    <div class="daily-command-kicker">Today&apos;s Merchant View</div>
+                    <h3 class="daily-command-title">Here&apos;s what matters right now.</h3>
+                    <p class="daily-command-subtitle">Built for quick checks on Clover Flex, Mini, Duo, and desktop: sales, profit risk, dead inventory, missing costs, and one-click fixes.</p>
+                </div>
+                <div class="daily-command-primary-action">
+                    <button id="btnDailyFixIssues" type="button" class="btn btn-primary">Fix Issues</button>
+                    <button id="btnDailyRefresh" type="button" class="btn btn-light">Refresh</button>
+                    <button id="btnDailySales" type="button" class="btn btn-light">Sales</button>
+                </div>
+            </div>
+            <div class="daily-command-grid">
+                <div class="daily-command-card good">
+                    <div class="daily-command-label">30-Day Revenue</div>
+                    <div class="daily-command-value" id="dailyRevenueValue">--</div>
+                    <div class="daily-command-help">From Clover sales</div>
+                </div>
+                <div class="daily-command-card good">
+                    <div class="daily-command-label">Estimated Profit</div>
+                    <div class="daily-command-value" id="dailyProfitValue">--</div>
+                    <div class="daily-command-help">Known-cost items</div>
+                </div>
+                <div class="daily-command-card warning">
+                    <div class="daily-command-label">Fix Issues</div>
+                    <div class="daily-command-value" id="dailyIssuesValue">0</div>
+                    <div class="daily-command-help">Cleanup alerts</div>
+                </div>
+                <div class="daily-command-card warning">
+                    <div class="daily-command-label">Missing Costs</div>
+                    <div class="daily-command-value" id="dailyMissingCostValue">0</div>
+                    <div class="daily-command-help">Profit locked</div>
+                </div>
+                <div class="daily-command-card danger">
+                    <div class="daily-command-label">Below Cost</div>
+                    <div class="daily-command-value" id="dailyBelowCostValue">0</div>
+                    <div class="daily-command-help">Losing money</div>
+                </div>
+                <div class="daily-command-card">
+                    <div class="daily-command-label">Dead Inventory</div>
+                    <div class="daily-command-value" id="dailyDeadInventoryValue">--</div>
+                    <div class="daily-command-help">No recent sales</div>
+                </div>
+            </div>
+            <div class="daily-command-footnote" id="dailyCommandFootnote">Sync Clover to load the daily merchant view.</div>
         </section>
 
         <section class="launch-guide-card" id="launchGuideCard">
             <div class="launch-guide-head">
                 <div>
                     <div class="launch-guide-kicker">Start Here</div>
-                    <h3 class="launch-guide-title">Get this Clover inventory ready in 4 steps.</h3>
-                    <p class="launch-guide-subtitle">Sync Clover, add costs, clean product data, and review profit opportunities from one guided workflow.</p>
+                    <h3 class="launch-guide-title">Get profitable inventory visibility in 4 steps.</h3>
+                    <p class="launch-guide-subtitle">Sync Clover, add costs, clean products, and review sales/profit so every merchant knows what to fix next.</p>
                 </div>
                 <div class="launch-guide-progress" id="launchGuideProgress">0 of 4 ready</div>
             </div>
@@ -7839,7 +8058,7 @@ function renderDashboard(options = {}) {
                         <tr>
                             <td colspan="6" class="empty">
                                 <strong>Loading Clover inventory...</strong>
-                                Your products will appear here in a moment.
+                                Your products will appear here in a moment. If sync finishes with no products, click Add Product or refresh Clover.
                             </td>
                         </tr>
                     </tbody>
@@ -8009,15 +8228,17 @@ function renderDashboard(options = {}) {
             if (!wrap) return;
 
             var toast = document.createElement("div");
-            toast.className = "toast " + (type || "info");
+            var toastType = type || "info";
+            toast.className = "toast " + toastType;
             toast.textContent = message;
             wrap.appendChild(toast);
 
+            var duration = toastType === "error" ? 6500 : (toastType === "success" ? 3000 : 4200);
             setTimeout(function () {
                 if (toast && toast.parentNode) {
                     toast.parentNode.removeChild(toast);
                 }
-            }, 4200);
+            }, duration);
         }
 
         function logActivity(title, message, status) {
@@ -8345,6 +8566,41 @@ function renderDashboard(options = {}) {
             setStatText("statBelowCost", belowCost);
             renderIntelligencePanel();
             updatePremiumProfitDashboard();
+            updateDailyCommandCenter();
+        }
+
+
+        function updateDailyCommandCenter() {
+            var summary = getProfitSummary ? getProfitSummary() : { belowCost: 0, missingCost: 0 };
+            var issues = getCleanupIssues ? getCleanupIssues() : [];
+            var sales = salesIntelligence || {};
+            var revenueCents = Number(sales.revenueCents || 0);
+            var profitCents = Number(sales.estimatedProfitCents || 0);
+            var deadCount = Array.isArray(sales.deadInventory) ? sales.deadInventory.length : null;
+
+            setStatText("dailyRevenueValue", revenueCents > 0 ? formatCurrencyFromCents(revenueCents) : "--");
+            setStatText("dailyProfitValue", profitCents > 0 ? formatCurrencyFromCents(profitCents) : "--");
+            setStatText("dailyIssuesValue", issues.length || 0);
+            setStatText("dailyMissingCostValue", summary.missingCost || 0);
+            setStatText("dailyBelowCostValue", summary.belowCost || 0);
+            setStatText("dailyDeadInventoryValue", deadCount === null ? "--" : String(deadCount));
+
+            var footnote = byId("dailyCommandFootnote");
+            if (footnote) {
+                if (!loadedItems || !loadedItems.length) {
+                    footnote.textContent = "Sync Clover to load products, costs, and profit checks.";
+                } else if (!salesIntelligence) {
+                    footnote.textContent = "Products loaded. Click Sales to pull 30-day Clover sales intelligence.";
+                } else if (revenueCents <= 0) {
+                    footnote.textContent = "Products loaded. No completed Clover sales found in the last 30 days yet.";
+                } else if ((summary.missingCost || 0) > 0) {
+                    footnote.textContent = "Sales loaded. Add missing costs to unlock more accurate profit reporting.";
+                } else if (issues.length > 0) {
+                    footnote.textContent = "Sales loaded. Fix the highlighted cleanup issues to improve inventory quality.";
+                } else {
+                    footnote.textContent = "Sales and inventory are loaded. Your Clover inventory looks ready for review.";
+                }
+            }
         }
 
         /*
@@ -9800,6 +10056,7 @@ function renderDashboard(options = {}) {
             if (opportunity) opportunity.textContent = formatCurrencyFromCents(intelligence.estimatedProfitOpportunity);
             if (opportunityHelp) opportunityHelp.textContent = "Estimate assumes about " + intelligence.assumedMonthlyUnits + " sales/month on affected products until sales history is connected.";
             refreshGuidedLaunchUX();
+        updateDailyCommandCenter();
         }
 
         function getIssueKey(issue) {
@@ -11970,9 +12227,12 @@ function renderDashboard(options = {}) {
         bind("btnRefreshInventory", "click", loadItems);
         bind("btnHeroSync", "click", loadItems);
         bind("btnHeroAdd", "click", toggleAddPanel);
-        bind("btnHeroAdvanced", "click", toggleAdvancedTools);
+        bind("btnHeroAdvanced", "click", function () { showCleanupTools(); logActivity("Fix Issues", "Opened cleanup workflow from hero.", "Viewed"); });
         bind("btnRecommendationsRefresh", "click", refreshGuidedLaunchUX);
         bind("btnRefreshSalesIntelligence", "click", loadSalesIntelligence);
+        bind("btnDailyFixIssues", "click", function () { showCleanupTools(); logActivity("Fix Issues", "Opened cleanup workflow from daily command center.", "Viewed"); });
+        bind("btnDailyRefresh", "click", function () { loadItems(); });
+        bind("btnDailySales", "click", function () { loadSalesIntelligence(); });
         document.addEventListener("click", function (event) {
             var guideBtn = event.target && event.target.closest ? event.target.closest("[data-guide-action]") : null;
             if (guideBtn) {
