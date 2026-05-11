@@ -338,6 +338,10 @@ async function initDatabase() {
             weekly_report_day TEXT NOT NULL DEFAULT 'Monday',
             weekly_report_time TEXT NOT NULL DEFAULT '7:00 AM',
             low_stock_threshold INTEGER NOT NULL DEFAULT 5,
+            low_stock_alert_frequency TEXT NOT NULL DEFAULT 'daily',
+            low_stock_reorder_multiplier INTEGER NOT NULL DEFAULT 3,
+            last_weekly_report_sent_at TIMESTAMPTZ,
+            last_low_stock_alert_sent_at TIMESTAMPTZ,
             timezone TEXT NOT NULL DEFAULT 'America/New_York',
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
@@ -350,6 +354,10 @@ async function initDatabase() {
     await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS weekly_report_day TEXT NOT NULL DEFAULT 'Monday';`);
     await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS weekly_report_time TEXT NOT NULL DEFAULT '7:00 AM';`);
     await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS low_stock_threshold INTEGER NOT NULL DEFAULT 5;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS low_stock_alert_frequency TEXT NOT NULL DEFAULT 'daily';`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS low_stock_reorder_multiplier INTEGER NOT NULL DEFAULT 3;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS last_weekly_report_sent_at TIMESTAMPTZ;`);
+    await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS last_low_stock_alert_sent_at TIMESTAMPTZ;`);
     await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS timezone TEXT NOT NULL DEFAULT 'America/New_York';`);
     await dbPool.query(`ALTER TABLE merchant_alert_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();`);
 
@@ -571,6 +579,10 @@ function defaultAlertSettings(merchantId = "") {
         weekly_report_day: "Monday",
         weekly_report_time: "7:00 AM",
         low_stock_threshold: 5,
+        low_stock_alert_frequency: "daily",
+        low_stock_reorder_multiplier: 3,
+        last_weekly_report_sent_at: "",
+        last_low_stock_alert_sent_at: "",
         timezone: "America/New_York"
     };
 }
@@ -579,6 +591,10 @@ function normalizeAlertSettings(input = {}, merchantId = "") {
     const defaults = defaultAlertSettings(merchantId);
     const email = String(input.report_email || input.email || "").trim();
     const threshold = Math.max(1, Math.min(999, Math.round(Number(input.low_stock_threshold || input.lowStockThreshold || defaults.low_stock_threshold))));
+    const allowedFrequencies = new Set(["daily", "weekly"]);
+    const rawFrequency = String(input.low_stock_alert_frequency || input.lowStockAlertFrequency || defaults.low_stock_alert_frequency).trim().toLowerCase();
+    const frequency = allowedFrequencies.has(rawFrequency) ? rawFrequency : defaults.low_stock_alert_frequency;
+    const reorderMultiplier = Math.max(1, Math.min(20, Math.round(Number(input.low_stock_reorder_multiplier || input.lowStockReorderMultiplier || defaults.low_stock_reorder_multiplier))));
     return {
         merchant_id: merchantId || input.merchant_id || input.merchantId || "",
         report_email: email,
@@ -588,6 +604,10 @@ function normalizeAlertSettings(input = {}, merchantId = "") {
         weekly_report_day: String(input.weekly_report_day || input.weeklyReportDay || defaults.weekly_report_day).trim() || defaults.weekly_report_day,
         weekly_report_time: String(input.weekly_report_time || input.weeklyReportTime || defaults.weekly_report_time).trim() || defaults.weekly_report_time,
         low_stock_threshold: threshold,
+        low_stock_alert_frequency: frequency,
+        low_stock_reorder_multiplier: reorderMultiplier,
+        last_weekly_report_sent_at: input.last_weekly_report_sent_at ? new Date(input.last_weekly_report_sent_at).toISOString() : (input.lastWeeklyReportSentAt || ""),
+        last_low_stock_alert_sent_at: input.last_low_stock_alert_sent_at ? new Date(input.last_low_stock_alert_sent_at).toISOString() : (input.lastLowStockAlertSentAt || ""),
         timezone: String(input.timezone || defaults.timezone).trim() || defaults.timezone
     };
 }
@@ -602,7 +622,8 @@ async function getAlertSettingsForMerchant(merchantId) {
     const result = await dbPool.query(
         `SELECT merchant_id, report_email, weekly_reports_enabled, low_stock_alerts_enabled,
                 reorder_suggestions_enabled, weekly_report_day, weekly_report_time,
-                low_stock_threshold, timezone
+                low_stock_threshold, low_stock_alert_frequency, low_stock_reorder_multiplier,
+                last_weekly_report_sent_at, last_low_stock_alert_sent_at, timezone
          FROM merchant_alert_settings
          WHERE merchant_id = $1
          LIMIT 1;`,
@@ -629,9 +650,9 @@ async function saveAlertSettingsForMerchant(merchantId, settingsInput) {
         `INSERT INTO merchant_alert_settings (
             merchant_id, report_email, weekly_reports_enabled, low_stock_alerts_enabled,
             reorder_suggestions_enabled, weekly_report_day, weekly_report_time,
-            low_stock_threshold, timezone, updated_at
+            low_stock_threshold, low_stock_alert_frequency, low_stock_reorder_multiplier, timezone, updated_at
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW())
         ON CONFLICT (merchant_id)
         DO UPDATE SET
             report_email = EXCLUDED.report_email,
@@ -641,6 +662,8 @@ async function saveAlertSettingsForMerchant(merchantId, settingsInput) {
             weekly_report_day = EXCLUDED.weekly_report_day,
             weekly_report_time = EXCLUDED.weekly_report_time,
             low_stock_threshold = EXCLUDED.low_stock_threshold,
+            low_stock_alert_frequency = EXCLUDED.low_stock_alert_frequency,
+            low_stock_reorder_multiplier = EXCLUDED.low_stock_reorder_multiplier,
             timezone = EXCLUDED.timezone,
             updated_at = NOW();`,
         [
@@ -652,6 +675,8 @@ async function saveAlertSettingsForMerchant(merchantId, settingsInput) {
             settings.weekly_report_day,
             settings.weekly_report_time,
             settings.low_stock_threshold,
+            settings.low_stock_alert_frequency,
+            settings.low_stock_reorder_multiplier,
             settings.timezone
         ]
     );
@@ -816,9 +841,10 @@ function buildReportMetricCard(label, value, helpText, accent = "#15803d") {
         </td>`;
 }
 
-function buildLowStockRows(items, threshold) {
+function buildLowStockRows(items, threshold, reorderMultiplier = 3) {
     return items.slice(0, 12).map((item) => {
-        const suggested = Math.max(threshold * 3, threshold - Number(item.qty || 0) + threshold * 2);
+        const multiplier = Math.max(1, Number(reorderMultiplier || 3));
+        const suggested = Math.max(threshold * multiplier, threshold - Number(item.qty || 0) + threshold * Math.max(1, multiplier - 1));
         return `<tr>
             <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${safe(item.name)}</td>
             <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(item.qty === null ? "Unknown" : item.qty)}</td>
@@ -855,6 +881,7 @@ function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, i
     const report = analyzeInventoryReport({ items, costs, settings });
     const lowStockItems = report.lowStock || [];
     const threshold = report.threshold || Number(settings?.low_stock_threshold || 5);
+    const reorderMultiplier = Math.max(1, Number(settings?.low_stock_reorder_multiplier || 3));
 
     const subjectPrefix = isTest ? "InventoryRite Test Low Stock Alert" : "InventoryRite Low Stock Alert";
     const subject = lowStockItems.length
@@ -863,7 +890,7 @@ function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, i
 
     const rows = lowStockItems.slice(0, 25).map((item) => {
         const currentQty = item.qty === null ? "Unknown" : item.qty;
-        const suggested = Math.max(threshold * 3, threshold - Number(item.qty || 0) + threshold * 2);
+        const suggested = Math.max(threshold * reorderMultiplier, threshold - Number(item.qty || 0) + threshold * Math.max(1, reorderMultiplier - 1));
         const priceText = item.price > 0 ? centsToMoneyServer(item.price) : "No price";
         const skuText = item.sku ? item.sku : "--";
         return `<tr>
@@ -944,7 +971,7 @@ function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
 
     const healthAccent = report.healthScore >= 85 ? "#15803d" : (report.healthScore >= 70 ? "#2563eb" : (report.healthScore >= 50 ? "#b45309" : "#b91c1c"));
 
-    const lowStockRows = buildLowStockRows(report.lowStock, report.threshold);
+    const lowStockRows = buildLowStockRows(report.lowStock, report.threshold, settings.low_stock_reorder_multiplier || 3);
     const opportunityRows = buildPricingOpportunityRows(report.pricingOpportunities);
     const missingCostRows = buildMissingCostRows(report.missingCost);
     const marginRiskRows = buildPricingOpportunityRows(report.belowCost.concat(report.lowMargin));
@@ -9389,6 +9416,8 @@ function renderDashboard(options = {}) {
                 var dayBox = byId("alertReportDay");
                 var timeBox = byId("alertReportTime");
                 var thresholdBox = byId("alertLowStockThreshold");
+                var lowFrequencyBox = byId("alertLowStockFrequency");
+                var reorderMultiplierBox = byId("alertReorderMultiplier");
 
                 var email = emailBox && emailBox.value ? emailBox.value.trim() : "";
                 if ((weeklyBox && weeklyBox.checked) || (lowBox && lowBox.checked)) {
@@ -9406,6 +9435,8 @@ function renderDashboard(options = {}) {
                     weekly_report_day: dayBox && dayBox.value ? dayBox.value : "Monday",
                     weekly_report_time: timeBox && timeBox.value ? timeBox.value : "7:00 AM",
                     low_stock_threshold: thresholdBox && thresholdBox.value ? Number(thresholdBox.value) : 5,
+                    low_stock_alert_frequency: lowFrequencyBox && lowFrequencyBox.value ? lowFrequencyBox.value : "daily",
+                    low_stock_reorder_multiplier: reorderMultiplierBox && reorderMultiplierBox.value ? Number(reorderMultiplierBox.value) : 3,
                     timezone: "America/New_York"
                 };
 
@@ -9471,6 +9502,10 @@ function renderDashboard(options = {}) {
                     "<div><label>Time</label><select id='alertReportTime' class='small-input'><option>7:00 AM</option><option>8:00 AM</option><option>9:00 AM</option><option>10:00 AM</option><option>5:00 PM</option></select></div>" +
                     "<div><label>Low Stock Threshold</label><input id='alertLowStockThreshold' type='number' min='1' max='999' value='" + escapeHtml(s.low_stock_threshold || 5) + "' /></div>" +
                 "</div>",
+                "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;'>" +
+                    "<div><label>Low Stock Alert Frequency</label><select id='alertLowStockFrequency' class='small-input'><option value='daily'>Daily summary</option><option value='weekly'>Weekly summary</option></select><div class='sync-note'>Merchant controls how often low-stock emails are sent.</div></div>" +
+                    "<div><label>Suggested Reorder Multiplier</label><input id='alertReorderMultiplier' type='number' min='1' max='20' value='" + escapeHtml(s.low_stock_reorder_multiplier || 3) + "' /><div class='sync-note'>Example: threshold 5 × 3 = suggest reorder around 15.</div></div>" +
+                "</div>",
                 "<div style='display:flex;gap:10px;flex-wrap:wrap;width:100%;'>" +
                     "<button id='btnSaveAlertSettings' type='button' class='btn btn-primary'>Save Alert Settings</button>" +
                     "<button id='btnSendTestReport' type='button' class='btn btn-light'>Send Test Email</button>" +
@@ -9484,6 +9519,8 @@ function renderDashboard(options = {}) {
                 var timeBox = byId("alertReportTime");
                 if (dayBox) dayBox.value = s.weekly_report_day || "Monday";
                 if (timeBox) timeBox.value = s.weekly_report_time || "7:00 AM";
+                var lowFrequencyBox = byId("alertLowStockFrequency");
+                if (lowFrequencyBox) lowFrequencyBox.value = s.low_stock_alert_frequency || "daily";
 
                 bind("btnSaveAlertSettings", "click", function () { saveAlertSettingsFromModal(false); });
                 bind("btnSendTestReport", "click", function () { saveAlertSettingsFromModal(true); });
@@ -14028,6 +14065,111 @@ app.use((req, res) => {
 });
 
 
+function getZonedParts(timezone = "America/New_York") {
+    const safeTimezone = timezone || "America/New_York";
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: safeTimezone,
+        weekday: "long",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+    });
+
+    const parts = {};
+    formatter.formatToParts(now).forEach((part) => {
+        parts[part.type] = part.value;
+    });
+
+    return {
+        weekday: parts.weekday || "Monday",
+        dateKey: `${parts.year}-${parts.month}-${parts.day}`,
+        minutes: convertTimeTextToMinutes(`${parts.hour}:${parts.minute} ${parts.dayPeriod || "AM"}`)
+    };
+}
+
+function convertTimeTextToMinutes(value) {
+    const text = String(value || "7:00 AM").trim().toUpperCase();
+    const match = text.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/);
+    if (!match) return 7 * 60;
+
+    let hour = Number(match[1] || 7);
+    const minute = Number(match[2] || 0);
+    const period = match[3];
+
+    if (period === "AM" && hour === 12) hour = 0;
+    if (period === "PM" && hour !== 12) hour += 12;
+
+    return Math.max(0, Math.min(1439, hour * 60 + minute));
+}
+
+function wasSentOnDate(isoValue, timezone = "America/New_York", dateKey = "") {
+    if (!isoValue || !dateKey) return false;
+
+    try {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone || "America/New_York",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+        });
+        const parts = {};
+        formatter.formatToParts(new Date(isoValue)).forEach((part) => {
+            parts[part.type] = part.value;
+        });
+        return `${parts.year}-${parts.month}-${parts.day}` === dateKey;
+    } catch (error) {
+        return false;
+    }
+}
+
+function shouldSendWeeklyReportNow(settings) {
+    const zoned = getZonedParts(settings.timezone);
+    const reportDay = String(settings.weekly_report_day || "Monday").trim();
+    const reportMinutes = convertTimeTextToMinutes(settings.weekly_report_time || "7:00 AM");
+
+    if (zoned.weekday !== reportDay) return false;
+    if (zoned.minutes < reportMinutes) return false;
+    if (wasSentOnDate(settings.last_weekly_report_sent_at, settings.timezone, zoned.dateKey)) return false;
+
+    return true;
+}
+
+function shouldSendLowStockAlertNow(settings) {
+    const zoned = getZonedParts(settings.timezone);
+    const frequency = String(settings.low_stock_alert_frequency || "daily").toLowerCase();
+    const reportMinutes = convertTimeTextToMinutes(settings.weekly_report_time || "7:00 AM");
+
+    if (frequency === "weekly" && zoned.weekday !== String(settings.weekly_report_day || "Monday").trim()) return false;
+    if (zoned.minutes < reportMinutes) return false;
+    if (wasSentOnDate(settings.last_low_stock_alert_sent_at, settings.timezone, zoned.dateKey)) return false;
+
+    return true;
+}
+
+async function markAlertSentForMerchant(merchantId, type) {
+    if (!USE_DATABASE || !dbPool || !merchantId) return;
+
+    if (type === "weekly") {
+        await dbPool.query(
+            `UPDATE merchant_alert_settings SET last_weekly_report_sent_at = NOW(), updated_at = NOW() WHERE merchant_id = $1;`,
+            [merchantId]
+        );
+        return;
+    }
+
+    if (type === "low_stock") {
+        await dbPool.query(
+            `UPDATE merchant_alert_settings SET last_low_stock_alert_sent_at = NOW(), updated_at = NOW() WHERE merchant_id = $1;`,
+            [merchantId]
+        );
+    }
+}
+
+
 async function runDueAlertReports() {
     if (!USE_DATABASE || !dbPool) return;
 
@@ -14065,7 +14207,8 @@ async function runDueAlertReports() {
             const items = itemData.elements || [];
 
             // Weekly report: full profit + inventory intelligence.
-            if (settings.weekly_reports_enabled) {
+            // Merchant controls the day/time. The scheduler also records last sent date to avoid duplicate emails.
+            if (settings.weekly_reports_enabled && shouldSendWeeklyReportNow(settings)) {
                 const weeklyReport = buildInventoryReportHtml({
                     merchantId,
                     items,
@@ -14079,11 +14222,13 @@ async function runDueAlertReports() {
                     html: weeklyReport.html
                 });
 
+                await markAlertSentForMerchant(merchantId, "weekly");
                 console.log(`Weekly alert report sent for merchant ${merchantId}`);
             }
 
             // Low-stock alert: dedicated short alert, only sent when low-stock items exist.
-            if (settings.low_stock_alerts_enabled) {
+            // Merchant controls daily vs weekly frequency. Last sent date prevents spam.
+            if (settings.low_stock_alerts_enabled && shouldSendLowStockAlertNow(settings)) {
                 const lowStockAlert = buildDedicatedLowStockAlertHtml({
                     merchantId,
                     items,
@@ -14098,6 +14243,7 @@ async function runDueAlertReports() {
                         subject: lowStockAlert.subject,
                         html: lowStockAlert.html
                     });
+                    await markAlertSentForMerchant(merchantId, "low_stock");
                     console.log(`Low-stock alert sent for merchant ${merchantId}`);
                 } else {
                     console.log(`Low-stock alert skipped for merchant ${merchantId}: no low-stock items.`);
@@ -14131,7 +14277,7 @@ initDatabase()
             console.log(`Server running on port ${PORT}`);
             console.log(`Database mode: ${USE_DATABASE ? "PostgreSQL" : "Demo memory only"}`);
 
-            // V1 alert scheduler: checks every 24 hours.
+            // Alert scheduler checks due merchants. Merchant settings control day/time and low-stock frequency.
             // Merchants can still send immediate test emails from the UI.
             setInterval(runDueAlertReports, Number(process.env.ALERT_SCHEDULER_INTERVAL_MS || 24 * 60 * 60 * 1000));
         });
