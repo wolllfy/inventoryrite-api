@@ -6693,20 +6693,29 @@ function renderDashboard(options = {}) {
 
         /* ---------------------------------------------------------------
         | MERCHANT DAILY COMMAND CENTER
-        | Designed for Clover Flex/Mini/Duo and desktop merchants who want
-        | the fastest answer to: what sold, what needs fixing, and what is
-        | costing me money today?
+        | Softer Clover-native version: dark accent strip, light cards, and
+        | fast daily answers without a heavy dashboard feel.
         --------------------------------------------------------------- */
         .daily-command-panel {
-            background: linear-gradient(135deg, #0f172a 0%, #14532d 52%, #166534 100%);
-            color: #ffffff;
-            border: 1px solid rgba(255,255,255,.12);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 52%, #f0fdf4 100%);
+            color: #0f172a;
+            border: 1px solid #bbf7d0;
             border-radius: 20px;
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
-            padding: 16px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.075);
+            padding: 0;
             margin: 0 0 12px;
             overflow: hidden;
             position: relative;
+        }
+        .daily-command-panel:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 7px;
+            background: linear-gradient(90deg, #14532d 0%, #15803d 48%, #22c55e 100%);
+            pointer-events: none;
         }
         .daily-command-panel:after {
             content: "";
@@ -6714,9 +6723,9 @@ function renderDashboard(options = {}) {
             width: 220px;
             height: 220px;
             border-radius: 999px;
-            right: -90px;
-            top: -110px;
-            background: rgba(255,255,255,.09);
+            right: -96px;
+            top: -114px;
+            background: rgba(22, 163, 74, .075);
             pointer-events: none;
         }
         .daily-command-head {
@@ -6726,10 +6735,10 @@ function renderDashboard(options = {}) {
             gap: 14px;
             position: relative;
             z-index: 1;
-            margin-bottom: 12px;
+            padding: 18px 18px 10px;
         }
         .daily-command-kicker {
-            color: #bbf7d0;
+            color: #15803d;
             font-size: 11px;
             font-weight: 900;
             letter-spacing: .10em;
@@ -6742,15 +6751,15 @@ function renderDashboard(options = {}) {
             line-height: 1.12;
             letter-spacing: -.035em;
             font-weight: 900;
-            color: #ffffff;
+            color: #0f172a;
         }
         .daily-command-subtitle {
             margin: 5px 0 0;
-            color: #dcfce7;
+            color: #475569;
             font-size: 12.5px;
             font-weight: 800;
             line-height: 1.45;
-            max-width: 720px;
+            max-width: 760px;
         }
         .daily-command-primary-action {
             display: flex;
@@ -6767,50 +6776,53 @@ function renderDashboard(options = {}) {
             font-size: 12px;
         }
         .daily-command-primary-action .btn-primary {
-            background: #ffffff;
-            color: #14532d;
-            box-shadow: 0 10px 22px rgba(0,0,0,.16);
+            background: #15803d;
+            color: #ffffff;
+            box-shadow: 0 8px 18px rgba(21, 128, 61, .18);
         }
         .daily-command-primary-action .btn-light {
-            background: rgba(255,255,255,.12);
-            color: #ffffff;
-            border-color: rgba(255,255,255,.25);
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid #dbe3ef;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
         }
         .daily-command-grid {
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
-            gap: 9px;
+            gap: 10px;
             position: relative;
             z-index: 1;
+            padding: 0 18px 12px;
         }
         .daily-command-card {
-            background: rgba(255,255,255,.10);
-            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(255,255,255,.92);
+            border: 1px solid #dbe3ef;
             border-radius: 15px;
             padding: 11px;
             min-height: 82px;
-            backdrop-filter: blur(8px);
-            transition: transform .14s ease, background .14s ease, border-color .14s ease;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, .045);
+            transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease;
         }
         .daily-command-card:hover {
             transform: translateY(-1px);
-            background: rgba(255,255,255,.145);
-            border-color: rgba(255,255,255,.28);
+            background: #ffffff;
+            border-color: #bbf7d0;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, .07);
         }
         .daily-command-card.warning {
-            background: rgba(251, 191, 36, .16);
-            border-color: rgba(253, 230, 138, .35);
+            background: #fffbeb;
+            border-color: #fde68a;
         }
         .daily-command-card.danger {
-            background: rgba(248, 113, 113, .17);
-            border-color: rgba(254, 202, 202, .36);
+            background: #fff7ed;
+            border-color: #fed7aa;
         }
         .daily-command-card.good {
-            background: rgba(74, 222, 128, .14);
-            border-color: rgba(187, 247, 208, .35);
+            background: #f0fdf4;
+            border-color: #bbf7d0;
         }
         .daily-command-label {
-            color: #dcfce7;
+            color: #64748b;
             font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
@@ -6821,24 +6833,30 @@ function renderDashboard(options = {}) {
         }
         .daily-command-value {
             margin-top: 5px;
-            color: #ffffff;
+            color: #0f172a;
             font-size: 20px;
             font-weight: 900;
             letter-spacing: -.03em;
             line-height: 1.05;
         }
+        .daily-command-card.good .daily-command-value { color: #14532d; }
+        .daily-command-card.warning .daily-command-value { color: #92400e; }
+        .daily-command-card.danger .daily-command-value { color: #9a3412; }
         .daily-command-help {
             margin-top: 4px;
-            color: #d1fae5;
+            color: #64748b;
             font-size: 11px;
             font-weight: 800;
             line-height: 1.25;
         }
         .daily-command-footnote {
-            margin-top: 10px;
-            color: #dcfce7;
+            margin: 0;
+            color: #14532d;
+            background: rgba(240, 253, 244, .86);
+            border-top: 1px solid #dcfce7;
             font-size: 11.5px;
-            font-weight: 800;
+            font-weight: 900;
+            padding: 10px 18px 12px;
             position: relative;
             z-index: 1;
         }
@@ -6846,14 +6864,15 @@ function renderDashboard(options = {}) {
             .daily-command-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
         @media (max-width: 720px) {
-            .daily-command-panel { padding: 13px; border-radius: 18px; }
-            .daily-command-head { flex-direction: column; }
+            .daily-command-panel { border-radius: 18px; }
+            .daily-command-head { flex-direction: column; padding: 16px 13px 10px; }
             .daily-command-primary-action { width: 100%; justify-content: stretch; }
             .daily-command-primary-action .btn { flex: 1 1 140px; }
-            .daily-command-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .daily-command-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 13px 12px; }
             .daily-command-title { font-size: 18px; }
             .daily-command-card { min-height: 76px; padding: 10px; }
             .daily-command-value { font-size: 18px; }
+            .daily-command-footnote { padding: 10px 13px 12px; }
         }
         @media (max-width: 420px) {
             .daily-command-grid { grid-template-columns: 1fr; }
