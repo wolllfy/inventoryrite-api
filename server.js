@@ -850,6 +850,91 @@ function buildMissingCostRows(items) {
     }).join("");
 }
 
+
+function buildDedicatedLowStockAlertHtml({ merchantId, items, costs, settings, isTest = false }) {
+    const report = analyzeInventoryReport({ items, costs, settings });
+    const lowStockItems = report.lowStock || [];
+    const threshold = report.threshold || Number(settings?.low_stock_threshold || 5);
+
+    const subjectPrefix = isTest ? "InventoryRite Test Low Stock Alert" : "InventoryRite Low Stock Alert";
+    const subject = lowStockItems.length
+        ? `${subjectPrefix} - ${lowStockItems.length} Item(s) Need Reorder`
+        : `${subjectPrefix} - No Low Stock Items Found`;
+
+    const rows = lowStockItems.slice(0, 25).map((item) => {
+        const currentQty = item.qty === null ? "Unknown" : item.qty;
+        const suggested = Math.max(threshold * 3, threshold - Number(item.qty || 0) + threshold * 2);
+        const priceText = item.price > 0 ? centsToMoneyServer(item.price) : "No price";
+        const skuText = item.sku ? item.sku : "--";
+        return `<tr>
+            <td style="padding:11px;border-bottom:1px solid #e5e7eb;">
+                <div style="font-weight:900;color:#111827;">${safe(item.name)}</div>
+                <div style="font-size:12px;color:#64748b;margin-top:3px;">SKU: ${safe(skuText)} · Price: ${safe(priceText)}</div>
+            </td>
+            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:900;color:#b91c1c;">${safe(currentQty)}</td>
+            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;">${safe(threshold)}</td>
+            <td style="padding:11px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:900;color:#166534;">${safe(suggested)}</td>
+        </tr>`;
+    }).join("");
+
+    const hasRows = lowStockItems.length > 0;
+
+    return {
+        subject,
+        shouldSend: isTest || hasRows,
+        summary: report,
+        html: `
+            <div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:24px;color:#111827;">
+                <div style="max-width:760px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#7f1d1d 0%,#b91c1c 42%,#0f172a 100%);color:white;padding:26px 24px;">
+                        <div style="font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#fee2e2;">InventoryRite</div>
+                        <h1 style="margin:10px 0 0;font-size:26px;line-height:1.15;font-weight:900;color:#ffffff;">${safe(isTest ? "Test Low Stock Alert" : "Low Stock Alert")}</h1>
+                        <p style="margin:10px 0 0;color:#fff1f2;line-height:1.55;font-size:14px;">
+                            ${hasRows
+                                ? `InventoryRite found ${safe(lowStockItems.length)} item(s) at or below your low-stock threshold of ${safe(threshold)}.`
+                                : `InventoryRite checked your Clover inventory and did not find products at or below the low-stock threshold of ${safe(threshold)}.`}
+                        </p>
+                    </div>
+                    <div style="padding:22px;background:#ffffff;">
+                        <div style="border:1px solid ${hasRows ? "#fecaca" : "#bbf7d0"};background:${hasRows ? "#fef2f2" : "#f0fdf4"};border-radius:15px;padding:14px;margin-bottom:16px;">
+                            <div style="font-size:13px;color:${hasRows ? "#991b1b" : "#166534"};font-weight:900;">${hasRows ? "Action Needed" : "Inventory Looks Good"}</div>
+                            <div style="font-size:14px;color:${hasRows ? "#7f1d1d" : "#14532d"};line-height:1.55;margin-top:6px;">
+                                Merchant <strong>${safe(merchantId)}</strong> has <strong>${safe(report.totalItems)}</strong> product(s) loaded.
+                                ${hasRows ? "Review these low-stock products and reorder before you run out." : "No reorder emergency was detected right now."}
+                            </div>
+                        </div>
+
+                        ${hasRows ? `
+                            <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#fff7ed;">
+                                        <th style="padding:10px;text-align:left;">Product</th>
+                                        <th style="padding:10px;text-align:center;">Current Stock</th>
+                                        <th style="padding:10px;text-align:center;">Threshold</th>
+                                        <th style="padding:10px;text-align:center;">Suggested Reorder</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        ` : `
+                            <p style="color:#166534;font-weight:bold;margin:0;">No low-stock products found right now.</p>
+                        `}
+
+                        <div style="margin-top:20px;border-top:1px solid #e5e7eb;padding-top:14px;color:#64748b;font-size:13px;line-height:1.55;">
+                            <strong style="color:#0f172a;">How this alert works:</strong>
+                            InventoryRite sends this only when Low Stock Alerts are enabled and product quantity is at or below the threshold saved in Email Reports & Alerts.
+                        </div>
+
+                        <p style="margin:16px 0 0;color:#64748b;font-size:12px;line-height:1.5;">
+                            This email was generated from InventoryRite based on saved alert settings. Low-stock alerts can be turned on or off inside InventoryRite.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `
+    };
+}
+
 function buildInventoryReportHtml({ merchantId, items, costs, settings }) {
     const report = analyzeInventoryReport({ items, costs, settings });
     const totalAlerts = report.belowCost.length + report.lowMargin.length + report.missingCost.length + report.lowStock.length;
@@ -9361,8 +9446,8 @@ function renderDashboard(options = {}) {
                     body: JSON.stringify({})
                 });
 
-                showToast(data && data.message ? data.message : "Test report generated.", data && data.sent ? "success" : "info");
-                logActivity("Test Email Report", data && data.sent ? "A test report email was sent." : "A test report preview was generated.", data && data.sent ? "Success" : "Info");
+                showToast(data && data.message ? data.message : "Test email generated.", data && data.sent ? "success" : "info");
+                logActivity("Test Email Report", data && data.sent ? "A test email was sent." : "A test email preview was generated.", data && data.sent ? "Success" : "Info");
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to send test report.", "error");
             }
@@ -9392,7 +9477,7 @@ function renderDashboard(options = {}) {
                 "</div>"
             ];
 
-            openFeatureModal("Email Reports & Alerts", "Let the merchant control reports, low-stock alerts, reorder suggestions, and test emails.", rows);
+            openFeatureModal("Email Reports & Alerts", "Let the merchant control reports, dedicated low-stock alerts, reorder suggestions, and test emails.", rows);
 
             setTimeout(function () {
                 var dayBox = byId("alertReportDay");
@@ -13880,12 +13965,25 @@ app.post("/send-test-report", async (req, res) => {
 
         const itemData = await fetchAllCloverItems(accessToken, merchantId);
         const costs = await getItemCostsForMerchant(merchantId);
-        const report = buildInventoryReportHtml({
-            merchantId,
-            items: itemData.elements || [],
-            costs,
-            settings
-        });
+
+        // Test email behavior:
+        // - If Low Stock Alerts are enabled, send a dedicated low-stock alert preview.
+        // - Otherwise, send the full weekly profit + inventory report preview.
+        const wantsLowStockTest = !!settings.low_stock_alerts_enabled;
+        const report = wantsLowStockTest
+            ? buildDedicatedLowStockAlertHtml({
+                merchantId,
+                items: itemData.elements || [],
+                costs,
+                settings,
+                isTest: true
+            })
+            : buildInventoryReportHtml({
+                merchantId,
+                items: itemData.elements || [],
+                costs,
+                settings
+            });
 
         const emailResult = await sendInventoryEmail({
             to: settings.report_email,
@@ -13897,12 +13995,13 @@ app.post("/send-test-report", async (req, res) => {
             success: true,
             sent: !!emailResult.sent,
             message: emailResult.sent
-                ? `Test report sent to ${settings.report_email}.`
+                ? `${wantsLowStockTest ? "Test low-stock alert" : "Test report"} sent to ${settings.report_email}.`
                 : emailResult.message,
             provider: emailResult.provider || "",
             emailId: emailResult.id || "",
             from: emailResult.from || getReportFromEmail(),
-            previewSubject: report.subject
+            previewSubject: report.subject,
+            lowStockItems: report.summary && report.summary.lowStock ? report.summary.lowStock.length : 0
         });
     } catch (error) {
         console.error("Send Test Report Error:", error.response?.data || error.message);
@@ -13963,20 +14062,47 @@ async function runDueAlertReports() {
 
             const itemData = await fetchAllCloverItems(accessToken, merchantId);
             const costs = await getItemCostsForMerchant(merchantId);
-            const report = buildInventoryReportHtml({
-                merchantId,
-                items: itemData.elements || [],
-                costs,
-                settings
-            });
+            const items = itemData.elements || [];
 
-            await sendInventoryEmail({
-                to: settings.report_email,
-                subject: report.subject,
-                html: report.html
-            });
+            // Weekly report: full profit + inventory intelligence.
+            if (settings.weekly_reports_enabled) {
+                const weeklyReport = buildInventoryReportHtml({
+                    merchantId,
+                    items,
+                    costs,
+                    settings
+                });
 
-            console.log(`Alert report sent for merchant ${merchantId}`);
+                await sendInventoryEmail({
+                    to: settings.report_email,
+                    subject: weeklyReport.subject,
+                    html: weeklyReport.html
+                });
+
+                console.log(`Weekly alert report sent for merchant ${merchantId}`);
+            }
+
+            // Low-stock alert: dedicated short alert, only sent when low-stock items exist.
+            if (settings.low_stock_alerts_enabled) {
+                const lowStockAlert = buildDedicatedLowStockAlertHtml({
+                    merchantId,
+                    items,
+                    costs,
+                    settings,
+                    isTest: false
+                });
+
+                if (lowStockAlert.shouldSend) {
+                    await sendInventoryEmail({
+                        to: settings.report_email,
+                        subject: lowStockAlert.subject,
+                        html: lowStockAlert.html
+                    });
+                    console.log(`Low-stock alert sent for merchant ${merchantId}`);
+                } else {
+                    console.log(`Low-stock alert skipped for merchant ${merchantId}: no low-stock items.`);
+                }
+            }
         }
     } catch (error) {
         console.error("Alert scheduler error:", error.message);
