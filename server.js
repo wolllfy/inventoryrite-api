@@ -70,7 +70,10 @@ const REQUIRED_CLOVER_SCOPES = [
 
 
 const DATABASE_URL = process.env.DATABASE_URL?.trim() || "";
-const USE_DATABASE = !!DATABASE_URL && !!Pool;
+const DATABASE_CONFIG_ERROR = !DATABASE_URL
+    ? "DATABASE_URL is missing."
+    : (!Pool ? "The pg package is missing. Add pg to package.json and redeploy." : "");
+const USE_DATABASE = !DATABASE_CONFIG_ERROR;
 
 const dbPool = USE_DATABASE
     ? new Pool({
@@ -85,6 +88,38 @@ const dbPool = USE_DATABASE
 const cloverApi = axios.create({
     timeout: REQUEST_TIMEOUT_MS
 });
+
+function databaseUnavailablePayload() {
+    return {
+        success: false,
+        message: "InventoryRite database is not configured. Add DATABASE_URL and ensure the pg package is installed before using this production app.",
+        error: DATABASE_CONFIG_ERROR || "Database unavailable."
+    };
+}
+
+function ensureDatabaseReady(req, res, next) {
+    if (USE_DATABASE && dbPool) return next();
+
+    const publicPaths = new Set([
+        "/health",
+        "/privacy",
+        "/terms",
+        "/support",
+        "/icon.png",
+        "/.well-known/clover.json"
+    ]);
+
+    if (publicPaths.has(req.path)) return next();
+
+    return res.status(503).json(databaseUnavailablePayload());
+}
+
+function requireDatabaseReady() {
+    if (!USE_DATABASE || !dbPool) {
+        throw new Error(DATABASE_CONFIG_ERROR || "Database unavailable.");
+    }
+}
+
 
 /*
 |--------------------------------------------------------------------------
@@ -236,7 +271,7 @@ app.use((req, res, next) => {
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     res.setHeader(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.clover.com https://apisandbox.dev.clover.com; frame-ancestors 'self' https://www.clover.com https://sandbox.dev.clover.com"
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.clover.com https://apisandbox.dev.clover.com; frame-ancestors 'self' https://www.clover.com https://sandbox.dev.clover.com;"
     );
     next();
 });
@@ -245,6 +280,7 @@ app.use(rateLimit);
 app.use(/^\/clover-(?!webhook|uninstall).*/, cloverApiRateLimit);
 app.use("/item-costs", cloverApiRateLimit);
 app.use("/item-cost", cloverApiRateLimit);
+app.use(ensureDatabaseReady);
 app.use(verifyCsrfToken);
 
 /*
@@ -252,11 +288,11 @@ app.use(verifyCsrfToken);
 | CONNECTION + COST STORAGE
 |--------------------------------------------------------------------------
 | Production path: PostgreSQL / Supabase / Render Postgres using DATABASE_URL.
-| Demo fallback: in-memory storage so the app still runs before the DB is added.
+| Production requires PostgreSQL / Supabase / Render Postgres using DATABASE_URL.
 |
-| IMPORTANT: For real Clover App Market behavior, add pg to package.json and set
-| DATABASE_URL in Render. Without DATABASE_URL, merchant cost data and tokens reset
-| whenever Render restarts.
+| IMPORTANT: This app intentionally fails closed when DATABASE_URL is missing.
+| That prevents merchant tokens, item costs, alert settings, or metadata from
+| ever being stored in shared server memory.
 |--------------------------------------------------------------------------
 */
 
@@ -271,16 +307,12 @@ let latestCloverConnection = {
     connected_at: ""
 };
 
-const fallbackItemCosts = {};
-const fallbackItemMetadata = {};
-const fallbackAlertSettings = {};
+// No in-memory merchant data fallback is used in production.
+// All merchant tokens, item costs, metadata, and alert settings must live in PostgreSQL.
 
 
 async function initDatabase() {
-    if (!USE_DATABASE || !dbPool) {
-        console.warn("DATABASE_URL/pg not available. Running in demo memory mode only.");
-        return;
-    }
+    requireDatabaseReady();
 
     await dbPool.query(`
         CREATE TABLE IF NOT EXISTS merchant_connections (
@@ -368,45 +400,38 @@ async function initDatabase() {
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_item_metadata_updated_at ON item_metadata(updated_at);`);
     await dbPool.query(`CREATE INDEX IF NOT EXISTS idx_merchant_alert_settings_updated_at ON merchant_alert_settings(updated_at);`);
 
-    const lastConnection = await dbPool.query(`
-        SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
-        FROM merchant_connections
-        ORDER BY updated_at DESC
-        LIMIT 1;
-    `);
-
-    if (lastConnection.rows.length > 0) {
-        const row = lastConnection.rows[0];
-        latestCloverConnection = {
-            connected: true,
-            merchant_id: row.merchant_id || "",
-            employee_id: row.employee_id || "",
-            access_token: decryptToken(row.access_token || ""),
-            refresh_token: decryptToken(row.refresh_token || ""),
-            token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
-            scopes: row.scopes || "",
-            connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
-        };
-    }
-
     console.log("Database ready: merchant_connections and item_costs tables verified.");
 }
 
 async function saveCloverConnection(connection) {
-    latestCloverConnection = {
-        connected: true,
-        merchant_id: connection.merchant_id || "",
-        employee_id: connection.employee_id || "",
-        access_token: connection.access_token || "",
-        refresh_token: connection.refresh_token || latestCloverConnection.refresh_token || "",
-        token_expires_at: connection.token_expires_at || latestCloverConnection.token_expires_at || "",
-        scopes: connection.scopes || latestCloverConnection.scopes || "",
-        connected_at: connection.connected_at || new Date().toISOString()
-    };
+    requireDatabaseReady();
 
-    if (!USE_DATABASE || !dbPool || !latestCloverConnection.merchant_id || !latestCloverConnection.access_token) {
-        return latestCloverConnection;
+    const merchantId = String(connection.merchant_id || "").trim();
+    const accessToken = String(connection.access_token || "").trim();
+
+    if (!merchantId || !accessToken) {
+        throw new Error("Missing Clover merchant id or access token.");
     }
+
+    const existing = await dbPool.query(
+        `SELECT refresh_token, token_expires_at, scopes, connected_at
+         FROM merchant_connections
+         WHERE merchant_id = $1
+         LIMIT 1;`,
+        [merchantId]
+    );
+
+    const existingRow = existing.rows[0] || {};
+    const nextConnection = {
+        connected: true,
+        merchant_id: merchantId,
+        employee_id: connection.employee_id || "",
+        access_token: accessToken,
+        refresh_token: connection.refresh_token || decryptToken(existingRow.refresh_token || "") || "",
+        token_expires_at: connection.token_expires_at || (existingRow.token_expires_at ? new Date(existingRow.token_expires_at).toISOString() : ""),
+        scopes: connection.scopes || existingRow.scopes || "",
+        connected_at: connection.connected_at || (existingRow.connected_at ? new Date(existingRow.connected_at).toISOString() : new Date().toISOString())
+    };
 
     await dbPool.query(
         `INSERT INTO merchant_connections (merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at, updated_at)
@@ -421,25 +446,24 @@ async function saveCloverConnection(connection) {
             connected_at = EXCLUDED.connected_at,
             updated_at = NOW();`,
         [
-            latestCloverConnection.merchant_id,
-            latestCloverConnection.employee_id,
-            encryptToken(latestCloverConnection.access_token),
-            latestCloverConnection.refresh_token ? encryptToken(latestCloverConnection.refresh_token) : null,
-            latestCloverConnection.token_expires_at || null,
-            latestCloverConnection.scopes || null,
-            latestCloverConnection.connected_at
+            nextConnection.merchant_id,
+            nextConnection.employee_id,
+            encryptToken(nextConnection.access_token),
+            nextConnection.refresh_token ? encryptToken(nextConnection.refresh_token) : null,
+            nextConnection.token_expires_at || null,
+            nextConnection.scopes || null,
+            nextConnection.connected_at
         ]
     );
 
-    return latestCloverConnection;
+    // Kept only for the current response after OAuth, not as a fallback lookup.
+    latestCloverConnection = nextConnection;
+    return nextConnection;
 }
 
 async function getItemCostsForMerchant(merchantId) {
     if (!merchantId) return {};
-
-    if (!USE_DATABASE || !dbPool) {
-        return fallbackItemCosts[merchantId] || {};
-    }
+    requireDatabaseReady();
 
     const result = await dbPool.query(
         `SELECT item_id, cost_cents FROM item_costs WHERE merchant_id = $1;`,
@@ -461,11 +485,7 @@ async function saveItemCostForMerchant(merchantId, itemId, costCents) {
 
     const normalizedCost = Math.max(0, Math.round(Number(costCents || 0)));
 
-    if (!USE_DATABASE || !dbPool) {
-        if (!fallbackItemCosts[merchantId]) fallbackItemCosts[merchantId] = {};
-        fallbackItemCosts[merchantId][itemId] = normalizedCost;
-        return normalizedCost;
-    }
+    requireDatabaseReady();
 
     await dbPool.query(
         `INSERT INTO item_costs (merchant_id, item_id, cost_cents, updated_at)
@@ -488,10 +508,7 @@ function normalizeItemMetadataInput(input = {}) {
 
 async function getItemMetadataForMerchant(merchantId) {
     if (!merchantId) return {};
-
-    if (!USE_DATABASE || !dbPool) {
-        return fallbackItemMetadata[merchantId] || {};
-    }
+    requireDatabaseReady();
 
     const result = await dbPool.query(
         `SELECT item_id, sku_code, barcode, category FROM item_metadata WHERE merchant_id = $1;`,
@@ -524,11 +541,7 @@ async function saveItemMetadataForMerchant(merchantId, itemId, metadataInput) {
         category: incoming.category || existing.category || ""
     };
 
-    if (!USE_DATABASE || !dbPool) {
-        if (!fallbackItemMetadata[merchantId]) fallbackItemMetadata[merchantId] = {};
-        fallbackItemMetadata[merchantId][itemId] = next;
-        return next;
-    }
+    requireDatabaseReady();
 
     await dbPool.query(
         `INSERT INTO item_metadata (merchant_id, item_id, sku_code, barcode, category, updated_at)
@@ -614,10 +627,7 @@ function normalizeAlertSettings(input = {}, merchantId = "") {
 
 async function getAlertSettingsForMerchant(merchantId) {
     if (!merchantId) return defaultAlertSettings("");
-
-    if (!USE_DATABASE || !dbPool) {
-        return fallbackAlertSettings[merchantId] || defaultAlertSettings(merchantId);
-    }
+    requireDatabaseReady();
 
     const result = await dbPool.query(
         `SELECT merchant_id, report_email, weekly_reports_enabled, low_stock_alerts_enabled,
@@ -641,10 +651,7 @@ async function saveAlertSettingsForMerchant(merchantId, settingsInput) {
 
     const settings = normalizeAlertSettings(settingsInput, merchantId);
 
-    if (!USE_DATABASE || !dbPool) {
-        fallbackAlertSettings[merchantId] = settings;
-        return settings;
-    }
+    requireDatabaseReady();
 
     await dbPool.query(
         `INSERT INTO merchant_alert_settings (
@@ -1374,8 +1381,8 @@ async function refreshTokenIfNeeded(connection) {
 }
 
 async function getConnectionFromRequest(req) {
-    // Security note: tokens are intentionally not accepted from query strings.
-    // The browser may send X-Merchant-Id, but bearer tokens stay server-side.
+    // Security note: tokens are intentionally not accepted from query strings unless
+    // Clover launches the app with merchant_id. Bearer tokens stay server-side.
     let merchantFromRequest =
         req.headers["x-merchant-id"] ||
         req.body?.merchantId ||
@@ -1386,79 +1393,65 @@ async function getConnectionFromRequest(req) {
 
     merchantFromRequest = String(merchantFromRequest || "").trim();
 
-    // Older frontend attempts used the word "server" as a placeholder. Do not
-    // treat that as a real Clover merchant id.
     if (merchantFromRequest.toLowerCase() === "server") {
         merchantFromRequest = "";
     }
 
-    let connection = latestCloverConnection;
-
-    if (USE_DATABASE && dbPool) {
-        let result;
-
-        if (merchantFromRequest) {
-            result = await dbPool.query(
-                `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
-                 FROM merchant_connections
-                 WHERE merchant_id = $1
-                 LIMIT 1;`,
-                [merchantFromRequest]
-            );
-
-            // CRITICAL MULTI-MERCHANT FIX:
-            // If the browser explicitly asks for a merchant, never fall back to another
-            // merchant's token. This prevents Jack/merchant B from seeing merchant A's
-            // cached Clover products when switching between sandbox merchants.
-            if (result.rows.length === 0) {
-                return {
-                    accessToken: "",
-                    merchantId: merchantFromRequest,
-                    connection: {
-                        connected: false,
-                        merchant_id: merchantFromRequest,
-                        employee_id: "",
-                        access_token: "",
-                        refresh_token: "",
-                        token_expires_at: "",
-                        scopes: "",
-                        connected_at: ""
-                    }
-                };
+    if (!merchantFromRequest) {
+        return {
+            accessToken: "",
+            merchantId: "",
+            connection: {
+                connected: false,
+                merchant_id: "",
+                employee_id: "",
+                access_token: "",
+                refresh_token: "",
+                token_expires_at: "",
+                scopes: "",
+                connected_at: ""
             }
-        } else {
-            // If the browser does not know the merchant id yet, fall back to the most
-            // recently connected Clover merchant saved in the database. This keeps
-            // inventory sync working after Render restarts/deploys.
-            result = await dbPool.query(
-                `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
-                 FROM merchant_connections
-                 ORDER BY updated_at DESC
-                 LIMIT 1;`
-            );
-        }
-
-        if (result && result.rows.length > 0) {
-            const row = result.rows[0];
-            connection = {
-                connected: true,
-                merchant_id: row.merchant_id || "",
-                employee_id: row.employee_id || "",
-
-                // IMPORTANT FIX:
-                // Tokens are stored encrypted in PostgreSQL by saveCloverConnection().
-                // They must be decrypted before sending them to Clover.
-                // Without this, Clover receives "enc:v1:..." instead of the real token
-                // and returns 401 Unauthorized when loading inventory.
-                access_token: decryptToken(row.access_token || ""),
-                refresh_token: decryptToken(row.refresh_token || ""),
-
-                token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
-                scopes: row.scopes || "",
-                connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
-            };
-        }
+        };
     }
+
+    requireDatabaseReady();
+
+    const result = await dbPool.query(
+        `SELECT merchant_id, employee_id, access_token, refresh_token, token_expires_at, scopes, connected_at
+         FROM merchant_connections
+         WHERE merchant_id = $1
+         LIMIT 1;`,
+        [merchantFromRequest]
+    );
+
+    if (result.rows.length === 0) {
+        return {
+            accessToken: "",
+            merchantId: merchantFromRequest,
+            connection: {
+                connected: false,
+                merchant_id: merchantFromRequest,
+                employee_id: "",
+                access_token: "",
+                refresh_token: "",
+                token_expires_at: "",
+                scopes: "",
+                connected_at: ""
+            }
+        };
+    }
+
+    const row = result.rows[0];
+    let connection = {
+        connected: true,
+        merchant_id: row.merchant_id || "",
+        employee_id: row.employee_id || "",
+        access_token: decryptToken(row.access_token || ""),
+        refresh_token: decryptToken(row.refresh_token || ""),
+        token_expires_at: row.token_expires_at ? new Date(row.token_expires_at).toISOString() : "",
+        scopes: row.scopes || "",
+        connected_at: row.connected_at ? new Date(row.connected_at).toISOString() : ""
+    };
 
     connection = await refreshTokenIfNeeded(connection);
 
@@ -1679,12 +1672,12 @@ function calculateMarginHealthScore(items) {
 */
 
 function renderDashboard(options = {}) {
-    const merchantId = options.merchant_id || latestCloverConnection.merchant_id || "";
-    const employeeId = options.employee_id || latestCloverConnection.employee_id || "";
-    const accessToken = options.access_token || latestCloverConnection.access_token || "";
+    const merchantId = options.merchant_id || "";
+    const employeeId = options.employee_id || "";
+    const accessToken = options.access_token || "";
     const csrfToken = issueCsrfToken();
-    const connected = !!accessToken || latestCloverConnection.connected;
-    const connectedAt = options.connected_at || latestCloverConnection.connected_at || "";
+    const connected = !!accessToken || !!options.connected;
+    const connectedAt = options.connected_at || "";
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -12781,7 +12774,7 @@ async function handleOAuthCallback(req, res) {
             }
         }
 
-        await saveCloverConnection({
+        const savedConnection = await saveCloverConnection({
             merchant_id: detectedMerchantId,
             employee_id: detectedEmployeeId,
             access_token: tokenData.access_token || "",
@@ -12791,16 +12784,16 @@ async function handleOAuthCallback(req, res) {
             connected_at: new Date().toISOString()
         });
 
-        logApiCall("/oauth-callback", latestCloverConnection.merchant_id, "GET", 200);
+        logApiCall("/oauth-callback", savedConnection.merchant_id, "GET", 200);
         console.log("Clover connected successfully.", {
-            merchant_id: latestCloverConnection.merchant_id,
-            employee_id: latestCloverConnection.employee_id,
-            hasAccessToken: !!latestCloverConnection.access_token,
-            hasRefreshToken: !!latestCloverConnection.refresh_token,
-            token_expires_at: latestCloverConnection.token_expires_at
+            merchant_id: savedConnection.merchant_id,
+            employee_id: savedConnection.employee_id,
+            hasAccessToken: !!savedConnection.access_token,
+            hasRefreshToken: !!savedConnection.refresh_token,
+            token_expires_at: savedConnection.token_expires_at
         });
 
-        return res.send(renderDashboard(latestCloverConnection));
+        return res.send(renderDashboard(savedConnection));
     } catch (error) {
         console.error("Clover OAuth Callback Error:", error.response?.data || error.message);
         logApiCall("/oauth-callback", "", "GET", error.response?.status || 500);
@@ -12857,15 +12850,7 @@ app.get("/health", (req, res) => {
         encryptionReady: hasValidEncryptionKey(),
         webhookSecretLoaded: !!CLOVER_WEBHOOK_SECRET,
         databaseEnabled: USE_DATABASE,
-        latestConnection: {
-            connected: latestCloverConnection.connected,
-            merchant_id: latestCloverConnection.merchant_id,
-            employee_id: latestCloverConnection.employee_id,
-            connected_at: latestCloverConnection.connected_at,
-            hasAccessToken: !!latestCloverConnection.access_token,
-            hasRefreshToken: !!latestCloverConnection.refresh_token,
-            token_expires_at: latestCloverConnection.token_expires_at
-        }
+        databaseStatus: USE_DATABASE ? "configured" : "missing"
     });
 });
 
@@ -12943,15 +12928,7 @@ app.get("/sync-debug", async (req, res) => {
             databaseEnabled: USE_DATABASE,
             merchantIdPresent: !!merchantId,
             accessTokenPresent: !!accessToken,
-            latestConnection: {
-                connected: latestCloverConnection.connected,
-                merchant_id: latestCloverConnection.merchant_id,
-                employee_id: latestCloverConnection.employee_id,
-                connected_at: latestCloverConnection.connected_at,
-                hasAccessToken: !!latestCloverConnection.access_token,
-                hasRefreshToken: !!latestCloverConnection.refresh_token,
-                token_expires_at: latestCloverConnection.token_expires_at
-            }
+            databaseStatus: USE_DATABASE ? "configured" : "missing"
         });
     } catch (error) {
         res.status(500).json({
@@ -13970,19 +13947,6 @@ app.post("/clover-uninstall", async (req, res) => {
             await dbPool.query("DELETE FROM merchant_connections WHERE merchant_id = $1", [merchantId]);
         }
 
-        if (merchantId && latestCloverConnection.merchant_id === merchantId) {
-            latestCloverConnection = {
-                connected: false,
-                merchant_id: "",
-                employee_id: "",
-                access_token: "",
-                refresh_token: "",
-                token_expires_at: "",
-                scopes: "",
-                connected_at: ""
-            };
-        }
-
         logApiCall("/clover-uninstall", merchantId, "POST", 200);
         return res.json({ success: true, message: "Merchant data cleanup complete." });
     } catch (error) {
@@ -14066,10 +14030,8 @@ app.get("/app-status", (req, res) => {
         app: "InventoryRite Clover Connector",
         status: "online",
         environment: IS_PRODUCTION_CLOVER ? "production" : "sandbox",
-        connected: latestCloverConnection.connected,
-        hasMerchant: !!latestCloverConnection.merchant_id,
-        connectedAt: latestCloverConnection.connected_at || null,
         databaseEnabled: USE_DATABASE,
+        databaseStatus: USE_DATABASE ? "configured" : "missing",
         emailConfigured: !!process.env.RESEND_API_KEY,
         reportFromEmail: getReportFromEmail()
     });
@@ -14311,7 +14273,8 @@ function shouldSendLowStockAlertNow(settings) {
 }
 
 async function markAlertSentForMerchant(merchantId, type) {
-    if (!USE_DATABASE || !dbPool || !merchantId) return;
+    if (!merchantId) return;
+    requireDatabaseReady();
 
     if (type === "weekly") {
         await dbPool.query(
@@ -14331,7 +14294,10 @@ async function markAlertSentForMerchant(merchantId, type) {
 
 
 async function runDueAlertReports() {
-    if (!USE_DATABASE || !dbPool) return;
+    if (!USE_DATABASE || !dbPool) {
+        console.log("Alert scheduler skipped: database is not configured.");
+        return;
+    }
 
     if (!process.env.RESEND_API_KEY) {
         console.log("Alert scheduler skipped: RESEND_API_KEY is not set.");
@@ -14435,7 +14401,7 @@ initDatabase()
     .finally(() => {
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
-            console.log(`Database mode: ${USE_DATABASE ? "PostgreSQL" : "Demo memory only"}`);
+            console.log(`Database mode: ${USE_DATABASE ? "PostgreSQL" : "Not configured - app fails closed"}`);
 
             // Alert scheduler checks due merchants. Merchant settings control one shared day/time and low-stock frequency.
             // Default is hourly so the selected send time is respected without waiting a full day after deploy.
