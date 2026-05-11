@@ -7108,7 +7108,296 @@ function renderDashboard(options = {}) {
             }
         }
 
-</style>
+
+
+        /* ============================================================
+           FINAL APP MARKET POLISH PASS
+           Keeps existing functionality intact. This only tightens the
+           dashboard presentation for Clover App Market review.
+        ============================================================ */
+
+        :root {
+            --shadow: 0 10px 28px rgba(15, 23, 42, 0.065);
+            --radius: 18px;
+        }
+
+        .topbar {
+            padding: 9px 22px;
+        }
+
+        .topbar-inner,
+        .wrap {
+            max-width: 1540px;
+        }
+
+        .wrap {
+            margin: 12px auto;
+            padding: 0 16px 32px;
+        }
+
+        .hero {
+            min-height: auto;
+            padding: 15px 22px;
+            margin-bottom: 12px;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+        }
+
+        .hero h2 {
+            font-size: 25px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero p {
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .card {
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+        }
+
+        .card:hover,
+        .metric-card:hover,
+        .recommendation-card:hover,
+        .start-step:hover,
+        .sales-panel:hover,
+        .profit-dashboard-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.075);
+        }
+
+        .card,
+        .metric-card,
+        .recommendation-card,
+        .start-step,
+        .sales-panel,
+        .profit-dashboard-card {
+            transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+        }
+
+        .inventory-card {
+            padding: 18px;
+        }
+
+        .table-top {
+            margin-bottom: 10px;
+        }
+
+        .table-top h3 {
+            font-size: 21px;
+            margin-bottom: 4px;
+        }
+
+        .table-top p,
+        .command-subtitle,
+        .merchant-control-subtitle,
+        .operations-tools-header .merchant-control-subtitle {
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .inventory-command-center,
+        .merchant-control-panel,
+        .start-here-panel,
+        .smart-recommendations-panel,
+        .sales-intelligence-panel,
+        .real-profit-dashboard,
+        .recent-changes-panel,
+        .operations-summary-strip {
+            margin-bottom: 12px !important;
+        }
+
+        .merchant-control-panel,
+        .inventory-command-center,
+        .operations-summary-strip {
+            padding: 12px !important;
+            border-radius: 16px !important;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.045) !important;
+        }
+
+        .operations-tools-header {
+            padding: 12px 14px !important;
+            border-radius: 16px !important;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        .operations-tools-grid {
+            gap: 8px !important;
+        }
+
+        .operations-tools-grid .btn,
+        .product-action-row .btn,
+        .command-search-actions .btn,
+        .toolbar .btn,
+        .hero-actions .btn {
+            min-height: 38px;
+            padding: 9px 13px;
+            border-radius: 11px;
+            font-size: 12px;
+        }
+
+        .btn {
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            box-shadow: 0 7px 16px rgba(21, 128, 61, 0.18);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(.99);
+        }
+
+        .btn-light,
+        .btn-secondary,
+        .btn-amber,
+        .btn-danger {
+            border-width: 1px;
+        }
+
+        input,
+        select,
+        textarea {
+            min-height: 38px;
+            border-radius: 11px;
+            padding: 10px 12px;
+        }
+
+        .metric-grid,
+        .profit-metric-grid,
+        .sales-metric-grid,
+        .recommendations-grid,
+        .start-steps-grid {
+            gap: 10px !important;
+        }
+
+        .metric-card,
+        .profit-metric-card,
+        .sales-metric-card,
+        .recommendation-card,
+        .start-step {
+            border-radius: 15px !important;
+            padding: 12px !important;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.035) !important;
+        }
+
+        .metric-card strong,
+        .profit-metric-card strong,
+        .sales-metric-card strong {
+            font-size: 21px;
+        }
+
+        .sales-insight-grid,
+        .sales-lists-grid {
+            gap: 10px !important;
+        }
+
+        .sales-insight-list,
+        .sales-list-card,
+        .smart-list-card {
+            border-radius: 15px !important;
+        }
+
+        .table-wrap {
+            border-radius: 15px !important;
+            overflow: auto;
+            max-height: 620px;
+        }
+
+        .table-wrap thead th,
+        .table-wrap table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #f8fafc !important;
+            box-shadow: 0 1px 0 #e5e7eb;
+        }
+
+        table th {
+            font-size: 11px !important;
+            letter-spacing: .08em !important;
+        }
+
+        table td {
+            font-size: 13px;
+        }
+
+        .row-actions .btn,
+        .row-actions button {
+            min-height: 30px !important;
+            min-width: 30px !important;
+            border-radius: 9px !important;
+        }
+
+        .toast,
+        .status-toast,
+        .alert-toast {
+            border-radius: 14px !important;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16) !important;
+        }
+
+        .modal-card,
+        .dialog-card,
+        .product-detail-modal,
+        .smart-review-modal {
+            border-radius: 18px !important;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.26) !important;
+        }
+
+        .modal-body,
+        .dialog-body {
+            max-height: min(76vh, 720px);
+        }
+
+        .loading-dot,
+        .skeleton-line {
+            background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 37%, #eef2f7 63%);
+            background-size: 400% 100%;
+            animation: inventoryRiteSkeleton 1.2s ease infinite;
+            border-radius: 999px;
+        }
+
+        @keyframes inventoryRiteSkeleton {
+            0% { background-position: 100% 0; }
+            100% { background-position: 0 0; }
+        }
+
+        @media (min-width: 1200px) {
+            .wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .wrap {
+                padding: 0 10px 28px;
+            }
+
+            .hero,
+            .inventory-card,
+            .merchant-control-panel,
+            .inventory-command-center {
+                padding: 12px !important;
+            }
+
+            .hero h2 {
+                font-size: 22px;
+            }
+
+            .operations-tools-grid,
+            .command-search-actions,
+            .product-action-row,
+            .toolbar {
+                gap: 7px !important;
+            }
+        }
+
+        </style>
 </head>
 <body>
 
