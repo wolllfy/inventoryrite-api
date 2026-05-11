@@ -2112,79 +2112,112 @@ function renderDashboard(options = {}) {
         .metric-col { width: 12%; }
         .actions-col { width: 20%; }
         .product-name-cell { min-width: 0; }
+        /* Compact product details modal: matches the clean 2-column repair/intelligence layout. */
+        #detailsModal .modal {
+            max-width: 980px;
+            width: min(980px, calc(100vw - 40px));
+            max-height: calc(100vh - 40px);
+            overflow: hidden;
+            padding: 18px;
+        }
+
+        #detailsModal .modal h3 {
+            margin: 0 0 5px;
+            font-size: 20px;
+            line-height: 1.15;
+        }
+
+        #detailsModal .modal > p {
+            font-size: 12px;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+
+        #detailsModal .modal-actions {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+
         .detail-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(320px, .9fr);
+            grid-template-columns: minmax(0, 1.25fr) minmax(300px, .9fr);
             gap: 12px;
-            margin-top: 12px;
+            margin-top: 10px;
             font-size: 13px;
             align-items: start;
+            max-height: calc(100vh - 170px);
+            overflow: auto;
+            padding-right: 2px;
         }
         .detail-panel {
             border: 1px solid #e2e8f0;
             border-radius: 14px;
             background: linear-gradient(180deg, #ffffff, #f8fafc);
             padding: 12px;
-            box-shadow: 0 1px 2px rgba(15,23,42,.04);
+            min-width: 0;
+        }
+        .detail-panel:first-child {
+            grid-row: span 2;
         }
         .detail-section-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 950;
             color: #15803d;
             text-transform: uppercase;
             letter-spacing: .08em;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .detail-grid-inner {
             display: grid;
-            grid-template-columns: 150px minmax(0, 1fr);
-            gap: 10px 14px;
+            grid-template-columns: 112px minmax(0, 1fr);
+            gap: 8px 12px;
             align-items: center;
         }
-        .detail-grid-inner.compact { gap: 8px 14px; }
-        .detail-label { color: var(--muted); font-weight: 900; }
-        .detail-value { color: var(--text); font-weight: 800; word-break: break-word; }
-        .mono-value { font-family: Consolas, Monaco, monospace; }
+        .detail-grid-inner.compact { gap: 7px 12px; }
+        .detail-label { color: var(--muted); font-weight: 900; font-size: 12px; }
+        .detail-value { color: var(--text); font-weight: 850; word-break: normal; overflow-wrap: anywhere; min-width: 0; }
+        .mono-value { font-family: Consolas, Monaco, monospace; font-size: 12px; }
         .detail-stat-row {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
-            margin-bottom: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .detail-stat {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
             background: #fff;
             padding: 9px;
-            min-height: 72px;
+            min-height: 64px;
         }
         .detail-stat span {
             display:block;
             color:#64748b;
-            font-size:11px;
+            font-size:10px;
             font-weight:900;
             text-transform:uppercase;
             letter-spacing:.04em;
-            margin-bottom:5px;
+            margin-bottom:4px;
         }
-        .detail-stat strong { font-size:16px; font-weight:950; }
+        .detail-stat strong { font-size:15px; font-weight:950; }
         .margin-badge.good { color:#166534; }
         .margin-badge.watch { color:#b45309; }
         .margin-badge.risk { color:#b91c1c; }
         .margin-badge.warn { color:#64748b; }
         .detail-edit-box {
-            display: flex;
-            align-items: center;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
             gap: 8px;
-            flex-wrap: wrap;
+            align-items: center;
+            min-width: 0;
         }
         .detail-input {
-            width: 180px;
-            min-width: 160px;
-            flex: 1 1 210px;
+            width: 100%;
+            min-width: 0;
             border: 1px solid #d1d5db;
             border-radius: 11px;
-            padding: 9px 10px;
+            padding: 8px 10px;
             font-size: 13px;
             font-weight: 900;
             background: #ffffff;
@@ -2192,25 +2225,34 @@ function renderDashboard(options = {}) {
         .detail-help {
             grid-column: 2;
             color: #64748b;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
-            line-height: 1.4;
-            margin-top: -5px;
+            line-height: 1.3;
+            margin-top: -2px;
+            max-width: 100%;
+        }
+        .detail-fast-note {
+            grid-column: 1 / -1;
+            margin-top: 8px;
+            padding: 9px 10px;
+            border-radius: 11px;
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1.3;
         }
         @media (max-width: 900px) {
-            .detail-grid {
-                grid-template-columns: 1fr;
-            }
+            #detailsModal .modal { width: calc(100vw - 24px); padding: 14px; }
+            .detail-grid { grid-template-columns: 1fr; max-height: calc(100vh - 150px); }
+            .detail-panel:first-child { grid-row: auto; }
         }
-
-        @media (max-width: 720px) {
+        @media (max-width: 640px) {
             .detail-grid-inner { grid-template-columns: 1fr; }
             .detail-help { grid-column: 1; }
+            .detail-edit-box { grid-template-columns: 1fr; }
             .detail-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .detail-input {
-                width: 100%;
-                min-width: 0;
-            }
         }
 
         tr.row-updated { animation: rowFlash 1.4s ease; }
@@ -10484,11 +10526,12 @@ function renderDashboard(options = {}) {
                             "</div>" +
                             "<div class='detail-help'>Categories help margin review, cleanup, reporting, and reorder organization.</div>" +
                             "<div class='detail-label'>Clover ID</div><div class='detail-value mono-value'>" + escapeHtml(item.id || "-") + "</div>" +
+                            "<div class='detail-fast-note'>Fast edit panel: keep the main table clean, but let the merchant repair Clover data in one place.</div>" +
                         "</div>" +
                     "</div>" +
 
                     "<div class='detail-panel'>" +
-                        "<div class='detail-section-title'>Pricing Intelligence</div>" +
+                        "<div class='detail-section-title'>Pricing</div>" +
                         "<div class='detail-stat-row'>" +
                             "<div class='detail-stat'><span>Price</span><strong>" + escapeHtml(formatCurrencyFromCents(priceCents)) + "</strong></div>" +
                             "<div class='detail-stat'><span>Cost</span><strong>" + escapeHtml(formatCurrencyFromCents(costCents)) + "</strong></div>" +
@@ -10501,7 +10544,7 @@ function renderDashboard(options = {}) {
                     "</div>" +
 
                     "<div class='detail-panel'>" +
-                        "<div class='detail-section-title'>Inventory Status</div>" +
+                        "<div class='detail-section-title'>Status</div>" +
                         "<div class='detail-grid-inner compact'>" +
                             "<div class='detail-label'>Quantity</div><div class='detail-value'>" + escapeHtml(qty === null ? "Unknown" : qty) + "</div>" +
                             "<div class='detail-label'>Available</div><div class='detail-value'>" + escapeHtml(available) + "</div>" +
