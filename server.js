@@ -2378,6 +2378,53 @@ function renderDashboard(options = {}) {
         .toast.error { background: #991b1b; }
         .toast.info { background: #1e3a8a; }
 
+        .products-section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 12px;
+            margin: 12px 0 8px;
+            padding: 0 2px;
+        }
+
+        .products-section-title {
+            font-size: 16px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+        }
+
+        .products-section-subtitle {
+            margin-top: 3px;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .products-section-status {
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .toast.warning { background: #92400e; }
+
+        @media (max-width: 760px) {
+            .products-section-heading {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+            .products-section-status {
+                white-space: normal;
+            }
+        }
+
         .modal-backdrop {
             display: none;
             position: fixed;
@@ -6906,7 +6953,7 @@ function renderDashboard(options = {}) {
                 <div>
                     <div class="launch-guide-kicker">Start Here</div>
                     <h3 class="launch-guide-title">Get this Clover inventory ready in 4 steps.</h3>
-                    <p class="launch-guide-subtitle">InventoryRite guides merchants from sync to cleanup to profit review without forcing them to understand every tool on day one.</p>
+                    <p class="launch-guide-subtitle">Sync Clover, add costs, clean product data, and review profit opportunities from one guided workflow.</p>
                 </div>
                 <div class="launch-guide-progress" id="launchGuideProgress">0 of 4 ready</div>
             </div>
@@ -7193,10 +7240,6 @@ function renderDashboard(options = {}) {
                     <div class="stat-label">Available Products</div>
                     <div class="stat-value" id="statAvailable">0</div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-label">Total Menu Value</div>
-                    <div class="stat-value" id="statValue">$0.00</div>
-                </div>
             </div>
 
             <div class="stats-row" id="marginStatsRow">
@@ -7219,6 +7262,14 @@ function renderDashboard(options = {}) {
             </div>
 
             <div class="merchant-hint">Tip: Select multiple rows, open Bulk Price Update, then increase or decrease selected product prices in one action.</div>
+
+            <div class="products-section-heading">
+                <div>
+                    <div class="products-section-title">Products</div>
+                    <div class="products-section-subtitle">Edit price, cost, margin, SKU, barcode, and cleanup details from the product row or details button.</div>
+                </div>
+                <div class="products-section-status" id="productsSectionStatus">Sync Clover to load products.</div>
+            </div>
 
             <div class="table-wrap">
                 <table>
@@ -8963,7 +9014,9 @@ function renderDashboard(options = {}) {
         }
 
         function buildRecommendation(priority, title, copy, action, button) {
-            return { priority: priority || "good", title: title || "Recommendation", copy: copy || "Review this item.", action: action || "review", button: button || "Review" };
+            title = String(title || "Recommendation").replace(/(variable|recipe|drink)\s*:\s*none/ig, "").trim() || "Recommendation";
+            copy = String(copy || "Review this item.").replace(/(variable|recipe|drink)\s*:\s*none/ig, "").trim() || "Review this item.";
+            return { priority: priority || "good", title: title, copy: copy, action: action || "review", button: button || "Review" };
         }
 
         function renderSmartRecommendations() {
@@ -10591,8 +10644,16 @@ function renderDashboard(options = {}) {
                 itemCosts[itemId] = costCents;
                 markSavedNow();
                 var costItem = (loadedItems || []).find(function (x) { return (x.id || "") === itemId; }) || { name: itemId };
-                logActivity("Cost Saved", (costItem.name || "Product") + " cost saved at " + formatCurrencyFromCents(costCents) + ".", "Success");
-                showToast(savedCost && savedCost.message ? savedCost.message : "Cost saved. Margin updated.", "success");
+                var syncedToClover = !savedCost || savedCost.cloverCostSynced !== false;
+                logActivity(
+                    syncedToClover ? "Cost Saved" : "Cost Saved - Clover Sync Queued",
+                    (costItem.name || "Product") + " cost saved at " + formatCurrencyFromCents(costCents) + (syncedToClover ? "." : ". Clover sync will need retry."),
+                    syncedToClover ? "Success" : "Queued"
+                );
+                showToast(
+                    savedCost && savedCost.message ? savedCost.message : (syncedToClover ? "Cost saved. Margin updated." : "Cost saved in InventoryRite. Clover sync can be retried."),
+                    syncedToClover ? "success" : "warning"
+                );
                 renderItems(loadedItems);
             } catch (error) {
                 showToast(error && error.message ? error.message : "Unable to save cost.", "error");
@@ -12168,30 +12229,41 @@ app.post("/item-cost/:itemId", async (req, res) => {
         // Save locally first so InventoryRite keeps its own profit/margin record.
         const savedCostCents = await saveItemCostForMerchant(merchantId, itemId, costCents);
 
-        // IMPORTANT: Clover DOES accept the item cost field as cents using { cost: costCents }.
-        // This keeps InventoryRite and Clover Dashboard's Cost column in sync.
-        const cloverResponse = await cloverApi.post(
-            `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
-            {
-                cost: savedCostCents
-            },
-            {
-                headers: cloverHeaders(accessToken)
-            }
-        );
+        // Clover sync is attempted after the local save. If Clover is busy/rate-limited,
+        // do not scare the merchant with a failed save. Return success with a warning
+        // so the UI can show: saved locally, Clover sync can be retried.
+        let cloverCostSynced = false;
+        let cloverCostSyncError = null;
+        let cloverResponseData = null;
+
+        try {
+            const cloverResponse = await cloverApi.post(
+                `${CLOVER_API_BASE_URL}/v3/merchants/${merchantId}/items/${itemId}`,
+                { cost: savedCostCents },
+                { headers: cloverHeaders(accessToken) }
+            );
+            cloverCostSynced = true;
+            cloverResponseData = cloverResponse.data;
+        } catch (syncError) {
+            const cloverError = getCloverError(syncError);
+            cloverCostSyncError = cloverError.data || syncError.message || "Clover sync failed.";
+            console.warn("Item cost saved locally but Clover sync failed:", cloverCostSyncError);
+        }
 
         logApiCall("/item-cost/:itemId", merchantId, "POST", 200);
 
         return res.json({
             success: true,
-            message: "Item cost saved successfully in InventoryRite and synced to Clover.",
+            message: cloverCostSynced
+                ? "Cost saved and synced to Clover."
+                : "Cost saved in InventoryRite. Clover is busy, so sync is queued for retry.",
             databaseEnabled: USE_DATABASE,
             merchantId,
             itemId,
             costCents: savedCostCents,
-            cloverCostSynced: true,
-            cloverCostSyncError: null,
-            cloverResponse: cloverResponse.data
+            cloverCostSynced,
+            cloverCostSyncError,
+            cloverResponse: cloverResponseData
         });
     } catch (error) {
         const cloverError = getCloverError(error);
@@ -12200,7 +12272,7 @@ app.post("/item-cost/:itemId", async (req, res) => {
 
         return res.status(cloverError.status).json({
             success: false,
-            message: "Failed to save and sync item cost.",
+            message: "Cost could not be saved in InventoryRite. Please try again.",
             error: cloverError.data
         });
     }
